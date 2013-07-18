@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,7 +28,7 @@ namespace copysync
 
         static int Main(string[] args)
         {
-            int result = DoAllStuff(args);
+            int result = CopyNonInteractive(args);
 
             if (Environment.UserInteractive)
             {
@@ -39,7 +39,7 @@ namespace copysync
             return result;
         }
 
-        static int DoAllStuff(string[] args)
+        static int CopyNonInteractive(string[] args)
         {
             string usage = @"CopySync 1.3
 
@@ -184,19 +184,19 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
         {
             List<string> errors = new List<string>();
 
-            string[] f1 = GetFiles(sourcePath, ExcludeFilePatterns);
-            Console.WriteLine("Total source files: " + f1.Length + Environment.NewLine);
+            string[] sourcePaths = GetFiles(sourcePath, ExcludeFilePatterns);
+            Console.WriteLine("Total source files: " + sourcePaths.Length + Environment.NewLine);
 
-            string[] f2 = GetFiles(destinationPath, ExcludeFilePatterns);
-            Console.WriteLine("Total destination files: " + f2.Length + Environment.NewLine);
+            string[] targetPaths = GetFiles(destinationPath, ExcludeFilePatterns);
+            Console.WriteLine("Total destination files: " + targetPaths.Length + Environment.NewLine);
 
             List<CopyOperation> copyOperations = new List<CopyOperation>();
 
 
-            var sourceFiles = f1.GroupBy(f => Path.GetFileName(f).ToLower()).ToList();
+            var sourceFiles = sourcePaths.GroupBy(f => Path.GetFileName(f).ToLower()).ToList();
             Console.WriteLine("Source: Unique file names: " + sourceFiles.Count);
 
-            var destinationFiles = f2.ToLookup(f => Path.GetFileName(f).ToLower(), f => f);
+            var destinationFiles = targetPaths.ToLookup(f => Path.GetFileName(f).ToLower(), f => f);
             Console.WriteLine("Destination: Unique file names: " + destinationFiles.Count + Environment.NewLine);
 
 
