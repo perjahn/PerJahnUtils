@@ -14,10 +14,6 @@
     <ProjectGuid>{D11ACDDE-0A25-48E5-9EF2-2D1AA0A9F244}</ProjectGuid>
     <RootNamespace>uptime</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <SccProjectName>SAK</SccProjectName>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
