@@ -36,7 +36,7 @@ void WriteOutfile(char *szFileName, unsigned char *buf, unsigned bufsize);
 void main(int argc, char *argv[])
 {
 	char *szUsage =
-		"TrimEnd 0.02 gamma\n"
+		"TrimEnd 0.03 gamma\n"
 		"\n"
 		"Usage: rep [-h] [-r] [-s] [-v] <searchtext> <filepattern>\n"
 		"\n"
