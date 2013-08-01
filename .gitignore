@@ -1,0 +1,11 @@
+*.user
+*.vspscc
+*.suo
+*.cache
+*.exe
+*.pdb
+*.sdf
+*.vssscc
+Debug
+Release
+ipch
