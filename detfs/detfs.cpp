@@ -156,6 +156,7 @@ void DelinkTFS(char *szPath)
 
 
 	// Fix projects
+	// todo: Add support for .vbproj/.vcxproj
 	strcpy(p, "\\*.csproj");
 	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
 	{
