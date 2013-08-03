@@ -68,8 +68,7 @@ void RecurseDir(wchar_t *szPath, long long unsigned *size, long long unsigned *f
 	wchar_t *p;
 	for(p=szPath+wcslen(szPath); p>szPath && *(p-1)!='\\' && *(p-1)!=':'; p--)
 		;
-	
-	wprintf(L"'%s'\n", szPath);
+
 	if((hFind=FindFirstFile(szPath, &Data))!=INVALID_HANDLE_VALUE)
 	{
 		do
@@ -87,8 +86,6 @@ void RecurseDir(wchar_t *szPath, long long unsigned *size, long long unsigned *f
 					subsize = subfiles = subdirs = 0;
 
 					RecurseDir(szPath, &subsize, &subfiles, &subdirs);
-					
-					//wprintf(L"%d\n", _depth);
 
 					*(p+wcslen(Data.cFileName)) = 0;
 
