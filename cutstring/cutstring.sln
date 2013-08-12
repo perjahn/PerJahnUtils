@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cutstring", "cutstring.vcxproj", "{1035D0F6-58E2-476C-8AA3-FB475559D934}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://tfs.wipcore.se/tfs/upgradedcollection
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = cutstring.vcxproj
+		SccLocalPath1 = .
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Debug|Win32.Build.0 = Debug|Win32
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Release|Win32.ActiveCfg = Release|Win32
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
