@@ -366,7 +366,7 @@ unsigned ConvertHexToBytes(char *in, unsigned char *out)
 	unsigned size;
 	unsigned char hexbuf[3];
 
-	buf[2] = 0;
+	hexbuf[2] = 0;
 
 	for(p1=in,p2=out; *p1; p1++,p2++)
 	{
