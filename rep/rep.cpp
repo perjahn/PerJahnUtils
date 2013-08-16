@@ -15,7 +15,7 @@ unsigned _findsize, _replacesize;
 char _szRename[1000];
 
 bool g_renamefiles;
-bool g_escape_hex;  // Should escape sequences (hex) in search input be converted?
+bool g_escapehex;  // Should escape sequences (hex) in search input be converted?
 bool g_recurse;
 bool g_verbose;  // Verbose logging
 
@@ -29,16 +29,16 @@ void ProcessFile(char *szFileName);
 bool ReadInfile(char *szFileName);
 bool AllocateBuffers(void);
 void DeAllocateBuffers(void);
-unsigned Expand(char *in, unsigned char *out);
+unsigned ConvertHexToBytes(char *in, unsigned char *out);
 void ParseBuf(unsigned char *inbuf, unsigned char *outbuf, unsigned inbufsize, unsigned outbufsize, unsigned *outsize, bool *modified);
 void WriteOutfile(char *szFileName, unsigned char *outbuf, unsigned outsize);
 
 //**********************************************************
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	char *szUsage =
-		"rep 2.6\n"
+		"rep 2.7\n"
 		"\n"
 		"Usage: rep [-f] [-h] [-s] [-v] <searchtext> <replacetext> <filepattern>\n"
 		"\n"
@@ -51,7 +51,7 @@ void main(int argc, char *argv[])
 		"-v: Verbose logging.\n";
 	char *p1, *p2, *p3;
 
-	g_renamefiles = g_escape_hex = g_recurse = g_verbose= false;
+	g_renamefiles = g_escapehex = g_recurse = g_verbose= false;
 	p1 = p2 = p3 = NULL;
 
 	int arg;
@@ -63,7 +63,7 @@ void main(int argc, char *argv[])
 		}
 		else if(!strcmp(argv[arg], "-h"))
 		{
-			g_escape_hex = true;
+			g_escapehex = true;
 		}
 		else if(!strcmp(argv[arg], "-s"))
 		{
@@ -79,21 +79,23 @@ void main(int argc, char *argv[])
 		}
 	}
 
-	if(arg==argc-3)
-	{
-		p1 = argv[argc-3];
-		p2 = argv[argc-2];
-		p3 = argv[argc-1];
-	}
-
 	if(g_verbose)
 	{
 		printf("%d %d %d %d\n",
 			g_renamefiles,
-			g_escape_hex,
+			g_escapehex,
 			g_recurse,
 			g_verbose);
 	}
+
+	if(arg!=argc-3)
+	{
+		printf(szUsage);
+	}
+
+	p1 = argv[argc-3];
+	p2 = argv[argc-2];
+	p3 = argv[argc-1];
 
 	if(p1 && p2 && p3)
 	{
@@ -102,10 +104,23 @@ void main(int argc, char *argv[])
 		RemoveEvilVsJunk(p2);
 #endif
 
-		if(g_escape_hex)
+		unsigned len = strlen(p1);
+		if(len>=1000)
 		{
-			_findsize = Expand(p1, _find);
-			_replacesize = Expand(p2, _replace);
+			printf("Error: searchtext too big (%u chars).", len);
+			return 1;
+		}
+		len = strlen(p2);
+		if(len>=1000)
+		{
+			printf("Error: replacetext too big (%u chars).", len);
+			return 1;
+		}
+
+		if(g_escapehex)
+		{
+			_findsize = ConvertHexToBytes(p1, _find);
+			_replacesize = ConvertHexToBytes(p2, _replace);
 		}
 		else
 		{
@@ -117,13 +132,9 @@ void main(int argc, char *argv[])
 
 		ProcessDir(p3);
 	}
-	else
-	{
-		printf(szUsage);
-	}
 
 
-	return;
+	return 0;
 }
 
 //**********************************************************
@@ -348,12 +359,12 @@ void DeAllocateBuffers(void)
 
 //**********************************************************
 
-unsigned Expand(char *in, unsigned char *out)
+unsigned ConvertHexToBytes(char *in, unsigned char *out)
 {
 	char *p1;
 	unsigned char *p2;
 	unsigned size;
-	unsigned char buf[3];
+	unsigned char hexbuf[3];
 
 	buf[2] = 0;
 
@@ -361,9 +372,9 @@ unsigned Expand(char *in, unsigned char *out)
 	{
 		if(*p1=='\\' && isxdigit(*(p1+1)) && isxdigit(*(p1+2)))
 		{
-			buf[0] = *(p1+1);
-			buf[1] = *(p1+2);
-			*p2 = (unsigned char)strtol((char *)buf, NULL, 16);
+			hexbuf[0] = *(p1+1);
+			hexbuf[1] = *(p1+2);
+			*p2 = (unsigned char)strtol((char *)hexbuf, NULL, 16);
 			p1+=2;
 		}
 		else
