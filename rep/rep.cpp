@@ -192,6 +192,8 @@ void ProcessDir(char *szFilePattern)
 				{
 					// File
 					sprintf(p, "%s", Data.cFileName);
+					if(g_verbose)
+						printf("File: '%s'\n", szSubPath);
 					ProcessFile(szSubPath);
 				}
 			}
@@ -204,26 +206,28 @@ void ProcessDir(char *szFilePattern)
 
 	sprintf(p, "*");
 
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if(g_recurse)
 	{
-		do
+		if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			do
 			{
-				if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 				{
-					// Dir
-					if(g_recurse)
+					if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 					{
+						// Dir
 						sprintf(p, "%s\\%s", Data.cFileName, pPattern);
+						if(g_verbose)
+							printf("Dir: '%s'\n", szSubPath);
 						ProcessDir(szSubPath);
 					}
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+			while(FindNextFile(hFind, &Data));
 
-		FindClose(hFind);
+			FindClose(hFind);
+		}
 	}
 
 
