@@ -17,7 +17,7 @@ void wmain(int argc, wchar_t *argv[])
 	if(argc<1 || argc>3)
 	{
 		printf(
-			"du 2.1\n"
+			"du 2.2\n"
 			"\n"
 			"Usage: du [path] [depth]\n");
 		return;
@@ -36,10 +36,18 @@ void wmain(int argc, wchar_t *argv[])
 
 	wchar_t szSubPath[1000];
 
-	if(argc>=2)		
+	if(argc>=2 && !wcscmp(argv[1], L".."))
+	{
+		wcscpy(szSubPath, L"..\\*");
+	}
+	else if(argc>=2 && wcscmp(argv[1], L"."))
+	{
 		wcscpy(szSubPath, argv[1]);
+	}
 	else
-		*szSubPath = 0;
+	{
+		wcscpy(szSubPath, L"*");
+	}
 
 	RecurseDir(szSubPath, &size, &files, &dirs);
 
