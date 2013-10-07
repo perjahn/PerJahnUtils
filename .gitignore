@@ -1,11 +1,12 @@
-*.user
-*.vspscc
-*.suo
 *.cache
 *.exe
 *.pdb
 *.sdf
+*.suo
+*.user
+*.vspscc
 *.vssscc
 Debug
 Release
 ipch
+obj
