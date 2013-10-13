@@ -1,5 +1,6 @@
 *.cache
 *.exe
+*.opensdf
 *.pdb
 *.sdf
 *.suo
