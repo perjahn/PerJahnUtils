@@ -1,0 +1,37 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="DBUtil.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="DBServer" Type="System.String" Scope="User">
+      <Value Profile="(Default)">(local)</Value>
+    </Setting>
+    <Setting Name="DBDatabases" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="DBPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="DBUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="OutputpathData" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Dump_dir</Value>
+    </Setting>
+    <Setting Name="OutputpathScripts" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ExcludeColumns" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ExcludeTables" Type="System.String" Scope="User">
+      <Value Profile="(Default)">dtproperties
+sysdiagrams
+swattachmentchunks</Value>
+    </Setting>
+    <Setting Name="DBServers" Type="System.String" Scope="User">
+      <Value Profile="(Default)">(local)
+.\SQLEXPRESS
+.\SQLSERVER</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
