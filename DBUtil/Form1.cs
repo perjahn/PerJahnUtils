@@ -87,6 +87,7 @@ namespace DBUtil
 
 				Dump.databases = dbs;
 				Dump.path = tbOutputPath.Text;
+				Dump.exportempty = cbExportEmpty.Checked;
 
 				Dump.maxrows = cbMaxrows.Checked ? int.Parse(tbMaxrows.Text) : -1;
 				Dump.binaryhex = cbBinaryhex.Checked;

@@ -24,6 +24,7 @@ namespace DBUtil
 
 		public bool sortColumns { get; set; }
 		public string path { get; set; }
+		public bool exportempty { get; set; }
 
 		public int maxrows { get; set; }
 		public bool binaryhex { get; set; }
@@ -82,23 +83,29 @@ namespace DBUtil
 								continue;
 						}
 
+						// Check number of rows
+						string sqlCount = _sql = "select count(*) from " + tablename;
+
+						int rowcount;
+
+						object o = mydb.ExecuteScalarSQL(sqlCount);
+						if (o.GetType() == typeof(long))
+						{
+							rowcount = (int)(long)o;
+						}
+						else
+						{
+							rowcount = (int)o;
+						}
+
+						if (!exportempty && rowcount == 0)
+						{
+							continue;
+						}
+
+
 						using (StreamWriter sw = new StreamWriter(filename))
 						{
-							// Check number of rows
-							string sqlCount = _sql = "select count(*) from " + tablename;
-
-							int rowcount;
-
-							object o = mydb.ExecuteScalarSQL(sqlCount);
-							if (o.GetType() == typeof(long))
-							{
-								rowcount = (int)(long)o;
-							}
-							else
-							{
-								rowcount = (int)o;
-							}
-
 							string sql;
 							if (maxrows != -1 && rowcount > maxrows)
 								sql = _sql = "select * from " + tablename + " where 0=1";
@@ -129,9 +136,9 @@ namespace DBUtil
 								if (sortColumns)
 								{
 									columns = columns
-											.OrderBy(c => reader.GetName(c))
-											.Select(c => c)
-											.ToList();
+										.OrderBy(c => reader.GetName(c))
+										.Select(c => c)
+										.ToList();
 								}
 
 
