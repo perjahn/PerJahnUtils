@@ -442,13 +442,29 @@ namespace DBUtil
 			{
 				return "[" + Schema + "].dbo.[" + Table + "]";
 			}
-			if (DbProvider == "MySql.Data.MySqlClient")
+			else if (DbProvider == "MySql.Data.MySqlClient")
 			{
 				return "`" + Schema + "`.`" + Table + "`";
 			}
 			else
 			{
-				return Schema;
+				return Table;
+			}
+		}
+
+		public static string GetColumnName(string DbProvider, string Column)
+		{
+			if (DbProvider == "System.Data.SqlClient")
+			{
+				return "[" + Column + "]";
+			}
+			else if (DbProvider == "MySql.Data.MySqlClient")
+			{
+				return "`" + Column + "`";
+			}
+			else
+			{
+				return Column;
 			}
 		}
 		#endregion Utils

@@ -108,6 +108,7 @@ namespace DBUtil
 				Dump.useRegexpColumns = cbUseRegexpColumns.Checked;
 
 				Dump.sortColumns = cbSortColumns.Checked;
+				Dump.sortRows = cbSortRows.Checked;
 
 				switch (cbSeparator.Text)
 				{

@@ -50,6 +50,7 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.cbMaxrows = new System.Windows.Forms.CheckBox();
+			this.cbExportEmpty = new System.Windows.Forms.CheckBox();
 			this.cbSortColumns = new System.Windows.Forms.CheckBox();
 			this.cbUseRegexpColumns = new System.Windows.Forms.CheckBox();
 			this.tbExcludeColumns = new System.Windows.Forms.TextBox();
@@ -84,7 +85,7 @@
 			this.tbPassword = new System.Windows.Forms.TextBox();
 			this.cbServer = new System.Windows.Forms.ComboBox();
 			this.tbDatabases = new System.Windows.Forms.TextBox();
-			this.cbExportEmpty = new System.Windows.Forms.CheckBox();
+			this.cbSortRows = new System.Windows.Forms.CheckBox();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1.SuspendLayout();
 			this.groupBox3.SuspendLayout();
@@ -311,6 +312,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBox3.Controls.Add(this.cbMaxrows);
+			this.groupBox3.Controls.Add(this.cbSortRows);
 			this.groupBox3.Controls.Add(this.cbExportEmpty);
 			this.groupBox3.Controls.Add(this.cbSortColumns);
 			this.groupBox3.Controls.Add(this.cbUseRegexpColumns);
@@ -346,6 +348,16 @@
 			this.cbMaxrows.Text = "Max rows per table:";
 			this.cbMaxrows.UseVisualStyleBackColor = true;
 			// 
+			// cbExportEmpty
+			// 
+			this.cbExportEmpty.AutoSize = true;
+			this.cbExportEmpty.Location = new System.Drawing.Point(6, 260);
+			this.cbExportEmpty.Name = "cbExportEmpty";
+			this.cbExportEmpty.Size = new System.Drawing.Size(118, 17);
+			this.cbExportEmpty.TabIndex = 37;
+			this.cbExportEmpty.Text = "Export empty tables";
+			this.cbExportEmpty.UseVisualStyleBackColor = true;
+			// 
 			// cbSortColumns
 			// 
 			this.cbSortColumns.AutoSize = true;
@@ -362,7 +374,7 @@
 			this.cbUseRegexpColumns.Location = new System.Drawing.Point(585, 19);
 			this.cbUseRegexpColumns.Name = "cbUseRegexpColumns";
 			this.cbUseRegexpColumns.Size = new System.Drawing.Size(74, 17);
-			this.cbUseRegexpColumns.TabIndex = 42;
+			this.cbUseRegexpColumns.TabIndex = 43;
 			this.cbUseRegexpColumns.Text = "Use regex";
 			this.cbUseRegexpColumns.UseVisualStyleBackColor = true;
 			// 
@@ -376,7 +388,7 @@
 			this.tbExcludeColumns.Name = "tbExcludeColumns";
 			this.tbExcludeColumns.ScrollBars = System.Windows.Forms.ScrollBars.Both;
 			this.tbExcludeColumns.Size = new System.Drawing.Size(240, 240);
-			this.tbExcludeColumns.TabIndex = 41;
+			this.tbExcludeColumns.TabIndex = 42;
 			this.tbExcludeColumns.Text = global::DBUtil.Properties.Settings.Default.ExcludeColumns;
 			// 
 			// label13
@@ -385,7 +397,7 @@
 			this.label13.Location = new System.Drawing.Point(489, 20);
 			this.label13.Name = "label13";
 			this.label13.Size = new System.Drawing.Size(90, 13);
-			this.label13.TabIndex = 40;
+			this.label13.TabIndex = 41;
 			this.label13.Text = "Exclude &columns:";
 			// 
 			// cbUseRegexpTables
@@ -394,7 +406,7 @@
 			this.cbUseRegexpTables.Location = new System.Drawing.Point(328, 19);
 			this.cbUseRegexpTables.Name = "cbUseRegexpTables";
 			this.cbUseRegexpTables.Size = new System.Drawing.Size(74, 17);
-			this.cbUseRegexpTables.TabIndex = 39;
+			this.cbUseRegexpTables.TabIndex = 40;
 			this.cbUseRegexpTables.Text = "Use regex";
 			this.cbUseRegexpTables.UseVisualStyleBackColor = true;
 			// 
@@ -408,7 +420,7 @@
 			this.tbExcludeTables.Name = "tbExcludeTables";
 			this.tbExcludeTables.ScrollBars = System.Windows.Forms.ScrollBars.Both;
 			this.tbExcludeTables.Size = new System.Drawing.Size(240, 240);
-			this.tbExcludeTables.TabIndex = 38;
+			this.tbExcludeTables.TabIndex = 39;
 			this.tbExcludeTables.Text = global::DBUtil.Properties.Settings.Default.ExcludeTables;
 			// 
 			// label12
@@ -417,7 +429,7 @@
 			this.label12.Location = new System.Drawing.Point(243, 20);
 			this.label12.Name = "label12";
 			this.label12.Size = new System.Drawing.Size(79, 13);
-			this.label12.TabIndex = 37;
+			this.label12.TabIndex = 38;
 			this.label12.Text = "Exclude &tables:";
 			// 
 			// label6
@@ -716,17 +728,17 @@
 			this.tbDatabases.TabIndex = 6;
 			this.tbDatabases.Text = global::DBUtil.Properties.Settings.Default.DBDatabases;
 			// 
-			// cbExportEmpty
+			// cbSortRows
 			// 
-			this.cbExportEmpty.AutoSize = true;
-			this.cbExportEmpty.Checked = true;
-			this.cbExportEmpty.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.cbExportEmpty.Location = new System.Drawing.Point(6, 237);
-			this.cbExportEmpty.Name = "cbExportEmpty";
-			this.cbExportEmpty.Size = new System.Drawing.Size(118, 17);
-			this.cbExportEmpty.TabIndex = 36;
-			this.cbExportEmpty.Text = "Export empty tables";
-			this.cbExportEmpty.UseVisualStyleBackColor = true;
+			this.cbSortRows.AutoSize = true;
+			this.cbSortRows.Checked = true;
+			this.cbSortRows.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.cbSortRows.Location = new System.Drawing.Point(6, 237);
+			this.cbSortRows.Name = "cbSortRows";
+			this.cbSortRows.Size = new System.Drawing.Size(134, 17);
+			this.cbSortRows.TabIndex = 36;
+			this.cbSortRows.Text = "Sort rows (order by PK)";
+			this.cbSortRows.UseVisualStyleBackColor = true;
 			// 
 			// Form1
 			// 
@@ -817,6 +829,7 @@
         private System.Windows.Forms.TextBox tbInputPath;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.CheckBox cbExportEmpty;
+        private System.Windows.Forms.CheckBox cbSortRows;
 	}
 }
 
