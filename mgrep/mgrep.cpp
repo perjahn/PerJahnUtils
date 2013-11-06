@@ -1,36 +1,38 @@
 //**********************************************************
 /*
 Version 2.0
- New implementation.
+New implementation.
 Version 2.01
- Fixed buffer overflow bug
+Fixed buffer overflow bug
 Version 2.1
- max size limit as parameter (hardcoded to 16MB before). -m
+max size limit as parameter (hardcoded to 16MB before). -m
 Version 2.11
- support for case sensitive -i
+support for case sensitive -i
 Version 2.12
- trim whitespace (space & tab) of printed strings. -t
+trim whitespace (space & tab) of printed strings. -t
 Version 2.13
- print line numbers. -n
+print line numbers. -n
 Version 2.14
- refactored set_options()
- changed: -t does now also trim searched string (can prevent output)
- support for escaping ascii values (hex & dec). -h & -d
+refactored set_options()
+changed: -t does now also trim searched string (can prevent output)
+support for escaping ascii values (hex & dec). -h & -d
 Version 2.15
- print line number even if string trimmed to nothing
- prevent beep
+print line number even if string trimmed to nothing
+prevent beep
 Version 2.16
- restore console color when breaking
+restore console color when breaking
 Version 2.17
- x64
+x64
 Version 2.18
- Exclude dirs
+Exclude dirs
 Version 2.19
- Optimize string matching (length instead of null termination).
- Fix: strnicmp slutar vid null!
+Optimize string matching (length instead of null termination).
+Fix: strnicmp slutar vid null!
 Version 2.20
- Bug fix for null in search strings
- Handle embedded nulls (\0) in search string.
+Bug fix for null in search strings
+Handle embedded nulls (\0) in search string.
+Version 2.21
+64-bit file sizes
 
 
 To compile, change project settings:
@@ -47,10 +49,10 @@ BUG: Bara ett minustecken för att excludera filer hänger programmet.
 support for unicode (non-obvious output today, 1 char per line).
 More advanced search logic: 0. x not in file (/v) 1. x not in file, but y. 2. x not on any row, but y.
 Prevent "beep". Option: Don't convert BEL to dot. -b
-  This is ascii value 149,
-	1. Is not prevented by cutting strings (user can search on ascii value)
-	2. Must be replaced with space/dot or empty string
-	3. Optional feature to replace control chars (<32) could be useful.
+This is ascii value 149,
+1. Is not prevented by cutting strings (user can search on ascii value)
+2. Must be replaced with space/dot or empty string
+3. Optional feature to replace control chars (<32) could be useful.
 Allow several include patterns, "*.x, +*.y"
 
 convert2oem after string are cut, could result in utf8 control codes splitting/or dos converting. Probably because of null char.
@@ -69,14 +71,14 @@ convert2oem after string are cut, could result in utf8 control codes splitting/o
 
 // g_string_length is the maximum number of text characters in printed strings.
 // g_string_length buffers must also include newline+null.
-unsigned g_string_length = 10240;
+unsigned long long g_string_length = 10240;
 
 bool g_preservecharset = false;  // Presere windows charset instead of converting to dos
 bool g_escape_dec = false;       // Should escape sequences (dec) in search input be converted?
 bool g_escape_hex = false;       // Should escape sequences (hex) in search input be converted?
 bool g_case_sensitive = false;   // Is text comparations case sensitive?
 bool g_only_filename = false;    // Should print only file names? (instead of grepping text)
-unsigned g_maxsize = 16*1024*1024;
+unsigned long long g_maxsize = 16ULL*1024*1024*1024;
 bool g_line_numbers = false;     // Print line numbers?
 bool g_recurse = false;          // Should recurse into sub dirs?
 bool g_show_statistics = false;  // Show statistics.
@@ -157,7 +159,7 @@ void print_color(char *szText, unsigned color)
 void process_file(char *szFileName)
 {
 	FILE *fh;
-	long size;
+	unsigned long long size;
 	size_t size2;
 	size_t size3;
 	unsigned char *buf;
@@ -178,8 +180,8 @@ void process_file(char *szFileName)
 	fh=fopen(szFileName, "rb");
 	if(fh)
 	{
-		fseek(fh, 0, SEEK_END);
-		size = ftell(fh);
+		_fseeki64(fh, 0, SEEK_END);
+		size = _ftelli64(fh);
 
 		if(!size)
 		{
@@ -194,7 +196,7 @@ void process_file(char *szFileName)
 			return;
 		}
 
-		fseek(fh, 0, SEEK_SET);
+		_fseeki64(fh, 0, SEEK_SET);
 		fread(buf, size, 1, fh);
 
 		for(p=buf; p<buf+size; p++)
@@ -300,7 +302,7 @@ void process_file(char *szFileName)
 						for(p1=txt; *p1; p1++)
 						{
 							if(*p1==149)
-							*p1='.';
+								*p1='.';
 						}
 
 						if(g_line_numbers)
@@ -359,6 +361,7 @@ void process_dir(char *szDir)
 	else
 		exclude_names = NULL;
 
+
 	// Search for files to exclude (currently, one unique file can be excluded multiple times)
 	exclude_count = 0;
 	for(unsigned i=0; i<g_ExcludePatterns; i++)
@@ -395,6 +398,7 @@ void process_dir(char *szDir)
 			FindClose(hFind);
 		}
 	}
+	
 
 	// Search for files (and exclude previous found, and by size)
 	if((hFind=FindFirstFile(szDir, &Data))!=INVALID_HANDLE_VALUE)
@@ -427,10 +431,11 @@ void process_dir(char *szDir)
 
 					// Exclude "by size" in this loop, else multiple patterns could
 					// cause the file size be counted several times.
+
 					if(filesize>g_maxsize)
 					{
-//						sprintf(s, "-=-=- File to large, ignoring: '%s' -=-=-\n", szPath);
-//						print_color(s, FOREGROUND_RED|FOREGROUND_INTENSITY);
+						//						sprintf(s, "-=-=- File to large, ignoring: '%s' -=-=-\n", szPath);
+						//						print_color(s, FOREGROUND_RED|FOREGROUND_INTENSITY);
 
 						bExclude = true;
 					}
@@ -458,6 +463,7 @@ void process_dir(char *szDir)
 
 		FindClose(hFind);
 	}
+
 
 	// Search for subdirs
 	if(g_recurse)
@@ -641,7 +647,7 @@ void set_options(void)
 					{
 						if(arg[2])
 						{
-							*(unsigned*)(g_pflags[i]) = atoi((char*)(arg+2));
+							*(unsigned long long*)(g_pflags[i]) = _atoi64((char*)(arg+2));
 						}
 						// Else ignore "-b"/"-m" argument
 					}
@@ -804,7 +810,7 @@ void main(int argc, char *argv[])
 {
 	bool foundex;
 	char *usage =
-		"mgrep 2.20\n"
+		"mgrep 2.21\n"
 		"\n"
 		"Usage: mgrep [-c] [-d|-h] [-i] [-l] [-mX] [-n] [-r] [-s] [-t]\n"
 		"             <search strings> <file pattern> [exclude file/dir patterns]\n"
