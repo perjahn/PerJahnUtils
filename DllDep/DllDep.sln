@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DllDep", "DllDep.csproj", "{2C0B8995-64F9-439D-9E3C-B35A5F570698}"
 EndProject
 Global
