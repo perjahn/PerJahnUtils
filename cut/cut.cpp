@@ -2,6 +2,7 @@
 2.1 Fixed bug: could write larger outfile than infile, appended junk.
 2.2 Added return value.
 2.3 Fixed bug, again: could write larger outfile than infile, appended junk.
+2.4 Fixed bug, again: crashed if start>size.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +12,7 @@ int main(int argc, char *argv[])
 	if(argc!=5)
 	{
 		printf(
-			"cut 2.3\n"
+			"cut 2.4\n"
 			"\n"
 			"Usage: cut <infile> <outfile> <start> <length>\n");
 		return 0;
@@ -33,6 +34,13 @@ int main(int argc, char *argv[])
 
 	_fseeki64(fh, 0, SEEK_END);
 	long long filesize = _ftelli64(fh);
+
+	if (start > filesize)
+	{
+		printf("Nothing copied: Start offset %llu are bigger than file size %llu.\n", start, filesize);
+		return 0;
+	}
+
 
 	if (start+length > filesize)
 	{
