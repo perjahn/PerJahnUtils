@@ -180,6 +180,8 @@ namespace DBUtil
 						sw.WriteLine();
 					}
 
+					c_c += columns.Count;
+
 					if (maxrows != -1 && rowcount > maxrows)
 					{
 						sw.WriteLine(rowcount + " rows.");
@@ -243,7 +245,6 @@ namespace DBUtil
 							}
 							sw.WriteLine();
 
-							c_c += columns.Count;
 							rownum++;
 						}
 					}
