@@ -18,7 +18,7 @@ void Close(HWND hDlg);
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine, int nCmdShow)
 {
-	if(lpCmdLine==NULL || !*lpCmdLine)
+	if (lpCmdLine == NULL || !*lpCmdLine)
 	{
 		return 1;
 	}
@@ -29,13 +29,13 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	g_pCmdLine = lpCmdLine;
 
 	// Make cmd line lower case
-	for(p=g_pCmdLine; *p; p++)
+	for (p = g_pCmdLine; *p; p++)
 		*p = tolower(*p);
 
 	// Trim trailing white spaces
-	for(p=g_pCmdLine+strlen(g_pCmdLine); p>g_pCmdLine && (*(p-1)==' ' || *(p-1)=='\t' || *(p-1)=='\r' || *(p-1)=='\n'); p--)
+	for (p = g_pCmdLine + strlen(g_pCmdLine); p > g_pCmdLine && (*(p - 1) == ' ' || *(p - 1) == '\t' || *(p - 1) == '\r' || *(p - 1) == '\n'); p--)
 		;
-	*p=0;
+	*p = 0;
 
 	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG), NULL, DialogProc);
 
@@ -46,12 +46,12 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 BOOL CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	switch(uMsg)
+	switch (uMsg)
 	{
 	case WM_INITDIALOG:
 		SetClassLong(hDlg, GCL_HICON, (LONG)LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_ICON)));
 
-		if(!strcmp(g_pCmdLine, "-enum"))
+		if (!strcmp(g_pCmdLine, "-enum"))
 		{
 			ShowWindow(GetDlgItem(hDlg, IDC_TEXT), 0);
 		}
@@ -72,12 +72,12 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 
 	case WM_SIZE:
-		MoveWindow(GetDlgItem(hDlg, IDC_TEXT), 10, 10, LOWORD(lParam)-20, HIWORD(lParam)-20, TRUE);
-		MoveWindow(GetDlgItem(hDlg, IDC_EDIT), 10, 10, LOWORD(lParam)-20, HIWORD(lParam)-20, TRUE);
+		MoveWindow(GetDlgItem(hDlg, IDC_TEXT), 10, 10, LOWORD(lParam) - 20, HIWORD(lParam) - 20, TRUE);
+		MoveWindow(GetDlgItem(hDlg, IDC_EDIT), 10, 10, LOWORD(lParam) - 20, HIWORD(lParam) - 20, TRUE);
 		return TRUE;
 
 	case WM_COMMAND:
-		switch(LOWORD(wParam))
+		switch (LOWORD(wParam))
 		{
 		case IDCANCEL:
 			KillTimer(hDlg, 1);
@@ -98,18 +98,18 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
 	char szTitle[1000];
 
-	if(GetWindowText(hwnd, szTitle, 1000))
+	if (GetWindowText(hwnd, szTitle, 1000))
 	{
-		if(!strcmp(g_pCmdLine, "-enum"))
+		if (!strcmp(g_pCmdLine, "-enum"))
 		{
 			p += sprintf(p, "%s\r\n", szTitle);
 		}
 		else
 		{
-			for(char *p=szTitle; *p; p++)
+			for (char *p = szTitle; *p; p++)
 				*p = tolower(*p);
 
-			if(strstr(szTitle, g_pCmdLine))
+			if (strstr(szTitle, g_pCmdLine))
 			{
 				PostMessage(hwnd, WM_CLOSE, 0, 0);
 			}
@@ -123,7 +123,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 
 void Close(HWND hDlg)
 {
-	if(!strcmp(g_pCmdLine, "-enum"))
+	if (!strcmp(g_pCmdLine, "-enum"))
 	{
 		szText[0] = 0;
 		p = szText;
@@ -131,11 +131,11 @@ void Close(HWND hDlg)
 
 	EnumWindows(EnumWindowsProc, (LPARAM)hDlg);
 
-	if(!strcmp(g_pCmdLine, "-enum"))
+	if (!strcmp(g_pCmdLine, "-enum"))
 	{
 		char szTextOld[100000];
 		GetDlgItemText(hDlg, IDC_EDIT, szTextOld, 100000);
-		if(strcmp(szTextOld, szText))
+		if (strcmp(szTextOld, szText))
 		{
 			SetDlgItemText(hDlg, IDC_EDIT, szText);
 		}
