@@ -75,6 +75,7 @@ unsigned long long g_string_length = 10240;
 
 bool g_preservecharset = false;  // Presere windows charset instead of converting to dos
 bool g_escape_dec = false;       // Should escape sequences (dec) in search input be converted?
+bool g_print_first_row = false;  // Should first row of file be printed, even if there's no match?
 bool g_escape_hex = false;       // Should escape sequences (hex) in search input be converted?
 bool g_case_sensitive = false;   // Is text comparations case sensitive?
 bool g_only_filename = false;    // Should print only file names? (instead of grepping text)
@@ -86,11 +87,11 @@ bool g_trim_whitespace = false;  // Should space & tab be trimmed before printin
 
 bool *g_pflags[] =
 {
-	(bool*)&g_string_length, &g_preservecharset, &g_escape_dec, &g_escape_hex, &g_case_sensitive,
+	(bool*)&g_string_length, &g_preservecharset, &g_escape_dec, &g_print_first_row, &g_escape_hex, &g_case_sensitive,
 	&g_only_filename, (bool*)&g_maxsize, &g_line_numbers, &g_recurse, &g_show_statistics,
 	&g_trim_whitespace
 };
-char *g_flags = "bcdhilmnrst";    // Flags, in the same order as g_pflags pointers
+char *g_flags = "bcdfhilmnrst";    // Flags, in the same order as g_pflags pointers
 
 DWORD g_time1, g_time2;
 
@@ -177,6 +178,7 @@ void process_file(char *szFileName)
 
 
 	bFound = false;
+
 	fh = fopen(szFileName, "rb");
 	if (fh)
 	{
@@ -240,6 +242,19 @@ void process_file(char *szFileName)
 							print_color(s, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 
 							bFound = true;
+
+							if (g_print_first_row && line > 1)
+							{
+								unsigned char *p3;
+								char szFirstRow[10001];
+
+								// Print first row
+								for (p3 = buf; p3 < buf + 10000 && *p3 && *p3 != '\r' && *p3 != '\n'; p3++)
+									;
+								memcpy(szFirstRow, buf, p3 - buf);
+								szFirstRow[p3 - buf] = 0;
+								print_color(szFirstRow, 0);
+							}
 						}
 
 						if (size2 >= g_string_length)
@@ -815,6 +830,7 @@ void main(int argc, char *argv[])
 		"-b: Maximum line buffer size to print (in bytes, default 10 kB).\n"
 		"-c: Disable DOS charset conversion.\n"
 		"-d: Escape ascii values, dec (\\ddd).\n"
+		"-f: Always print first row of file.\n"
 		"-h: Escape ascii values, hex (\\hh).\n"
 		"-i: Case sensitive.\n"
 		"-l: Print only filenames, not content.\n"
