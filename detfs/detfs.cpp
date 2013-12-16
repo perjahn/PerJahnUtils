@@ -1,6 +1,14 @@
 //**********************************************************
 /*
-Application for de-linking solutions & projects with TFS.
+Application for delinking solutions & projects with TFS.
+
+1.0 - Initial release.
+1.1 - Updated to handle projects in sln files.
+1.2 - Reverted to old logic.
+1.3 - Fixed bug in sln handling. Not yet :)
+
+
+Program corresponds somewhat to the following 4 tasks:
 
 1.
 attrib -r -s -h -a *.* /s
@@ -45,24 +53,24 @@ void FixSolutionFile(char *szFileName);
 
 void main(int argc, char *argv[])
 {
-	if(argc==2)
+	if (argc == 2)
 	{
 		g_simulate = false;
 		DelinkTFS(argv[1]);
 	}
-	else if(argc==3 && !strcmp(argv[1], "-s"))
+	else if (argc == 3 && !strcmp(argv[1], "-s"))
 	{
 		g_simulate = true;
 		g_verbose = false;
 		DelinkTFS(argv[2]);
 	}
-	else if(argc==3 && !strcmp(argv[1], "-v"))
+	else if (argc == 3 && !strcmp(argv[1], "-v"))
 	{
 		g_simulate = false;
 		g_verbose = true;
 		DelinkTFS(argv[2]);
 	}
-	else if(argc==4 &&
+	else if (argc == 4 &&
 		((!strcmp(argv[1], "-s") && !strcmp(argv[2], "-v")) ||
 		(!strcmp(argv[1], "-v") && !strcmp(argv[2], "-s"))))
 	{
@@ -73,6 +81,8 @@ void main(int argc, char *argv[])
 	else
 	{
 		printf(
+			"detfs 1.2\n"
+			"\n"
 			"Usage: detfs [-s] [-v] <path>\n"
 			"\n"
 			"-s  Simulate\n"
@@ -92,22 +102,21 @@ void DelinkTFS(char *szPath)
 	char *p, szSubPath[1000];
 
 	strcpy(szSubPath, szPath);
-	p = szSubPath+strlen(szSubPath);
+	p = szSubPath + strlen(szSubPath);
 
 
 	// Remove r/o attrib
 	strcpy(p, "\\*");
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
 				sprintf(p, "\\%s", Data.cFileName);
 				FixAttrib(szSubPath);
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -115,20 +124,19 @@ void DelinkTFS(char *szPath)
 
 	// Del *.vspscc
 	strcpy(p, "\\*.vspscc");
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					sprintf(p, "\\%s", Data.cFileName);
 					MyDeleteFile(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -136,20 +144,19 @@ void DelinkTFS(char *szPath)
 
 	// Del *.vssscc
 	strcpy(p, "\\*.vssscc");
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					sprintf(p, "\\%s", Data.cFileName);
 					MyDeleteFile(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -158,20 +165,19 @@ void DelinkTFS(char *szPath)
 	// Fix projects
 	// todo: Add support for .vbproj/.vcxproj
 	strcpy(p, "\\*.csproj");
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					sprintf(p, "\\%s", Data.cFileName);
 					FixProjectFile(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -179,20 +185,19 @@ void DelinkTFS(char *szPath)
 
 	// Fix solutions
 	strcpy(p, "\\*.sln");
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					sprintf(p, "\\%s", Data.cFileName);
 					FixSolutionFile(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -200,20 +205,19 @@ void DelinkTFS(char *szPath)
 
 	// Recurse subdirs
 	strcpy(p, "\\*");
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
 					sprintf(p, "\\%s", Data.cFileName);
 					DelinkTFS(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
