@@ -167,18 +167,7 @@ namespace ProjFix
 			}
 
 			// Combine folders into path2
-			string path2 = string.Empty;
-			for (int i = 0; i < folders.Count; i++)
-			{
-				if (i == 0)
-				{
-					path2 = folders[i];
-				}
-				else
-				{
-					path2 += Path.DirectorySeparatorChar + folders[i];
-				}
-			}
+			string path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders.ToArray());
 
 			// If path had a starting/ending \, keep it
 			string sep = Path.DirectorySeparatorChar.ToString();
