@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MouseMove", "MouseMove.vcxproj", "{786BECC8-1B2D-41BA-9C88-F800651D5B2D}"
 EndProject
 Global
