@@ -1,3 +1,4 @@
+*.aps
 *.cache
 *.exe
 *.opensdf
@@ -11,4 +12,3 @@ Debug
 Release
 ipch
 obj
-*.aps
