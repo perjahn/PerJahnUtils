@@ -1,6 +1,6 @@
 //**********************************************************
 //
-// MouseMove 1.0
+// MouseMove 1.1
 //
 // Written by Per Jahn
 //
@@ -36,11 +36,13 @@ struct movenode
 
 HINSTANCE  g_hInstance;
 DWORD      g_OldIcon;
+int        g_widthcount;
 
 //**********************************************************
 
 BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void UpdateCount(HWND hwnd);
+void UpdateCount(void);
+void UpdateTimer(HWND hwnd);
 
 //**********************************************************
 
@@ -48,8 +50,8 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LPSTR lpszCmdLine, int nCmdShow)
 {
 	g_hInstance = hInstance;
-
 	pStart = pEnd = NULL;
+	g_widthcount = 0;
 
 	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG), NULL, (DLGPROC)DlgProc);
 
@@ -60,33 +62,30 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	switch(uMsg)
+	switch (uMsg)
 	{
 	case WM_INITDIALOG:
 		// Set Class icon
 		g_OldIcon = SetClassLong(hDlg, GCL_HICON, (LONG)LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_ICON)));
+
+		SetTimer(hDlg, 1, 100, NULL);
 		return TRUE;  // return FALSE if modeless and SetFocus is called
 
-	case WM_MOUSEMOVE:
-		{
-			int x = LOWORD(lParam);
-			int y = HIWORD(lParam);
-			HDC hdc;
-			if (hdc = GetDC(hDlg))
-			{
-				SetPixel(hdc, x, y, RGB(255, 0, 0));
-				ReleaseDC(hDlg, hdc);
-			}
+	case WM_TIMER:
+		UpdateTimer(hDlg);
+		return TRUE;
 
-			UpdateCount(hDlg);
-		}
+	case WM_MOUSEMOVE:
+		UpdateCount();
 		return TRUE;
 
 	case WM_COMMAND:
-		switch(LOWORD(wParam))
+		switch (LOWORD(wParam))
 		{
 		case IDCANCEL:
 			// Quit program...
+
+			KillTimer(hDlg, 1);
 
 			// Remove Class icon
 			SetClassLong(hDlg, GCL_HICON, g_OldIcon);
@@ -102,9 +101,9 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 //**********************************************************
 
-void UpdateCount(HWND hwnd)
+void UpdateCount(void)
 {
-	long long unsigned time = GetTickCount64();
+	auto time = GetTickCount64();
 
 	movenode *pNode = new movenode;
 	pNode->time = time;
@@ -117,10 +116,57 @@ void UpdateCount(HWND hwnd)
 	}
 	else
 	{
-		pStart = pNode;
+		pStart = pEnd = pNode;
+	}
+}
+
+//**********************************************************
+
+void UpdateTimer(HWND hwnd)
+{
+	auto time = GetTickCount64();
+
+	int count = 0;
+	for (movenode *pNode = pStart; pNode;)
+	{
+		if (pNode->time < time - 1000)
+		{
+			pStart = pNode->pNext;
+			delete pNode;
+			pNode = pStart;
+		}
+		else
+		{
+			count++;
+			pNode = pNode->pNext;
+		}
 	}
 
-	SetWindowText(hwnd, "qwe");
+
+	char counttext[100];
+	sprintf_s(counttext, 100, "%d", count);
+	SetWindowText(hwnd, counttext);
+
+
+	RECT rc;
+	GetClientRect(hwnd, &rc);
+
+	if (g_widthcount >= rc.right)
+	{
+		g_widthcount = 0;
+		InvalidateRect(hwnd, NULL, TRUE);
+		UpdateWindow(hwnd);
+	}
+
+	HDC hdc;
+	if (hdc = GetDC(hwnd))
+	{
+		MoveToEx(hdc, g_widthcount, rc.bottom, NULL);
+		LineTo(hdc, g_widthcount, rc.bottom - count);
+		ReleaseDC(hwnd, hdc);
+	}
+
+	g_widthcount++;
 }
 
 //**********************************************************
