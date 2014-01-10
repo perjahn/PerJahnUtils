@@ -47,7 +47,7 @@ void main(int argc, char *argv[])
 
 	params = SetOptions(argc, argv);
 
-	if(params != 2)
+	if (params != 2)
 	{
 		printf(
 			"DeleteOld 1.4\n"
@@ -65,10 +65,10 @@ void main(int argc, char *argv[])
 		return;
 	}
 
-	if(g_count>=0)
+	if (g_count >= 0)
 	{
-		g_count = atoi(argv[argc-1]);
-		if(g_count<1)
+		g_count = atoi(argv[argc - 1]);
+		if (g_count < 1)
 		{
 			printf("Number of files (days) must be atleast 1 when using '-n'.\n");
 			return;
@@ -81,20 +81,20 @@ void main(int argc, char *argv[])
 
 		PrintTime("Now", &g_ftOld);
 
-		oldtime = (((unsigned long long)(g_ftOld.dwHighDateTime))<<32)+g_ftOld.dwLowDateTime;
-		oneday = (unsigned long long)24*3600*10000000;
-		oldtime -= atoi(argv[argc-1])*oneday;
+		oldtime = (((unsigned long long)(g_ftOld.dwHighDateTime)) << 32) + g_ftOld.dwLowDateTime;
+		oneday = (unsigned long long)24 * 3600 * 10000000;
+		oldtime -= atoi(argv[argc - 1])*oneday;
 
-		g_ftOld.dwHighDateTime = (DWORD)(oldtime>>32);
-		g_ftOld.dwLowDateTime = (DWORD)(oldtime&0x00000000FFFFFFFF);
+		g_ftOld.dwHighDateTime = (DWORD)(oldtime >> 32);
+		g_ftOld.dwLowDateTime = (DWORD)(oldtime & 0x00000000FFFFFFFF);
 
 		PrintTime("Old", &g_ftOld);
 	}
 
 	g_depth = 0;
-	ExpandPath(argv[argc-2]);
+	ExpandPath(argv[argc - 2]);
 
-	if(fhLogFile)
+	if (fhLogFile)
 		fclose(fhLogFile);
 
 	return;
@@ -108,51 +108,51 @@ int SetOptions(int argc, char *argv[])
 	bool bFoundOption = true;
 	int i = 1;
 
-	while(i<argc && bFoundOption)
+	while (i < argc && bFoundOption)
 	{
 		bFoundOption = false;
-		if(i<argc && !strcmp(argv[i], "-c"))
+		if (i < argc && !strcmp(argv[i], "-c"))
 		{
 			g_usedate = 2;
 			i++;
 			bFoundOption = true;
 		}
-		if(i<argc && !strcmp(argv[i], "-c2"))
+		if (i < argc && !strcmp(argv[i], "-c2"))
 		{
 			g_usedate = 3;
 			i++;
 			bFoundOption = true;
 		}
-		if(i<argc && !strcmp(argv[i], "-d"))
+		if (i < argc && !strcmp(argv[i], "-d"))
 		{
 			g_deletedirs = true;
 			i++;
 			bFoundOption = true;
 		}
-		if(i<argc && !strcmp(argv[i], "-l"))
+		if (i < argc && !strcmp(argv[i], "-l"))
 		{
 			char szTempDir[1000], szTempFileName[1000];
 			GetTempPath(1000, szTempDir);
 			sprintf(szTempFileName, "%s\\deleteold.txt", szTempDir);
 			fhLogFile = fopen(szTempFileName, "a");
-			if(fhLogFile)
+			if (fhLogFile)
 				fprintf(fhLogFile, "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 			i++;
 			bFoundOption = true;
 		}
-		if(i<argc && !strcmp(argv[i], "-n"))
+		if (i < argc && !strcmp(argv[i], "-n"))
 		{
 			g_count = 0;  // Enable
 			i++;
 			bFoundOption = true;
 		}
-		if(i<argc && !strcmp(argv[i], "-r"))
+		if (i < argc && !strcmp(argv[i], "-r"))
 		{
 			g_recurse = true;
 			i++;
 			bFoundOption = true;
 		}
-		if(i<argc && !strcmp(argv[i], "-s"))
+		if (i < argc && !strcmp(argv[i], "-s"))
 		{
 			g_simulate = true;
 			i++;
@@ -160,7 +160,7 @@ int SetOptions(int argc, char *argv[])
 		}
 	}
 
-	return argc-i;
+	return argc - i;
 }
 
 //**********************************************************
@@ -169,8 +169,8 @@ void PrintTime(char *szPrefix, unsigned long long time)
 {
 	FILETIME ft;
 
-	ft.dwHighDateTime = (DWORD)(time>>32);
-	ft.dwLowDateTime = (DWORD)(time&0x00000000FFFFFFFF);
+	ft.dwHighDateTime = (DWORD)(time >> 32);
+	ft.dwLowDateTime = (DWORD)(time & 0x00000000FFFFFFFF);
 
 	PrintTime(szPrefix, &ft);
 
@@ -187,7 +187,7 @@ void PrintTime(char *szPrefix, FILETIME *ft)
 	printf("%s: %04hu-%02hu-%02hu %02hu:%02hu:%02hu.%03hu\n",
 		szPrefix,
 		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
-	if(fhLogFile)
+	if (fhLogFile)
 		fprintf(fhLogFile, "%s: %04hu-%02hu-%02hu %02hu:%02hu:%02hu.%03hu\n",
 		szPrefix,
 		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
@@ -215,7 +215,7 @@ void ExpandPath(char *szPath)
 	char szFileName[1000];
 	unsigned l;
 
-	if(g_depth>100)
+	if (g_depth > 100)
 	{
 		printf("Maximum recursedepth reached: '%s'\n", szPath);
 		return;
@@ -225,20 +225,20 @@ void ExpandPath(char *szPath)
 	// Find first occurance of x\x*x\x or x\x?x\x
 	char *p, *p1, *p2;
 
-	for(p=p1=szPath; p<szPath+strlen(szPath) && *p!='?' && *p!='*'; p++)
+	for (p = p1 = szPath; p < szPath + strlen(szPath) && *p != '?' && *p != '*'; p++)
 	{
-		if(*p=='\\')
+		if (*p == '\\')
 		{
-			p1 = p+1;
+			p1 = p + 1;
 		}
 	}
 
 	// Step to next backslash
-	for(; p<szPath+strlen(szPath) && *p!='\\'; p++)
+	for (; p < szPath + strlen(szPath) && *p != '\\'; p++)
 		;
-	p2 = *p? p: NULL;
+	p2 = *p ? p : NULL;
 
-	if(p2)
+	if (p2)
 	{
 		// It exists a backslash after a wildcard character - an embedded wildcard
 
@@ -246,7 +246,7 @@ void ExpandPath(char *szPath)
 
 		// p1->first char of token, p2->backslash after token
 
-		int size = p2-szPath;
+		int size = p2 - szPath;
 
 		memcpy(szSearch, szPath, size);
 		szSearch[size] = 0;  // Null terminate string
@@ -254,22 +254,22 @@ void ExpandPath(char *szPath)
 		//printf("Expanding: '%s'\n", szSearch);
 
 		hFind = FindFirstFile(szSearch, &Data);
-		if(hFind != INVALID_HANDLE_VALUE)
+		if (hFind != INVALID_HANDLE_VALUE)
 		{
 			do
 			{
-				if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+				if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 				{
-					if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+					if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 					{
 						// Dir
 
 						strcpy(szSubDir, szSearch);
 
-						for(p=szSubDir+strlen(szSubDir); p>szSubDir && *(p-1)!='\\' && *(p-1)!=':'; p--)
+						for (p = szSubDir + strlen(szSubDir); p > szSubDir && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 							;
 
-						sprintf(p, "%s\\%s", Data.cFileName, p2+1);
+						sprintf(p, "%s\\%s", Data.cFileName, p2 + 1);
 
 						ExpandPath(szSubDir);
 					}
@@ -278,57 +278,55 @@ void ExpandPath(char *szPath)
 						// File
 					}
 				}
-			}
-			while(FindNextFile(hFind, &Data));
+			} while (FindNextFile(hFind, &Data));
 
 			FindClose(hFind);
 		}
 	}
 	else
 	{
-		if(g_count!=-1)
+		if (g_count != -1)
 		{
 			int countAll = 0, countMatch = 0;
 
 			// Count total number of files in dir
 
 			strcpy(szSearch, szPath);
-			for(p=szSearch+strlen(szSearch); p>szSearch && *(p-1)!='\\' && *(p-1)!=':'; p--)
+			for (p = szSearch + strlen(szSearch); p > szSearch && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 				;
 			strcpy(p, "*");
 
 			hFind = FindFirstFile(szSearch, &Data);
-			if(hFind != INVALID_HANDLE_VALUE)
+			if (hFind != INVALID_HANDLE_VALUE)
 			{
 				do
 				{
-					if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+					if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 					{
-						if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+						if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 						{
 							countAll++;
 						}
 					}
-				}
-				while(FindNextFile(hFind, &Data));
+				} while (FindNextFile(hFind, &Data));
 
 				FindClose(hFind);
 			}
 
-			if(countAll>g_count)
+			if (countAll > g_count)
 			{
 				// To many files in dir, delete the oldest matching.
 
 				hFind = FindFirstFile(szPath, &Data);
-				if(hFind != INVALID_HANDLE_VALUE)
+				if (hFind != INVALID_HANDLE_VALUE)
 				{
 					do
 					{
-						if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+						if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 						{
-							if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+							if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 							{
-								if(countMatch<100000)
+								if (countMatch < 100000)
 								{
 									exclude_names[countMatch] = Data;
 									countMatch++;
@@ -337,29 +335,28 @@ void ExpandPath(char *szPath)
 									printf("Out of memory (%s)\n", szPath);
 							}
 						}
-					}
-					while(FindNextFile(hFind, &Data));
+					} while (FindNextFile(hFind, &Data));
 
 					FindClose(hFind);
 				}
 
-				if(countMatch>0)
+				if (countMatch > 0)
 				{
 					// Some files has to go
 
-					int countDelete = countAll-g_count;
+					int countDelete = countAll - g_count;
 
 					// File system is not in a constant state when enumerating files,
 					// prevent to many matches.
-					if(countDelete>countMatch)
+					if (countDelete > countMatch)
 						countDelete = countMatch;
 
 					qsort(exclude_names, countMatch, sizeof(WIN32_FIND_DATA), compare);
 
-					for(int i=0; i<countDelete; i++)
+					for (int i = 0; i<countDelete; i++)
 					{
 						strcpy(szFileName, szPath);
-						for(p=szFileName+strlen(szFileName); p>szFileName && *(p-1)!='\\' && *(p-1)!=':'; p--)
+						for (p = szFileName + strlen(szFileName); p>szFileName && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 							;
 						strcpy(p, exclude_names[i].cFileName);
 
@@ -371,13 +368,13 @@ void ExpandPath(char *szPath)
 		else
 		{
 			hFind = FindFirstFile(szPath, &Data);
-			if(hFind != INVALID_HANDLE_VALUE)
+			if (hFind != INVALID_HANDLE_VALUE)
 			{
 				do
 				{
-					if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+					if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 					{
-						if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+						if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 						{
 							// Dir
 						}
@@ -386,15 +383,15 @@ void ExpandPath(char *szPath)
 							// File
 
 							strcpy(szFileName, szPath);
-							for(p=szFileName+strlen(szFileName); p>szFileName && *(p-1)!='\\' && *(p-1)!=':'; p--)
+							for (p = szFileName + strlen(szFileName); p > szFileName && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 								;
 							strcpy(p, Data.cFileName);
 
 							FILETIME *ft;
 
-							if(g_usedate==1)
+							if (g_usedate == 1)
 								ft = &(Data.ftLastWriteTime);
-							else if(g_usedate==2)
+							else if (g_usedate == 2)
 								ft = &(Data.ftCreationTime);
 							else
 							{
@@ -402,40 +399,39 @@ void ExpandPath(char *szPath)
 								l = CompareFileTime(&(Data.ftCreationTime), &(Data.ftLastWriteTime));
 
 								// Delete as few files as possible
-								ft = (l<0) ? &(Data.ftLastWriteTime): &(Data.ftCreationTime);
+								ft = (l < 0) ? &(Data.ftLastWriteTime) : &(Data.ftCreationTime);
 							}
 
 							ProcessFile(szFileName, ft);
 						}
 					}
-				}
-				while(FindNextFile(hFind, &Data));
+				} while (FindNextFile(hFind, &Data));
 
 				FindClose(hFind);
 			}
 		}
 
-	/*
-		else
-		{
+		/*
+			else
+			{
 			DWORD dwErr = GetLastError();
 			char g_szError[1000];
 			char szErr[1000];
 
 			if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwErr, 0, szErr, 1000, NULL))
 			{
-				*g_szError = 0;
-				printf("Format message failed with 0x%08X\n", GetLastError());
+			*g_szError = 0;
+			printf("Format message failed with 0x%08X\n", GetLastError());
 			}
 
 			printf("'%s'\n0x%08X - %s", szPath, dwErr, szErr);
-		}
-	*/
+			}
+			*/
 
-		if(strchr(szPath, '*') || strchr(szPath, '?'))
+		if (strchr(szPath, '*') || strchr(szPath, '?'))
 		{
 			strcpy(szSearch, szPath);
-			for(p=szSearch+strlen(szSearch); p>szSearch && *(p-1)!='\\' && *(p-1)!=':'; p--)
+			for (p = szSearch + strlen(szSearch); p > szSearch && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 				;
 			strcpy(p, "*");
 		}
@@ -445,52 +441,52 @@ void ExpandPath(char *szPath)
 		}
 
 
-		if(g_recurse)
+		if (g_recurse)
 		{
 			hFind = FindFirstFile(szSearch, &Data);
-			if(hFind != INVALID_HANDLE_VALUE)
+			if (hFind != INVALID_HANDLE_VALUE)
 			{
 				do
 				{
-					if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+					if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 					{
-						if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+						if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 						{
 							// Dir
 
-							for(p=szPath+strlen(szPath); p>szPath && *(p-1)!='\\' && *(p-1)!=':'; p--)
+							for (p = szPath + strlen(szPath); p > szPath && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 								;
 
-							l = (long)(p-szPath);
+							l = (long)(p - szPath);
 							memcpy(szSubDir, szPath, l);
 							szSubDir[l] = 0;
 
-							if(strchr(szPath, '*') || strchr(szPath, '?'))
+							if (strchr(szPath, '*') || strchr(szPath, '?'))
 							{
-								sprintf(szSubDir+l, "%s\\%s", Data.cFileName, p);
+								sprintf(szSubDir + l, "%s\\%s", Data.cFileName, p);
 							}
 							else
 							{
-								sprintf(szSubDir+l, "%s\\%s", Data.cFileName, "*");
+								sprintf(szSubDir + l, "%s\\%s", Data.cFileName, "*");
 							}
-							
+
 							ExpandPath(szSubDir);
 
 
-							if(g_deletedirs)
+							if (g_deletedirs)
 							{
-								for(p=szSubDir+strlen(szSubDir); p>szSubDir && *(p-1)!='\\' && *(p-1)!=':'; p--)
+								for (p = szSubDir + strlen(szSubDir); p > szSubDir && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 									;
-								if(p>szSubDir)
-									*(p-1) = 0;
+								if (p > szSubDir)
+									*(p - 1) = 0;
 								else
 									*p = 0;
 
 
-								if(fhLogFile)
+								if (fhLogFile)
 									fprintf(fhLogFile, "%s\n", szSubDir);
 
-								if(!g_simulate)
+								if (!g_simulate)
 								{
 									RemoveDirectory(szSubDir);
 								}
@@ -501,8 +497,7 @@ void ExpandPath(char *szPath)
 							// File
 						}
 					}
-				}
-				while(FindNextFile(hFind, &Data));
+				} while (FindNextFile(hFind, &Data));
 
 				FindClose(hFind);
 			}
@@ -520,11 +515,11 @@ void ExpandPath(char *szPath)
 void ProcessFile(char *szFileName, FILETIME *ft)
 {
 	LONG l;
-///	unsigned long long t;
+	///	unsigned long long t;
 
 	///t = (((unsigned long long)(ft->dwHighDateTime))<<32)+ft->dwLowDateTime;
 
-	if(ft)
+	if (ft)
 	{
 		l = CompareFileTime(ft, &g_ftOld);
 	}
@@ -533,13 +528,13 @@ void ProcessFile(char *szFileName, FILETIME *ft)
 		l = -1;
 	}
 
-	if(l<0)
+	if (l < 0)
 	{
 		printf("%s\n", szFileName);
-		if(fhLogFile)
+		if (fhLogFile)
 			fprintf(fhLogFile, "%s\n", szFileName);
 
-		if(!g_simulate)
+		if (!g_simulate)
 		{
 			SetFileAttributes(szFileName, 0);
 			DeleteFile(szFileName);
@@ -563,12 +558,12 @@ int compare(const void *arg1, const void *arg2)
 	LONG l;
 
 
-	if(g_usedate==1)
+	if (g_usedate == 1)
 	{
 		ft1 = &(entry1->ftLastWriteTime);
 		ft2 = &(entry2->ftLastWriteTime);
 	}
-	else if(g_usedate==2)
+	else if (g_usedate == 2)
 	{
 		ft1 = &(entry1->ftCreationTime);
 		ft2 = &(entry2->ftCreationTime);
@@ -576,10 +571,10 @@ int compare(const void *arg1, const void *arg2)
 	else
 	{
 		l = CompareFileTime(&(entry1->ftCreationTime), &(entry1->ftLastWriteTime));
-		ft1 = (l<0) ? &(entry1->ftLastWriteTime): &(entry1->ftCreationTime);
+		ft1 = (l < 0) ? &(entry1->ftLastWriteTime) : &(entry1->ftCreationTime);
 
 		l = CompareFileTime(&(entry2->ftCreationTime), &(entry2->ftLastWriteTime));
-		ft2 = (l<0) ? &(entry2->ftLastWriteTime): &(entry2->ftCreationTime);
+		ft2 = (l < 0) ? &(entry2->ftLastWriteTime) : &(entry2->ftCreationTime);
 	}
 
 
