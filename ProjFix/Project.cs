@@ -196,12 +196,7 @@ namespace ProjFix
 		// Wipcore.Enova.Something
 		private static string GetShortRef(string s)
 		{
-			if (s.IndexOf(',') >= 0)
-			{
-				return s.Substring(0, s.IndexOf(','));
-			}
-
-			return s;
+			return s.Split(',')[0];
 		}
 
 		public void CompactRefs()
