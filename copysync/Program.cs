@@ -32,8 +32,8 @@ namespace copysync
 
             if (Environment.UserInteractive)
             {
-                Console.WriteLine(Environment.NewLine + "Press Enter to continue...");
-                Console.ReadLine();
+                Console.WriteLine(Environment.NewLine + "Press any key to continue...");
+                Console.ReadKey();
             }
 
             return result;

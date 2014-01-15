@@ -80,8 +80,8 @@ namespace DllDep
 
 			if (args.Length < 1)
 			{
-				Console.WriteLine("Press Enter to exit!");
-				Console.ReadLine();
+				Console.WriteLine("Press eny key to exit!");
+				Console.ReadKey();
 			}
 
 			return result;

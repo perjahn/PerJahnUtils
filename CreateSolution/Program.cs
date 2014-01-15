@@ -26,8 +26,8 @@ namespace CreateSolution
             ParseArguments(args);
             if (Environment.UserInteractive)
             {
-                Console.WriteLine("Press Enter to continue...");
-                Console.ReadLine();
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey();
             }
         }
 
