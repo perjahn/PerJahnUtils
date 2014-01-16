@@ -6,7 +6,7 @@ Application for delinking solutions & projects with TFS.
 1.1 - Updated to handle projects in sln files.
 1.2 - Reverted to old logic.
 1.3 - Fixed bug in sln handling. Not yet :)
-
+1.4 - Added support for wixproj.
 
 Program corresponds somewhat to the following 4 tasks:
 
@@ -23,6 +23,7 @@ rep -s "    <SccProjectName>SAK</SccProjectName>\0D\0A" "" *
 rep -s "    <SccLocalPath>SAK</SccLocalPath>\0D\0A" "" *
 rep -s "    <SccAuxPath>SAK</SccAuxPath>\0D\0A" "" *
 rep -s "    <SccProvider>SAK</SccProvider>\0D\0A" "" *
++vdproj
 
 4.
 remove global sections with scc in *.sln
@@ -53,22 +54,24 @@ void FixSolutionFile(char *szFileName);
 
 void main(int argc, char *argv[])
 {
+	char *path;
+
 	if (argc == 2)
 	{
 		g_simulate = false;
-		DelinkTFS(argv[1]);
+		path = argv[1];
 	}
 	else if (argc == 3 && !strcmp(argv[1], "-s"))
 	{
 		g_simulate = true;
 		g_verbose = false;
-		DelinkTFS(argv[2]);
+		path = argv[2];
 	}
 	else if (argc == 3 && !strcmp(argv[1], "-v"))
 	{
 		g_simulate = false;
 		g_verbose = true;
-		DelinkTFS(argv[2]);
+		path = argv[2];
 	}
 	else if (argc == 4 &&
 		((!strcmp(argv[1], "-s") && !strcmp(argv[2], "-v")) ||
@@ -76,12 +79,12 @@ void main(int argc, char *argv[])
 	{
 		g_simulate = true;
 		g_verbose = true;
-		DelinkTFS(argv[3]);
+		path = argv[3];
 	}
 	else
 	{
 		printf(
-			"detfs 1.2\n"
+			"detfs 1.4\n"
 			"\n"
 			"Usage: detfs [-s] [-v] <path>\n"
 			"\n"
@@ -90,41 +93,45 @@ void main(int argc, char *argv[])
 		return;
 	}
 
+	DelinkTFS(path);
+
 	PrintStat();
 }
 
 //**********************************************************
 
-void DelinkTFS(char *szPath)
+void EnumAll(char *buf, char *p, char *pattern, void(*Action)(char *path))
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
-	char *p, szSubPath[1000];
 
-	strcpy(szSubPath, szPath);
-	p = szSubPath + strlen(szSubPath);
-
-
-	// Remove r/o attrib
-	strcpy(p, "\\*");
-	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
+	*p = '\\';
+	strcpy(p + 1, pattern);
+	if ((hFind = FindFirstFile(buf, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
 			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
 				sprintf(p, "\\%s", Data.cFileName);
-				FixAttrib(szSubPath);
+				Action(buf);
 			}
 		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
+}
 
+//**********************************************************
 
-	// Del *.vspscc
-	strcpy(p, "\\*.vspscc");
-	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
+void EnumFiles(char *buf, char *p, char *pattern, void(*FileAction)(char *path))
+{
+	HANDLE hFind;
+	WIN32_FIND_DATA Data;
+
+	*p = '\\';
+	strcpy(p + 1, pattern);
+	if ((hFind = FindFirstFile(buf, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
@@ -133,79 +140,25 @@ void DelinkTFS(char *szPath)
 				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					sprintf(p, "\\%s", Data.cFileName);
-					MyDeleteFile(szSubPath);
+					FileAction(buf);
 				}
 			}
 		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
+}
 
+//**********************************************************
 
-	// Del *.vssscc
-	strcpy(p, "\\*.vssscc");
-	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
-			{
-				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-				{
-					sprintf(p, "\\%s", Data.cFileName);
-					MyDeleteFile(szSubPath);
-				}
-			}
-		} while (FindNextFile(hFind, &Data));
+void EnumDirs(char *buf, char *p, char *pattern, void(*DirAction)(char *path))
+{
+	HANDLE hFind;
+	WIN32_FIND_DATA Data;
 
-		FindClose(hFind);
-	}
-
-
-	// Fix projects
-	// todo: Add support for .vbproj/.vcxproj
-	strcpy(p, "\\*.csproj");
-	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
-			{
-				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-				{
-					sprintf(p, "\\%s", Data.cFileName);
-					FixProjectFile(szSubPath);
-				}
-			}
-		} while (FindNextFile(hFind, &Data));
-
-		FindClose(hFind);
-	}
-
-
-	// Fix solutions
-	strcpy(p, "\\*.sln");
-	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
-			{
-				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-				{
-					sprintf(p, "\\%s", Data.cFileName);
-					FixSolutionFile(szSubPath);
-				}
-			}
-		} while (FindNextFile(hFind, &Data));
-
-		FindClose(hFind);
-	}
-
-
-	// Recurse subdirs
-	strcpy(p, "\\*");
-	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
+	*p = '\\';
+	strcpy(p + 1, pattern);
+	if ((hFind = FindFirstFile(buf, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
@@ -214,13 +167,40 @@ void DelinkTFS(char *szPath)
 				if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
 					sprintf(p, "\\%s", Data.cFileName);
-					DelinkTFS(szSubPath);
+					DirAction(buf);
 				}
 			}
 		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
+}
+
+//**********************************************************
+
+void DelinkTFS(char *szPath)
+{
+	char *p, szSubPath[1000];
+
+	strcpy(szSubPath, szPath);
+	p = szSubPath + strlen(szSubPath);
+
+
+	EnumAll(szSubPath, p, "*", FixAttrib);
+
+	EnumFiles(szSubPath, p, "*.vspscc", MyDeleteFile);
+	EnumFiles(szSubPath, p, "*.vssscc", MyDeleteFile);
+
+	EnumFiles(szSubPath, p, "*.csproj", FixProjectFile);
+	EnumFiles(szSubPath, p, "*.vbproj", FixProjectFile);
+	EnumFiles(szSubPath, p, "*.vcxproj", FixProjectFile);
+	EnumFiles(szSubPath, p, "*.wixproj", FixProjectFile);
+	EnumFiles(szSubPath, p, "*.modelproj", FixProjectFile);
+	EnumFiles(szSubPath, p, "*.vdproj", FixProjectFile);
+
+	EnumFiles(szSubPath, p, "*.sln", FixSolutionFile);
+
+	EnumDirs(szSubPath, p, "*", DelinkTFS);
 
 
 	return;

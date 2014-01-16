@@ -59,7 +59,7 @@ void FixProjectFile(char *szFileName)
 
 	if (!(fh = fopen(szFileName, "rb")))
 	{
-		sprintf(g_szLog, "Couldn't read file (%s).\n", szFileName);
+		sprintf(g_szLog, "Couldn't read file: '%s'.\n", szFileName);
 		Log(g_szLog, 1);
 		return;
 	}
@@ -71,7 +71,7 @@ void FixProjectFile(char *szFileName)
 	if (!buf)
 	{
 		fclose(fh);
-		sprintf(g_szLog, "Out of memory (%u bytes).\n", size);
+		sprintf(g_szLog, "Out of memory: %u bytes.\n", size);
 		Log(g_szLog, 1);
 		return;
 	}
@@ -95,7 +95,7 @@ void FixProjectFile(char *szFileName)
 			if (!(fh = fopen(szFileName, "wb")))
 			{
 				delete[] buf;
-				sprintf(g_szLog, "Couldn't write to file (%s).\n", szFileName);
+				sprintf(g_szLog, "Couldn't write to file: '%s'.\n", szFileName);
 				Log(g_szLog, 1);
 				return;
 			}
@@ -114,48 +114,57 @@ void FixProjectFile(char *szFileName)
 
 unsigned FixProjectBuf(unsigned char *buf, unsigned size)
 {
-	char szFind[4][100];
-	unsigned sizes[4];
+	char *finds[] =
+	{
+		"    <SccProjectName>SAK</SccProjectName>\r\n",
+		"    <SccLocalPath>SAK</SccLocalPath>\r\n",
+		"    <SccAuxPath>SAK</SccAuxPath>\r\n",
+		"    <SccProvider>SAK</SccProvider>\r\n",
+		"\"SccAuxPath\" = \"8:\"\r\n",
+		"\"SccAuxPath\" = \"8:SAK\"\r\n",
+		"\"SccLocalPath\" = \"8:\"\r\n",
+		"\"SccLocalPath\" = \"8:SAK\"\r\n",
+		"\"SccProjectName\" = \"8:\"\r\n",
+		"\"SccProjectName\" = \"8:SAK\"\r\n",
+		"\"SccProvider\" = \"8:\"\r\n",
+		"\"SccProvider\" = \"8:SAK\"\r\n",
+		NULL
+	};
 
-	strcpy(szFind[0], "    <SccProjectName>SAK</SccProjectName>\r\n");
-	sizes[0] = strlen(szFind[0]);
+	int findcount;
+	for (findcount = 0; finds[findcount]; findcount++)
+		;
+	unsigned *sizes = new unsigned[findcount];
 
-	strcpy(szFind[1], "    <SccLocalPath>SAK</SccLocalPath>\r\n");
-	sizes[1] = strlen(szFind[1]);
-
-	strcpy(szFind[2], "    <SccAuxPath>SAK</SccAuxPath>\r\n");
-	sizes[2] = strlen(szFind[2]);
-
-	strcpy(szFind[3], "    <SccProvider>SAK</SccProvider>\r\n");
-	sizes[3] = strlen(szFind[3]);
+	for (int i = 0; i < findcount; i++)
+	{
+		sizes[i] = strlen(finds[i]);
+	}
 
 	unsigned char *p1, *p2;
 
 	for (p1 = p2 = buf; p1 < buf + size;)
 	{
-		if (p1 < buf + size - sizes[0] && !memcmp(p1, szFind[0], sizes[0]))
+		bool found = false;
+
+		for (int i = 0; i < findcount && !found; i++)
 		{
-			p1 += sizes[0];
+			if (p1 < buf + size - sizes[i] && !memcmp(p1, finds[i], sizes[i]))
+			{
+				p1 += sizes[i];
+				found = true;
+			}
 		}
-		else if (p1 < buf + size - sizes[1] && !memcmp(p1, szFind[1], sizes[1]))
-		{
-			p1 += sizes[1];
-		}
-		else if (p1 < buf + size - sizes[2] && !memcmp(p1, szFind[2], sizes[2]))
-		{
-			p1 += sizes[2];
-		}
-		else if (p1 < buf + size - sizes[3] && !memcmp(p1, szFind[3], sizes[3]))
-		{
-			p1 += sizes[3];
-		}
-		else
+
+		if (!found)
 		{
 			*p2 = *p1;
 			p1++;
 			p2++;
 		}
 	}
+
+	delete[] sizes;
 
 	if (p1 != p2)
 		return p2 - buf;
@@ -171,7 +180,7 @@ void FixSolutionFile(char *szFileName)
 
 	if (!(fh = fopen(szFileName, "rb")))
 	{
-		sprintf(g_szLog, "Couldn't read file (%s).\n", szFileName);
+		sprintf(g_szLog, "Couldn't read file: '%s'.\n", szFileName);
 		Log(g_szLog, 1);
 		return;
 	}
@@ -183,7 +192,7 @@ void FixSolutionFile(char *szFileName)
 	if (!buf)
 	{
 		fclose(fh);
-		sprintf(g_szLog, "Out of memory (%u bytes).\n", size);
+		sprintf(g_szLog, "Out of memory: %u bytes.\n", size);
 		Log(g_szLog, 1);
 		return;
 	}
@@ -210,8 +219,8 @@ void FixSolutionFile(char *szFileName)
 			if (!(fh = fopen(szFileName, "wb")))
 			{
 				delete[] buf;
-				//sprintf(g_szLog, "Couldn't write to file (%s).\n", outFileName);
-				sprintf(g_szLog, "Couldn't write to file (%s).\n", szFileName);
+				//sprintf(g_szLog, "Couldn't write to file: '%s'.\n", outFileName);
+				sprintf(g_szLog, "Couldn't write to file: '%s'.\n", szFileName);
 				Log(g_szLog, 1);
 				return;
 			}
@@ -255,9 +264,9 @@ unsigned FixSolutionBuf(unsigned char *buf, unsigned size)
 		}
 		/*if (p1 < buf + size - 16 && !memcmp(p1, "\n\tProjectSection", 16))
 		{
-			// Found start of a (project) section
-			pps = p1 + 1;
-			printf("B: p1:%X p2:%X\n", p1 - buf, p2 - buf);
+		// Found start of a (project) section
+		pps = p1 + 1;
+		printf("B: p1:%X p2:%X\n", p1 - buf, p2 - buf);
 		}*/
 
 		if (p1 < buf + size - 6 && !memcmp(p1, "\n\t\tScc", 6))
@@ -269,12 +278,12 @@ unsigned FixSolutionBuf(unsigned char *buf, unsigned size)
 			}
 			/*if (pps)
 			{
-				// This is a ss/tfs section
+			// This is a ss/tfs section
 
-				printf("E: p1:%X p2:%X\n", p1 - buf, p2 - buf);
-				// Remove line in (project) section
-				p1 += 20;  // for loop will add 1 to this
-				p2 -= (p1 - pps);
+			printf("E: p1:%X p2:%X\n", p1 - buf, p2 - buf);
+			// Remove line in (project) section
+			p1 += 20;  // for loop will add 1 to this
+			p2 -= (p1 - pps);
 			}*/
 		}
 
@@ -294,9 +303,9 @@ unsigned FixSolutionBuf(unsigned char *buf, unsigned size)
 
 		/*if (p1 < buf + size - 21 && !memcmp(p1, "\n\tEndProjectSection\r\n", 21) && pps)
 		{
-			pps = NULL;
-			printf("F: p1:%X p2:%X\n", p1 - buf, p2 - buf);
-			continue;
+		pps = NULL;
+		printf("F: p1:%X p2:%X\n", p1 - buf, p2 - buf);
+		continue;
 		}*/
 
 		*p2 = *p1;
