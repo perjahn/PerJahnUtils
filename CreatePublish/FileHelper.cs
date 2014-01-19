@@ -12,14 +12,14 @@ namespace CreatePublish
 		{
 			ConsoleHelper.WriteLine("Testing GetRelativePath():", false);
 			string[] paths =
-            {
-                @"Wipcore.eNova\BusinessProcessorLib\BusinessProcessorLib.csproj",
-                @"Wipcore.eNova.Core\Core\CoreLib.csproj",
-                @"..\..\Wipcore.eNova.Core\Core\CoreLib.csproj",
+			{
+				@"Folder1\Folder2\File1.csproj",
+				@"Folder3\Folder4\File2.csproj",
+				@"..\..\Folder3\Folder4\File2.csproj",
    
-                @"dir1\file1", @"dir2\file2", @"..\dir2\file2",
-                @"dir1\", @"dir2\file2", @"..\dir2\file2"
-            };
+				@"dir1\file1", @"dir2\file2", @"..\dir2\file2",
+				@"dir1\", @"dir2\file2", @"..\dir2\file2"
+			};
 
 			for (int i = 0; i < paths.Length; i += 3)
 			{
@@ -167,18 +167,7 @@ namespace CreatePublish
 			}
 
 			// Combine folders into path2
-			string path2 = string.Empty;
-			for (int i = 0; i < folders.Count; i++)
-			{
-				if (i == 0)
-				{
-					path2 = folders[i];
-				}
-				else
-				{
-					path2 += Path.DirectorySeparatorChar + folders[i];
-				}
-			}
+			string path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders.ToArray());
 
 			// If path had a starting/ending \, keep it
 			string sep = Path.DirectorySeparatorChar.ToString();

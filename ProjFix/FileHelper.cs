@@ -12,14 +12,14 @@ namespace ProjFix
 		{
 			ConsoleHelper.WriteLine("Testing GetRelativePath():", false);
 			string[] paths =
-            {
-                @"Wipcore.eNova\BusinessProcessorLib\BusinessProcessorLib.csproj",
-                @"Wipcore.eNova.Core\Core\CoreLib.csproj",
-                @"..\..\Wipcore.eNova.Core\Core\CoreLib.csproj",
+			{
+				@"Folder1\Folder2\File1.csproj",
+				@"Folder3\Folder4\File2.csproj",
+				@"..\..\Folder3\Folder4\File2.csproj",
    
-                @"dir1\file1", @"dir2\file2", @"..\dir2\file2",
-                @"dir1\", @"dir2\file2", @"..\dir2\file2"
-            };
+				@"dir1\file1", @"dir2\file2", @"..\dir2\file2",
+				@"dir1\", @"dir2\file2", @"..\dir2\file2"
+			};
 
 			for (int i = 0; i < paths.Length; i += 3)
 			{

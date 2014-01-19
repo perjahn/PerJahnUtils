@@ -1,40 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
-using System.IO;
 
 namespace ProjFix
 {
-	class AssemblyRef
-	{
-		public string include { get; set; }
-		public string shortinclude { get; set; }  // Assembly name
-		public string name { get; set; }
-		public string hintpath { get; set; }
-		public bool? copylocal { get; set; }  // Xml tag name=Private
-
-		// Used when loading, before validating/fixing
-		public List<string> names { get; set; }
-		public List<string> hintpaths { get; set; }
-		public List<string> copylocals { get; set; }
-	}
-
-	class ProjectRef
-	{
-		public string include { get; set; }
-		public string shortinclude { get; set; }  // Project file name
-		public string name { get; set; }
-		public string project { get; set; }
-		public string package { get; set; }
-
-		// Used when loading, before validating/fixing
-		public List<string> names { get; set; }
-		public List<string> projects { get; set; }
-		public List<string> packages { get; set; }
-	}
-
 	class Project
 	{
 		public string _sln_package { get; set; }
@@ -191,9 +163,9 @@ namespace ProjFix
 			return newproj;
 		}
 
-		// Wipcore.Enova.Something, Version=1.2.3.4, Culture=neutral, processorArchitecture=MSIL
+		// Vendor.Product.Something, Version=1.2.3.4, Culture=neutral, processorArchitecture=MSIL
 		// ->
-		// Wipcore.Enova.Something
+		// Vendor.Product.Something
 		private static string GetShortRef(string s)
 		{
 			return s.Split(',')[0];
