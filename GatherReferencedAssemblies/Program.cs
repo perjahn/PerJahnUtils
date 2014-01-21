@@ -11,15 +11,21 @@ namespace GatherReferencedAssemblies
 	class Project
 	{
 		public string path { get; set; }
-		public List<string> assnames { get; set; }
-		//public string include { get; set; }
-		//public string shortinclude { get; set; }  // Project file name
+		//public List<string> assnames { get; set; }
+		public XDocument xdoc { get; set; }
 	}
 
 	class FailedProject
 	{
 		public string path { get; set; }
 		public string message { get; set; }
+	}
+
+	class Assembly
+	{
+		public string path { get; set; }
+		public string shortname { get; set; }
+		public string projectPath { get; set; }
 	}
 
 	class Program
@@ -36,17 +42,20 @@ namespace GatherReferencedAssemblies
 
 		static bool ParseArguments(string[] args)
 		{
+			bool gatherAssemblyReferences = args.Any(a => a == "-r");
+			args = args.Except(new string[] { "-r" }).ToArray();
+
+
 			if (args.Length != 3)
 			{
 				string usage =
 @"Gather Referenced Assemblies 1.0
 
-GetAss.exe <project file> <build config> <output path>
+GetAss.exe [-r] <project file> <build config> <output path>
+
+-r:  Also gather all referenced assemblies (non-source project).
 
 Example: getass myproj.csproj Release ..\libs";
-
-				// Option for? Follow only project references, or also assembly references.
-				// Simulate.
 
 				Console.WriteLine(usage);
 				return true;
@@ -60,6 +69,8 @@ Example: getass myproj.csproj Release ..\libs";
 			List<Project> projects = new List<Project>();
 			List<FailedProject> fails = new List<FailedProject>();
 			GetProjects(projectFile, ref projects, ref fails);
+			projects = projects.OrderBy(p => p.path).ToList();
+			fails = fails.OrderBy(f => f.path).ToList();
 			ShowFails(fails, "Couldn't load {0} projects:");
 
 			WriteLineColor("Loaded " + projects.Count() + " projects:", ConsoleColor.Green);
@@ -70,13 +81,15 @@ Example: getass myproj.csproj Release ..\libs";
 
 
 			fails = new List<FailedProject>();
-			List<string> assemblies = GetAssemblies(projects, buildConfig, ref fails);
+			List<Assembly> assemblies = GetAssemblies(projects, buildConfig, ref fails, gatherAssemblyReferences);
+			assemblies = assemblies.OrderBy(a => a.path).ToList();
+			fails = fails.OrderBy(f => f.path).ToList();
 			ShowFails(fails, "Couldn't find {0} assemblies:");
 
 			WriteLineColor("Found " + assemblies.Count() + " assemblies:", ConsoleColor.Green);
-			foreach (string file in assemblies)
+			foreach (Assembly ass in assemblies)
 			{
-				WriteLineColor("  " + file, ConsoleColor.Green);
+				WriteLineColor("  " + ass.path, ConsoleColor.Green);
 			}
 
 
@@ -94,15 +107,15 @@ Example: getass myproj.csproj Release ..\libs";
 				}
 			}
 
-			foreach (string file in assemblies)
+			foreach (Assembly ass in assemblies)
 			{
-				string destfile = Path.Combine(outputPath, Path.GetFileName(file));
-				Console.WriteLine("Copying '" + file + "' -> '" + destfile + "'...");
+				string destfile = Path.Combine(outputPath, Path.GetFileName(ass.path));
+				Console.WriteLine("Copying '" + ass.path + "' -> '" + destfile + "'...");
 				if (File.Exists(destfile))
 				{
 					RemoveRO(destfile);
 				}
-				File.Copy(file, destfile, true);
+				File.Copy(ass.path, destfile, true);
 				RemoveRO(destfile);
 			}
 
@@ -119,7 +132,6 @@ Example: getass myproj.csproj Release ..\libs";
 			}
 
 			XDocument xdoc;
-			XNamespace ns;
 
 			try
 			{
@@ -137,10 +149,10 @@ Example: getass myproj.csproj Release ..\libs";
 				return;
 			}
 
-			projects.Add(new Project() { path = project });
+			projects.Add(new Project() { path = project, xdoc = xdoc });
 
 
-			ns = xdoc.Root.Name.Namespace;
+			XNamespace ns = xdoc.Root.Name.Namespace;
 
 			IEnumerable<string> projectPaths =
 					from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "ProjectReference")
@@ -174,32 +186,15 @@ Example: getass myproj.csproj Release ..\libs";
 			}
 		}
 
-		static List<string> GetAssemblies(List<Project> projects, string buildConfig, ref List<FailedProject> fails)
+		static List<Assembly> GetAssemblies(List<Project> projects, string buildConfig, ref List<FailedProject> fails, bool gatherAssemblyReferences)
 		{
-			List<string> assemblies = new List<string>();
+			List<Assembly> assemblies = new List<Assembly>();
+			List<Assembly> assembliesMissing = new List<Assembly>();
 
 			foreach (Project project in projects)
 			{
-				XDocument xdoc;
-				XNamespace ns;
-
-				try
-				{
-					//Console.WriteLine("Loading project: '" + projectFile + "'");
-					xdoc = XDocument.Load(project.path);
-				}
-				catch (IOException ex)
-				{
-					fails.Add(new FailedProject { path = project.path, message = ex.Message });
-					continue;
-				}
-				catch (System.Xml.XmlException ex)
-				{
-					fails.Add(new FailedProject { path = project.path, message = ex.Message });
-					continue;
-				}
-
-				ns = xdoc.Root.Name.Namespace;
+				XDocument xdoc = project.xdoc;
+				XNamespace ns = project.xdoc.Root.Name.Namespace;
 
 
 				IEnumerable<string> assemblynames =
@@ -252,6 +247,46 @@ Example: getass myproj.csproj Release ..\libs";
 				}
 
 
+				if (gatherAssemblyReferences)
+				{
+					IEnumerable<XElement> assemblyReferences =
+							from el in project.xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
+							where el.Attribute("Include") != null && !gac.IsSystemAssembly(el.Attribute("Include").Value.Split(',')[0], true)
+							select el;
+
+					foreach (XElement assref in assemblyReferences)
+					{
+						string fullname = assref.Attribute("Include").Value;
+						string shortname = fullname.Split(',')[0];
+						XElement xele = assref.Element(ns + "HintPath");
+						if (xele == null)
+						{
+							// Might be ok
+							assembliesMissing.Add(new Assembly { path = null, shortname = shortname, projectPath = project.path });
+							continue;
+						}
+						else
+						{
+							string hintpath = xele.Value;
+							string asspath = CompactPath(Path.Combine(Path.GetDirectoryName(project.path), hintpath));
+
+							if (assemblies.Any(p => string.Compare(Path.GetFileName(p.path), Path.GetFileName(asspath), true) == 0))
+							{
+								continue;
+							}
+
+							if (!File.Exists(asspath))
+							{
+								assembliesMissing.Add(new Assembly { path = asspath, shortname = shortname, projectPath = project.path });
+								continue;
+							}
+
+							assemblies.Add(new Assembly { path = asspath, shortname = shortname });
+						}
+					}
+				}
+
+
 				string assemblyname = assemblynames.Single();
 				string outputpath = outputpaths.Single();
 				string outputtype = outputtypes.Single();
@@ -274,16 +309,47 @@ Example: getass myproj.csproj Release ..\libs";
 				}
 
 
-				string path = Path.Combine(Path.Combine(Path.GetDirectoryName(project.path), outputpath), assemblyname + ext);
+				string path = CompactPath(Path.Combine(Path.Combine(Path.GetDirectoryName(project.path), outputpath), assemblyname + ext));
 
-				if (!File.Exists(path))
+				if (assemblies.Any(p => string.Compare(p.path, path, true) == 0) ||
+					assembliesMissing.Any(p => string.Compare(p.path, path, true) == 0))
 				{
-					fails.Add(new FailedProject { path = project.path, message = "File not found: '" + path + "'" });
 					continue;
 				}
 
-				assemblies.Add(path);
+				if (!File.Exists(path))
+				{
+					assembliesMissing.Add(new Assembly { path = path, shortname = assemblyname, projectPath = project.path });
+					continue;
+				}
+
+				assemblies.Add(new Assembly { path = path, shortname = assemblyname });
 			}
+
+
+			foreach (Assembly ass in assembliesMissing)
+			{
+				if (ass.path == null)
+				{
+					if (assemblies.Any(a => string.Compare(a.shortname, ass.shortname, true) == 0))
+					{
+						continue;
+					}
+					else
+					{
+						WriteLineColor(ass.projectPath + ": Reference: '" + ass.shortname + "', Warning: HintPath not found, assembly file ignored!",
+							ConsoleColor.Yellow);
+					}
+				}
+				else
+				{
+					WriteLineColor(ass.projectPath + ": Reference: '" + ass.shortname + "', Warning: File not found, assembly file ignored: '" + ass.path + "'",
+						ConsoleColor.Yellow);
+				}
+
+				//fails.Add(new FailedProject { path = project.path, message = "File not found: '" + path + "'" });
+			}
+
 
 			return assemblies;
 		}
