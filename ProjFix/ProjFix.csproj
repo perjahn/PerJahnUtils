@@ -55,6 +55,7 @@
     <Compile Include="Project.cs" />
     <Compile Include="ProjectRef.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Reference.cs" />
     <Compile Include="Solution.cs" />
   </ItemGroup>
   <ItemGroup>

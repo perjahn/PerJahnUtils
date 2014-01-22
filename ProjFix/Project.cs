@@ -166,7 +166,7 @@ namespace ProjFix
 		// Vendor.Product.Something, Version=1.2.3.4, Culture=neutral, processorArchitecture=MSIL
 		// ->
 		// Vendor.Product.Something
-		private static string GetShortRef(string s)
+		public static string GetShortRef(string s)
 		{
 			return s.Split(',')[0];
 		}
@@ -512,12 +512,15 @@ namespace ProjFix
 			{
 				foreach (AssemblyRef assref in _references.OrderBy(r => r.shortinclude))
 				{
-					string include = GetShortRef(assref.include);
+					string shortref = GetShortRef(assref.include);
+					if (shortref != assref.include)
+					{
+						ConsoleHelper.WriteLine("  ref: removing version: '" + assref.include + "' -> '" + shortref + "'.", true);
+						assref.include = shortref;
+						assref.shortinclude = shortref;
 
-					if (include != assref.shortinclude)
-						ConsoleHelper.WriteLine("  ref: removing version: '" + assref.shortinclude + "' -> '" + include + "'.", true);
-
-					_modified = true;
+						_modified = true;
+					}
 				}
 			}
 
@@ -919,126 +922,16 @@ namespace ProjFix
 				}
 			}
 
-			// Add references
+			// Add/update references
 			foreach (AssemblyRef assref in _references.OrderBy(r => r.shortinclude))
 			{
-				/*string dummy;
-				if (gac.IsSystemAssembly(assref.shortinclude, out dummy, true))
-				{
-						continue;
-				}*/
-
 				if (!references.Contains(assref.shortinclude))
 				{
-					ConsoleHelper.WriteLine("  Adding assembly ref: '" + assref.include + "'", true);
-
-					XElement newref;
-
-					if (assref.hintpath == null)
-					{
-						newref = new XElement(ns + "Reference",
-							new XAttribute("Include", assref.include),
-							new XElement(ns + "SpecificVersion", "False")
-							);
-					}
-					else
-					{
-						newref = new XElement(ns + "Reference",
-							new XAttribute("Include", assref.include),
-							new XElement(ns + "SpecificVersion", "False"),
-							new XElement(ns + "HintPath", assref.hintpath)
-							);
-					}
-
-
-					// Sort insert
-					var groups = from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup")
-											 where el.Element(ns + "Reference") != null
-											 select el;
-					if (groups.Count() == 0)
-					{
-						throw new NotImplementedException("Cannot insert reference!");
-					}
-
-					var refs = from el in groups.ElementAt(0).Elements(ns + "Reference")
-										 where el.Attribute("Include") != null
-										 orderby el.Attribute("Include").Value
-										 select el;
-
-					if (assref.include.CompareTo(refs.First().Attribute("Include").Value) < 0)
-					{
-						groups.ElementAt(0).AddFirst(newref);
-					}
-					else if (assref.include.CompareTo(refs.Last().Attribute("Include").Value) > 0)
-					{
-						refs.Last().AddAfterSelf(newref);
-					}
-					else
-					{
-						for (int i = 0; i < refs.Count() - 1; i++)
-						{
-							string inc1 = refs.ElementAt(i).Attribute("Include").Value;
-							string inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
-							if (assref.include.CompareTo(inc1) > 0 && assref.include.CompareTo(inc2) < 0)
-							{
-								refs.ElementAt(i).AddAfterSelf(newref);
-							}
-						}
-					}
+					assref.AddToDoc(xdoc, ns);
 				}
 				else
 				{
-					// update existing hint path
-
-					List<XElement> references2 =
-						(from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
-						 where el.Attribute("Include") != null && el.Attribute("Include").Value == assref.include
-						 select el)
-					.ToList();
-
-					if (references2.Count != 1)
-					{
-						ConsoleHelper.WriteLine("  Error: Couldn't update assembly ref: '" + assref.include + "'", false);
-						return;
-					}
-
-					XElement reference = references2[0];
-
-
-					XElement hintPath = reference.Element(ns + "HintPath");
-					if (assref.hintpath == null)
-					{
-						if (hintPath != null)
-						{
-							string oldpath = hintPath.Value;
-							if (oldpath != assref.hintpath)
-							{
-								ConsoleHelper.WriteLine("  Updating assembly ref: Removing hintpath: '" + assref.include +
-									"': '" + oldpath + "'.", true);
-								hintPath.Remove();
-							}
-						}
-					}
-					else
-					{
-						if (hintPath == null)
-						{
-							ConsoleHelper.WriteLine("  Updating assembly ref: Adding hintpath: '" + assref.include +
-								"', '" + assref.hintpath + "'.", true);
-							hintPath = new XElement(ns + "HintPath", assref.hintpath);
-							reference.Add(hintPath);
-						}
-						else
-						{
-							string oldpath = hintPath.Value;
-							if (oldpath != assref.hintpath)
-							{
-								ConsoleHelper.WriteLine("  Updating assembly ref: Updating hintpath: '" + assref.include +
-									"': '" + oldpath + "' -> '" + assref.hintpath + "'.", true);
-								hintPath.Value = assref.hintpath;
-							}
-						}
-					}
+					assref.UpdateInDoc(xdoc, ns);
 				}
 			}
 
@@ -1073,69 +966,22 @@ namespace ProjFix
 				}
 			}
 
-			// Add project references
+			// Add/update project references
 			foreach (ProjectRef projref in _projectReferences.OrderBy(r => r.shortinclude))
 			{
 				if (!projectReferences.Contains(projref.shortinclude))
 				{
-					ConsoleHelper.WriteLine("  Adding proj ref: '" + projref.include + "'", true);
-
-					XElement newref = new XElement(ns + "ProjectReference",
-						new XAttribute("Include", projref.include),
-						new XElement(ns + "Project", projref.project),
-						new XElement(ns + "Name", projref.name)
-						);
-
-					// Sort insert
-					var groups = from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup")
-											 where el.Element(ns + "ProjectReference") != null
-											 select el;
-
-					if (groups.Count() == 0)
-					{
-						groups = from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup")
-										 select el;
-
-						XElement newgroup = new XElement(ns + "ItemGroup", newref);
-						groups.Last().AddAfterSelf(newgroup);
-					}
-					else
-					{
-						var refs = from el in groups.Elements(ns + "ProjectReference")
-											 where el.Attribute("Include") != null
-											 orderby el.Attribute("Include").Value
-											 select el;
-
-						if (projref.include.CompareTo(refs.First().Attribute("Include").Value) < 0)
-						{
-							groups.ElementAt(0).AddFirst(newref);
-						}
-						else if (projref.include.CompareTo(refs.Last().Attribute("Include").Value) > 0)
-						{
-							refs.Last().AddAfterSelf(newref);
-						}
-						else
-						{
-							for (int i = 0; i < refs.Count() - 1; i++)
-							{
-								string inc1 = refs.ElementAt(i).Attribute("Include").Value;
-								string inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
-								if (projref.include.CompareTo(inc1) > 0 && projref.include.CompareTo(inc2) < 0)
-								{
-									refs.ElementAt(i).AddAfterSelf(newref);
-								}
-							}
-						}
-					}
+					projref.AddToDoc(xdoc, ns);
 				}
 				else
 				{
-					// todo: update existing proj path
+					//throw new NotImplementedException("Todo: update existing proj path!");
 				}
 			}
 
 			return;
 		}
+
 
 		public void UpdateOutputPath(XDocument xdoc, string solutionfile, string outputpath)
 		{

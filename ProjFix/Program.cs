@@ -18,33 +18,26 @@ namespace ProjFix
 			System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
 			string usage =  // Todo
-@"ProjFix 2.5 - Program for patching Visual Studio project files.
+@"Usage: ProjFix [-b] [-c] [-hPaths] [-oPath] [-r] [-s] [-v] <solutionfile>
 
-Usage: ProjFix [-b] [-c] [-hPaths] [-oPath] [-r] [-s] [-v] <solutionfile>
-
- -b:   Don't create backup files.
 NOT: -c:   Force copy local true (NOT IMPLEMENTED YET). Why is this useful? GAC dlls should usually not be copied to output folder.
 NOT: -c:   If copy local is true, don't remove hint path. (copy local means that VS copies the referenced dll to the output folder,
            *even when the file is in GAC*). This should be done automatically, I see no reason for not doing it. Option is unnecessary.
            Private without Hintpath is useless, probably invalid.
- -d:   On all dll references: Force specific version=False and remove all version info.
- -h:   Hint path folders for assembly references (dlls).
+ -d:   On all dll references: (Force specific version=False and) remove all version info.
  -o:   Set common output path for all projects (NOT IMPLEMENTED YET).
- -r:   Restore project files from backups.
- -s:   Simulate: Don't write anything to file system.
- -v:   Verbose logging.
 
 Example: ProjFix -h..\Dir1,Dir2 -obin mysol.sln
 
-Hintpaths are relative from current directory.
 Rootpath will be search recursively for matching .targets files, must be uniquely named.";
 
 			usage =
-@"ProjFix 2.4 - Program for patching Visual Studio project files.
+@"ProjFix 2.5 - Program for patching Visual Studio project files.
 
 Usage: ProjFix [-b] [-hPaths] [-r] [-s] [-v] <solutionfile>
 
  -b:   Don't create backup files.
+ -d:   On all dll references: Remove all version info.
  -h:   Hint path folders for assembly references (dlls).
  -r:   Restore project files from backups.
  -s:   Simulate: Don't write anything to file system.
