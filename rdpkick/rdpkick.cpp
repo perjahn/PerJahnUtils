@@ -14,7 +14,7 @@ void main(int argc, char *argv[])
 	{
 		printf("Found %d sessions.\n", sessioncount);
 
-		for (unsigned i=0; i<sessioncount; i++)
+		for (unsigned i = 0; i < sessioncount; i++)
 		{
 			wchar_t ComputerName[1000];
 			DWORD size = 1000;
@@ -29,19 +29,23 @@ void main(int argc, char *argv[])
 			{
 				printf("%S: Kicking: '%S', '%S'\n",
 					ComputerName,
-					pSessionInfos[i].pSessionName? pSessionInfos[i].pSessionName: TEXT("-"),
-					pSessionInfos[i].pUserName? pSessionInfos[i].pUserName: TEXT("-"));
-				if (argc<2)
+					pSessionInfos[i].pSessionName ? pSessionInfos[i].pSessionName : TEXT("-"),
+					pSessionInfos[i].pUserName ? pSessionInfos[i].pUserName : TEXT("-"));
+				if (argc < 2)
 				{
-					WTSLogoffSession(WTS_CURRENT_SERVER_HANDLE, pSessionInfos[i].SessionId, TRUE);
+					result = WTSLogoffSession(WTS_CURRENT_SERVER_HANDLE, pSessionInfos[i].SessionId, TRUE);
+					if (!result)
+					{
+						printf("Couldn't kick: %d.\n", GetLastError());
+					}
 				}
 			}
 			else
 			{
 				printf("%S: Not kicking: '%S', '%S'\n",
 					ComputerName,
-					pSessionInfos[i].pSessionName? pSessionInfos[i].pSessionName: TEXT("-"),
-					pSessionInfos[i].pUserName? pSessionInfos[i].pUserName: TEXT("-"));
+					pSessionInfos[i].pSessionName ? pSessionInfos[i].pSessionName : TEXT("-"),
+					pSessionInfos[i].pUserName ? pSessionInfos[i].pUserName : TEXT("-"));
 			}
 		}
 
