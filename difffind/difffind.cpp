@@ -24,10 +24,10 @@ unsigned g_diffcount;
 unsigned char *g_buf1;
 unsigned char *g_buf2;
 
-WORD colorred = FOREGROUND_RED|FOREGROUND_INTENSITY;
-WORD coloryellow = FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_INTENSITY;
-WORD colorgray = FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE;
-WORD colorwhite = FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE|FOREGROUND_INTENSITY;
+WORD colorred = FOREGROUND_RED | FOREGROUND_INTENSITY;
+WORD coloryellow = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+WORD colorgray = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+WORD colorwhite = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 
@@ -41,7 +41,7 @@ bool compare_files(char *szFileName1, char *szFileName2);
 
 int main(int argc, char *argv[])
 {
-	if(argc<2)
+	if (argc < 2)
 	{
 		printf(
 			"difffind 3.0 - Program for finding mismatched files.\n"
@@ -62,15 +62,15 @@ int main(int argc, char *argv[])
 
 	pszPattern = argv[1];
 
-	if(argc<3)
+	if (argc < 3)
 	{
 		g_excludepatterns = NULL;
 		g_excludepatterncount = 0;
 	}
 	else
 	{
-		g_excludepatterns = argv+2;
-		g_excludepatterncount = argc-2;
+		g_excludepatterns = argv + 2;
+		g_excludepatterncount = argc - 2;
 	}
 
 
@@ -88,21 +88,21 @@ int main(int argc, char *argv[])
 
 	DWORD t2 = GetTickCount();
 
-	if(t1 == t2)
+	if (t1 == t2)
 	{
-		printf("Read: %llu MB.\n", g_totalsize/1024/1024);
+		printf("Read: %llu MB.\n", g_totalsize / 1024 / 1024);
 	}
 	else
 	{
 		// b/ms -> kb/s:   /1024*1000
-		DWORD t = t2-t1;
-		unsigned long long speed = g_totalsize/(t2-t1)*10000/1024/1024;
+		DWORD t = t2 - t1;
+		unsigned long long speed = g_totalsize / (t2 - t1) * 10000 / 1024 / 1024;
 		printf("Read: %llu MB. (%llu.%llu MB/s).\n",
-			g_totalsize/1024/1024,
-			speed/10, speed%10);
+			g_totalsize / 1024 / 1024,
+			speed / 10, speed % 10);
 	}
 
-	if(result)
+	if (result)
 	{
 		return 1;
 	}
@@ -122,34 +122,33 @@ void gather(char *szPath)
 	unsigned excludedcount = 0;
 
 
-	for(pPattern=szPath+strlen(szPath); pPattern>szPath && *(pPattern-1)!='\\' && *(pPattern-1)!=':'; pPattern--)
+	for (pPattern = szPath + strlen(szPath); pPattern > szPath && *(pPattern - 1) != '\\' && *(pPattern - 1) != ':'; pPattern--)
 		;
 
 
 	strcpy(szSubPath, szPath);
-	for(p=szSubPath+strlen(szSubPath); p>szSubPath && *(p-1)!='\\' && *(p-1)!=':'; p--)
+	for (p = szSubPath + strlen(szSubPath); p > szSubPath && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
 
 
 	// Create exclude array
-	for(unsigned patt=0; patt<g_excludepatterncount; patt++)
+	for (unsigned patt = 0; patt < g_excludepatterncount; patt++)
 	{
-		sprintf(p, "%s", g_excludepatterns[patt]+1);
+		sprintf(p, "%s", g_excludepatterns[patt] + 1);
 
-		if((hFind=FindFirstFile(szSubPath, &FindExclude)) != INVALID_HANDLE_VALUE)
+		if ((hFind = FindFirstFile(szSubPath, &FindExclude)) != INVALID_HANDLE_VALUE)
 		{
 			do
 			{
-				if(FindExclude.cFileName && strcmp(FindExclude.cFileName, ".") && strcmp(FindExclude.cFileName, ".."))
+				if (FindExclude.cFileName && strcmp(FindExclude.cFileName, ".") && strcmp(FindExclude.cFileName, ".."))
 				{
-					excluded[excludedcount] = new char[strlen(FindExclude.cFileName)+1];
+					excluded[excludedcount] = new char[strlen(FindExclude.cFileName) + 1];
 
 					strcpy(excluded[excludedcount], FindExclude.cFileName);
 					excludedcount++;
 					g_totalexcluded++;
 				}
-			}
-			while(FindNextFile(hFind, &FindExclude));
+			} while (FindNextFile(hFind, &FindExclude));
 
 			FindClose(hFind);
 		}
@@ -159,32 +158,31 @@ void gather(char *szPath)
 	// Recurse folders
 	sprintf(p, "*");
 
-	if((hFind=FindFirstFile(szSubPath, &FindDir)) != INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &FindDir)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(FindDir.cFileName && strcmp(FindDir.cFileName, ".") && strcmp(FindDir.cFileName, ".."))
+			if (FindDir.cFileName && strcmp(FindDir.cFileName, ".") && strcmp(FindDir.cFileName, ".."))
 			{
-				if(FindDir.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)
+				if (FindDir.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)
 				{
 					bool foundex = false;
-					for(unsigned ex=0; ex<excludedcount; ex++)
+					for (unsigned ex = 0; ex < excludedcount; ex++)
 					{
-						if(!strcmp(excluded[ex], FindDir.cFileName))
+						if (!strcmp(excluded[ex], FindDir.cFileName))
 						{
 							foundex = true;
 							break;
 						}
 					}
-					if(!foundex)
+					if (!foundex)
 					{
 						sprintf(p, "%s\\%s", FindDir.cFileName, pPattern);
 						gather(szSubPath);
 					}
 				}
 			}
-		}
-		while(FindNextFile(hFind, &FindDir));
+		} while (FindNextFile(hFind, &FindDir));
 
 		FindClose(hFind);
 	}
@@ -194,42 +192,41 @@ void gather(char *szPath)
 	sprintf(p, "%s", pPattern);
 
 	FindFile = &(g_filedata[g_filecount].Data);
-	if((hFind=FindFirstFile(szSubPath, FindFile)) != INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, FindFile)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(FindFile->cFileName && strcmp(FindFile->cFileName, ".") && strcmp(FindFile->cFileName, ".."))
+			if (FindFile->cFileName && strcmp(FindFile->cFileName, ".") && strcmp(FindFile->cFileName, ".."))
 			{
-				if(!(FindFile->dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY))
+				if (!(FindFile->dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY))
 				{
 					bool foundex = false;
-					for(unsigned ex=0; ex<excludedcount; ex++)
+					for (unsigned ex = 0; ex < excludedcount; ex++)
 					{
-						if(!strcmp(excluded[ex], FindFile->cFileName))
+						if (!strcmp(excluded[ex], FindFile->cFileName))
 						{
 							foundex = true;
 							break;
 						}
 					}
-					if(!foundex)
+					if (!foundex)
 					{
-						int size = pPattern-szPath;
+						int size = pPattern - szPath;
 						memcpy(g_filedata[g_filecount].szFullPath, szPath, size);
-						sprintf(g_filedata[g_filecount].szFullPath+size, "%s", FindFile->cFileName);
+						sprintf(g_filedata[g_filecount].szFullPath + size, "%s", FindFile->cFileName);
 						g_filecount++;
 					}
 				}
 			}
 
 			FindFile = &(g_filedata[g_filecount].Data);
-		}
-		while(FindNextFile(hFind, FindFile));
+		} while (FindNextFile(hFind, FindFile));
 
 		FindClose(hFind);
 	}
 
 
-	for(unsigned i=0; i<excludedcount; i++)
+	for (unsigned i = 0; i < excludedcount; i++)
 	{
 		delete[] excluded[i];
 	}
@@ -249,7 +246,7 @@ int compare(const void *arg1, const void *arg2)
 	file *f2 = (file*)arg2;
 
 	int diff = strcmp(f1->Data.cFileName, f2->Data.cFileName);
-	if(diff)
+	if (diff)
 		return diff;
 
 	return strcmp(f1->szFullPath, f2->szFullPath);
@@ -262,11 +259,11 @@ bool analyze(void)
 {
 	unsigned maxsize = 0;
 
-	for(unsigned i=0; i<g_filecount; i++)
+	for (unsigned i = 0; i<g_filecount; i++)
 	{
 		g_filedata[i].diff = false;
 
-		if(g_filedata[i].Data.nFileSizeLow>maxsize)
+		if (g_filedata[i].Data.nFileSizeLow>maxsize)
 		{
 			maxsize = g_filedata[i].Data.nFileSizeLow;
 		}
@@ -277,9 +274,9 @@ bool analyze(void)
 
 	g_diffcount = 0;
 
-	for(unsigned i=0; i<g_filecount; i++)
+	for (unsigned i = 0; i < g_filecount; i++)
 	{
-		for(unsigned j=i; j<g_filecount; j++)
+		for (unsigned j = i; j < g_filecount; j++)
 		{
 			compare_entries(i, j);
 		}
@@ -291,9 +288,9 @@ bool analyze(void)
 
 
 	unsigned difffiles = 0;
-	for(unsigned i=0; i<g_filecount; i++)
+	for (unsigned i = 0; i < g_filecount; i++)
 	{
-		if(g_filedata[i].diff)
+		if (g_filedata[i].diff)
 			difffiles++;
 	}
 
@@ -303,7 +300,7 @@ bool analyze(void)
 
 	SetConsoleTextAttribute(hStdout, colorgray);
 
-	if(g_diffcount>0)
+	if (g_diffcount > 0)
 		return true;
 
 	return false;
@@ -316,7 +313,7 @@ void compare_entries(int i, int j)
 {
 	static char *pLast = "";
 
-	if(i==j)
+	if (i == j)
 	{
 		return;
 	}
@@ -325,18 +322,18 @@ void compare_entries(int i, int j)
 	f1 = &g_filedata[i];
 	f2 = &g_filedata[j];
 
-	if(strcmp(f1->Data.cFileName, f2->Data.cFileName))
+	if (strcmp(f1->Data.cFileName, f2->Data.cFileName))
 	{
 		return;
 	}
 
 	long long size1, size2;
-	size1 = (((long long)(f1->Data.nFileSizeHigh))<<32)+f1->Data.nFileSizeLow;
-	size2 = (((long long)(f2->Data.nFileSizeHigh))<<32)+f2->Data.nFileSizeLow;
+	size1 = (((long long)(f1->Data.nFileSizeHigh)) << 32) + f1->Data.nFileSizeLow;
+	size2 = (((long long)(f2->Data.nFileSizeHigh)) << 32) + f2->Data.nFileSizeLow;
 
-	if(size1 == size2)
+	if (size1 == size2)
 	{
-		if(!compare_files(f1->szFullPath, f2->szFullPath))
+		if (!compare_files(f1->szFullPath, f2->szFullPath))
 		{
 			return;
 		}
@@ -346,7 +343,7 @@ void compare_entries(int i, int j)
 	f1->diff = true;
 	f2->diff = true;
 
-	if(strcmp(f1->Data.cFileName, pLast))
+	if (strcmp(f1->Data.cFileName, pLast))
 	{
 		SetConsoleTextAttribute(hStdout, colorgray);
 		printf("'");
@@ -362,16 +359,16 @@ void compare_entries(int i, int j)
 	char szDir1[1000], szDir2[1000], *p;
 
 	strcpy(szDir1, f1->szFullPath);
-	for(p=szDir1+strlen(szDir1); p>szDir1 && *(p-1)!='\\' && *(p-1)!=':'; p--)
+	for (p = szDir1 + strlen(szDir1); p > szDir1 && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
-	if(p>szDir1 && *(p-1)=='\\')
+	if (p > szDir1 && *(p - 1) == '\\')
 		p--;
 	*p = 0;
 
 	strcpy(szDir2, f2->szFullPath);
-	for(p=szDir2+strlen(szDir2); p>szDir2 && *(p-1)!='\\' && *(p-1)!=':'; p--)
+	for (p = szDir2 + strlen(szDir2); p > szDir2 && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
-	if(p>szDir2 && *(p-1)=='\\')
+	if (p > szDir2 && *(p - 1) == '\\')
 		p--;
 	*p = 0;
 
@@ -400,13 +397,13 @@ bool compare_files(char *szFileName1, char *szFileName2)
 {
 	FILE *fh1, *fh2;
 
-	if(!(fh1 = fopen(szFileName1, "rb")))
+	if (!(fh1 = fopen(szFileName1, "rb")))
 	{
 		printf("Couldn't open file: '%s'\n", szFileName1);
 		return true;
 	}
 
-	if(!(fh2 = fopen(szFileName2, "rb")))
+	if (!(fh2 = fopen(szFileName2, "rb")))
 	{
 		fclose(fh1);
 		printf("Couldn't open file: '%s'\n", szFileName2);
@@ -428,7 +425,7 @@ bool compare_files(char *szFileName1, char *szFileName2)
 
 	int result = memcmp(g_buf1, g_buf2, size);
 
-	return result?true:false;
+	return result ? true : false;
 }
 
 //**********************************************************
