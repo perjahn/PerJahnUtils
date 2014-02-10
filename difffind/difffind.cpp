@@ -282,7 +282,6 @@ void Gather(char *szPath)
 
 int Compare(const void *arg1, const void *arg2)
 {
-	//return _stricmp(*(char**)arg1, *(char**)arg2);
 	file *f1 = (file*)arg1;
 	file *f2 = (file*)arg2;
 
