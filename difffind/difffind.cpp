@@ -103,7 +103,7 @@ int ParseArgs(int argc, char *argv[])
 
 	pszPattern = args[0];
 
-	if (argcount < 3)
+	if (argcount < 2)
 	{
 		g_excludepatterns = NULL;
 		g_excludepatterncount = 0;
