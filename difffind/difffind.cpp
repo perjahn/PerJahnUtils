@@ -30,47 +30,88 @@ WORD colorgray = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 WORD colorwhite = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
+int (*g_CompareFunction)(const char *, const char *);
 
-void gather(char *szPath);
-int compare(const void *arg1, const void *arg2);
-bool analyze(void);
-void compare_entries(int i, int j);
-bool compare_files(char *szFileName1, char *szFileName2);
+int ParseArgs(int argc, char *argv[]);
+void Gather(char *szPath);
+int Compare(const void *arg1, const void *arg2);
+bool Analyze(void);
+void CompareEntries(int i, int j);
+bool CompareFiles(char *szFileName1, char *szFileName2);
 
 //**********************************************************
 
 int main(int argc, char *argv[])
 {
-	if (argc < 2)
+	int result = ParseArgs(argc, argv);
+
+	if (result == 2)
 	{
-		printf(
-			"difffind 3.0 - Program for finding mismatched files.\n"
+		char *usage =
+			"difffind 3.1 - Program for finding mismatched files.\n"
 			"               Useful when an exact copy of a file must exist in several locations.\n"
 			"\n"
-			"Usage: difffind <pattern> [-pattern1 -pattern2 ...]\n"
+			"Usage: difffind [-i] <pattern> [-pattern1 -pattern2 ...]\n"
 			"\n"
+			" -i:       Case insesitive file names (Case sesitive is default).\n"
 			" -patten:  Exclude files and folders.\n"
 			"\n"
 			"Example: difffind *.dll -Deploy -*.resources.dll\n"
 			"\n"
-			"Return value: 1 if any mismatch found, else 0. 2 if error.\n");
+			"Return value: 1 if any mismatch found, else 0.\n";  // todo: 2 if error.
+
+		printf(usage);
 		return 0;
+	}
+
+	return result;
+}
+
+//**********************************************************
+
+int ParseArgs(int argc, char *argv[])
+{
+	int argcount = argc;
+	char **args = argv;
+
+	if (argcount < 2)
+	{
+		return 2;
+	}
+
+	if (!strcmp(args[1], "-i") && argcount < 3)
+	{
+		return 2;
+	}
+
+
+	if (strcmp(args[1], "-i"))
+	{
+		argcount--;
+		args = args + 1;
+		g_CompareFunction = strcmp;
+	}
+	else
+	{
+		argcount -= 2;
+		args = args + 2;
+		g_CompareFunction = _stricmp;
 	}
 
 
 	char *pszPattern = NULL;
 
-	pszPattern = argv[1];
+	pszPattern = args[0];
 
-	if (argc < 3)
+	if (argcount < 3)
 	{
 		g_excludepatterns = NULL;
 		g_excludepatterncount = 0;
 	}
 	else
 	{
-		g_excludepatterns = argv + 2;
-		g_excludepatterncount = argc - 2;
+		g_excludepatterns = args + 1;
+		g_excludepatterncount = argcount - 1;
 	}
 
 
@@ -80,11 +121,11 @@ int main(int argc, char *argv[])
 
 	DWORD t1 = GetTickCount();
 
-	gather(pszPattern);
+	Gather(pszPattern);
 
-	qsort(g_filedata, g_filecount, sizeof(file), compare);
+	qsort(g_filedata, g_filecount, sizeof(file), Compare);
 
-	bool result = analyze();
+	bool result = Analyze();
 
 	DWORD t2 = GetTickCount();
 
@@ -112,7 +153,7 @@ int main(int argc, char *argv[])
 
 //**********************************************************
 
-void gather(char *szPath)
+void Gather(char *szPath)
 {
 	char szSubPath[1000], *p, *pPattern;
 	WIN32_FIND_DATA FindDir, *FindFile, FindExclude;
@@ -169,7 +210,7 @@ void gather(char *szPath)
 					bool foundex = false;
 					for (unsigned ex = 0; ex < excludedcount; ex++)
 					{
-						if (!strcmp(excluded[ex], FindDir.cFileName))
+						if (!_stricmp(excluded[ex], FindDir.cFileName))
 						{
 							foundex = true;
 							break;
@@ -178,7 +219,7 @@ void gather(char *szPath)
 					if (!foundex)
 					{
 						sprintf(p, "%s\\%s", FindDir.cFileName, pPattern);
-						gather(szSubPath);
+						Gather(szSubPath);
 					}
 				}
 			}
@@ -203,7 +244,7 @@ void gather(char *szPath)
 					bool foundex = false;
 					for (unsigned ex = 0; ex < excludedcount; ex++)
 					{
-						if (!strcmp(excluded[ex], FindFile->cFileName))
+						if (!_stricmp(excluded[ex], FindFile->cFileName))
 						{
 							foundex = true;
 							break;
@@ -239,23 +280,23 @@ void gather(char *szPath)
 
 //**********************************************************
 
-int compare(const void *arg1, const void *arg2)
+int Compare(const void *arg1, const void *arg2)
 {
 	//return _stricmp(*(char**)arg1, *(char**)arg2);
 	file *f1 = (file*)arg1;
 	file *f2 = (file*)arg2;
 
-	int diff = strcmp(f1->Data.cFileName, f2->Data.cFileName);
+	int diff = g_CompareFunction(f1->Data.cFileName, f2->Data.cFileName);
 	if (diff)
 		return diff;
 
-	return strcmp(f1->szFullPath, f2->szFullPath);
+	return g_CompareFunction(f1->szFullPath, f2->szFullPath);
 }
 
 //**********************************************************
 // Return: true=found diff, false=everything identical
 
-bool analyze(void)
+bool Analyze(void)
 {
 	unsigned maxsize = 0;
 
@@ -278,7 +319,7 @@ bool analyze(void)
 	{
 		for (unsigned j = i; j < g_filecount; j++)
 		{
-			compare_entries(i, j);
+			CompareEntries(i, j);
 		}
 	}
 
@@ -309,7 +350,7 @@ bool analyze(void)
 //**********************************************************
 // Compare two entries in g_filedata array
 
-void compare_entries(int i, int j)
+void CompareEntries(int i, int j)
 {
 	static char *pLast = "";
 
@@ -322,7 +363,7 @@ void compare_entries(int i, int j)
 	f1 = &g_filedata[i];
 	f2 = &g_filedata[j];
 
-	if (strcmp(f1->Data.cFileName, f2->Data.cFileName))
+	if (g_CompareFunction(f1->Data.cFileName, f2->Data.cFileName))
 	{
 		return;
 	}
@@ -333,7 +374,7 @@ void compare_entries(int i, int j)
 
 	if (size1 == size2)
 	{
-		if (!compare_files(f1->szFullPath, f2->szFullPath))
+		if (!CompareFiles(f1->szFullPath, f2->szFullPath))
 		{
 			return;
 		}
@@ -343,7 +384,7 @@ void compare_entries(int i, int j)
 	f1->diff = true;
 	f2->diff = true;
 
-	if (strcmp(f1->Data.cFileName, pLast))
+	if (g_CompareFunction(f1->Data.cFileName, pLast))
 	{
 		SetConsoleTextAttribute(hStdout, colorgray);
 		printf("'");
@@ -393,7 +434,7 @@ void compare_entries(int i, int j)
 //**********************************************************
 // Return: true=diff, false=identical
 
-bool compare_files(char *szFileName1, char *szFileName2)
+bool CompareFiles(char *szFileName1, char *szFileName2)
 {
 	FILE *fh1, *fh2;
 
