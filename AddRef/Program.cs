@@ -15,7 +15,7 @@ namespace AddRef
 
 Usage: AddRef <ReferenceName> <ProjectFile>
 
-Example: AddRef folder\myproject.csproj System.Something";
+Example: AddRef System.Something folder\myproject.csproj";
 
 			if (args.Length != 2)
 			{
