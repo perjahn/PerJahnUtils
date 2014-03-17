@@ -108,14 +108,14 @@ namespace ProjFix
 						"', sln_guid: '" + p._sln_guid +
 						"', sln_shortfilename: '" + p._sln_shortfilename +
 						"', sln_path: '" + p._sln_path +
-						"', proj_assemblyname: '" + p2._proj_assemblyname +
-						"', proj_guid: '" + p2._proj_guid +
-						"', proj_outputtype: '" + p2._proj_outputtype + "'.",
+						"', proj_assemblynames: " + p2._proj_assemblynames.Count +
+						", proj_guids: " + p2._proj_guids.Count +
+						", proj_outputtypes: " + p2._proj_outputtypes.Count + ".",
 						true);
 
-				p._proj_assemblyname = p2._proj_assemblyname;
-				p._proj_guid = p2._proj_guid;
-				p._proj_outputtype = p2._proj_outputtype;
+				p._proj_assemblynames = p2._proj_assemblynames;
+				p._proj_guids = p2._proj_guids;
+				p._proj_outputtypes = p2._proj_outputtypes;
 
 				p._outputpaths = p2._outputpaths;
 				p._references = p2._references;
@@ -134,6 +134,11 @@ namespace ProjFix
 		public bool FixProjects(List<Project> projects, List<string> hintpaths, string outputpath, bool copylocal, bool removeversion)
 		{
 			bool valid = true;
+
+			foreach (Project p in projects.OrderBy(p => p._sln_path))
+			{
+				p.Compact();
+			}
 
 			foreach (Project p in projects.OrderBy(p => p._sln_path))
 			{

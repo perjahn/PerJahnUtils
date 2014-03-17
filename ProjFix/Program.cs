@@ -1,5 +1,6 @@
-﻿//todo: prevent circular references
-
+﻿// todo:
+// prevent circular references.
+// multiple referenced to same ass seems to be compacted. print warning?
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +33,7 @@ Example: ProjFix -h..\Dir1,Dir2 -obin mysol.sln
 Rootpath will be search recursively for matching .targets files, must be uniquely named.";
 
 			usage =
-@"ProjFix 2.5 - Program for patching Visual Studio project files.
+@"ProjFix 2.6 - Program for patching Visual Studio project files.
 
 Usage: ProjFix [-b] [-hPaths] [-r] [-s] [-v] <solutionfile>
 
