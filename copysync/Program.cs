@@ -165,16 +165,61 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
                 }
             }
 
-            string[] files = Directory.GetFiles(folder, pattern, SearchOption.AllDirectories);
+            string[] files;
+            List<Exception> errors = new List<Exception>();
+            //files = Directory.GetFiles(folder, pattern, SearchOption.AllDirectories);
+            files = GetFiles2(new DirectoryInfo(folder), pattern, out errors).ToArray();
 
             foreach (string ExcludeFilePattern in ExcludeFilePatterns)
             {
-                List<string> ExcludeFiles = Directory.GetFiles(folder, ExcludeFilePattern, SearchOption.AllDirectories)
-                    .Select(f => Path.GetFileName(f))
-                    .Distinct()
-                    .ToList();
+                List<string> ExcludeFiles = //Directory.GetFiles(folder, ExcludeFilePattern, SearchOption.AllDirectories)
+                    GetFiles2(new DirectoryInfo(folder), pattern, out errors)
+                        .Select(f => Path.GetFileName(f))
+                        .Distinct()
+                        .ToList();
 
                 files = files.Where(f => !ExcludeFiles.Contains(Path.GetFileName(f))).ToArray();
+            }
+
+            foreach (Exception ex in errors)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+
+            return files;
+        }
+
+        // A working version of GetFiles, not the sucky one in .net framework.
+        static List<string> GetFiles2(DirectoryInfo folder, string pattern, out List<Exception> errors)
+        {
+            List<string> files = new List<string>();
+            errors = new List<Exception>();
+
+            try
+            {
+                files = folder.GetFiles(pattern).Select(f => f.FullName).ToList();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                errors.Add(ex);
+            }
+
+
+            try
+            {
+                DirectoryInfo[] subdirs = folder.GetDirectories(pattern);
+
+                foreach (DirectoryInfo di in subdirs)
+                {
+                    List<Exception> subdirErrors;
+                    files.AddRange(GetFiles2(di, pattern, out subdirErrors));
+                    errors.AddRange(subdirErrors);
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                errors.Add(ex);
             }
 
             return files;
@@ -233,12 +278,12 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
             if (_onlynewer)
             {
                 DateTime oldestSource = SourceFileNames
-                    .Select(f => System.IO.File.GetLastWriteTime(f))
+                    .Select(f => File.GetLastWriteTime(f))
                     .OrderBy(f => f)
                     .First();
 
                 DateTime newestDestination = DestinationFileNames
-                    .Select(f => System.IO.File.GetLastWriteTime(f))
+                    .Select(f => File.GetLastWriteTime(f))
                     .OrderBy(f => f)
                     .Last();
 
