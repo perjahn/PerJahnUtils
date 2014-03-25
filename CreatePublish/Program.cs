@@ -87,11 +87,12 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 
 				string folder = FileHelper.GetRelativePath(Path.Combine(Path.GetDirectoryName(buildfile), project._sln_path), publishfolder);
 
-				string projname = Path.GetFileNameWithoutExtension(project._sln_path).Replace(".", "").Trim();
+				string projname = Path.GetFileNameWithoutExtension(project._sln_path).Replace(".", "");
 				if (projname.ToLower().StartsWith(solutionname.ToLower()) && projname.Length > solutionname.Length)
 				{
 					projname = projname.Substring(solutionname.Length);
 				}
+                projname = projname.Trim();
 
 				folder = Path.Combine(folder, projname);
 
