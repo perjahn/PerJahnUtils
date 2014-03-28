@@ -134,7 +134,7 @@ namespace GatherOutputAssemblies
 			return;
 		}
 
-		public void CopyOutput(string solutionfile, string buildconfig, string targetpath)
+		public bool CopyOutput(string solutionfile, string buildconfig, string targetpath)
 		{
 			var outputpaths = _outputpaths.Where(o => MatchCondition(o.Condition, buildconfig, false));
 
@@ -146,14 +146,14 @@ namespace GatherOutputAssemblies
 			if (outputpaths.Count() != 1)
 			{
 				ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + _sln_path + "': Couldn't find an unambiguous PropertyGroup Condition");
-				return;
+				return false;
 			}
 
 			string sourcepath = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), outputpaths.Single().Path);
 
-			CopyFolder(new DirectoryInfo(sourcepath), new DirectoryInfo(targetpath));
+			ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "Copying folder: '" + sourcepath + "' -> '" + targetpath + "'");
 
-			return;
+			return CopyFolder(new DirectoryInfo(sourcepath), new DirectoryInfo(targetpath));
 		}
 
 		//  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -178,9 +178,15 @@ namespace GatherOutputAssemblies
 			}
 		}
 
-		private static void CopyFolder(DirectoryInfo source, DirectoryInfo target)
+		private static bool CopyFolder(DirectoryInfo source, DirectoryInfo target)
 		{
-			if (!Directory.Exists(target.FullName))
+			if (!source.Exists)
+			{
+				ConsoleHelper.ColorWrite(ConsoleColor.Red, "Ignoring folder, it does not exist: '" + source.FullName + "'");
+				return false;
+			}
+
+			if (!target.Exists)
 			{
 				Console.WriteLine("Creating folder: '" + target.FullName + "'");
 				Directory.CreateDirectory(target.FullName);
@@ -199,6 +205,8 @@ namespace GatherOutputAssemblies
 				DirectoryInfo targetSubdir = new DirectoryInfo(Path.Combine(target.FullName, di.Name));
 				CopyFolder(di, targetSubdir);
 			}
+
+			return true;
 		}
 	}
 }

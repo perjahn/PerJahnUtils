@@ -57,9 +57,9 @@ Example: GatherOutputAssemblies mysol.sln ""Release|AnyCPU"" artifacts";
 				return 1;
 			}
 
-			s.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects);
+			int result = s.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects);
 
-			return 0;
+			return result;
 		}
 	}
 }

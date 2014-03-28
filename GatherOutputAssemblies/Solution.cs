@@ -84,8 +84,8 @@ namespace GatherOutputAssemblies
 				}
 
 				ConsoleHelper.WriteLine(
-						"sln_path: '" + p._sln_path + "', proj_assemblynames: " + p2._proj_assemblynames.Count + ".",
-						true);
+					"sln_path: '" + p._sln_path + "', proj_assemblynames: " + p2._proj_assemblynames.Count + ".",
+					true);
 
 				p._proj_assemblynames = p2._proj_assemblynames;
 
@@ -107,8 +107,10 @@ namespace GatherOutputAssemblies
 			return projects;
 		}
 
-		public void CopyProjectOutput(List<Project> projects, string buildconfig, string outputpath, List<string> includeProjects, List<string> excludeProjects)
+		public int CopyProjectOutput(List<Project> projects, string buildconfig, string outputpath, List<string> includeProjects, List<string> excludeProjects)
 		{
+			int result = 0;
+
 			foreach (Project project in projects.OrderBy(p => p._sln_path))
 			{
 				if (
@@ -117,12 +119,16 @@ namespace GatherOutputAssemblies
 					&& !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path))
 					)
 				{
-					project.CopyOutput(_solutionfile, buildconfig, Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)));
+					bool projectresult = project.CopyOutput(_solutionfile, buildconfig, Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)));
+					if (!projectresult)
+					{
+						result = 1;
+					}
 				}
 			}
 
 
-			return;
+			return result;
 		}
 	}
 }
