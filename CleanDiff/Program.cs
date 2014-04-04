@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -13,10 +15,12 @@ namespace CleanDiff
 	{
 		static bool _RemoveComments, _SortAttributes, _SortElements, _Collapse, _WinDiff, _DontDiffIfEqual;
 
+		static List<string> _searchPaths = new List<string>();
+
 		static int Main(string[] args)
 		{
 			string usage =
-					@"CleanDiff 1.1 - Compare normalized xml files
+				@"CleanDiff 1.2 - Compare normalized xml files
 
 Usage: CleanDiff [flags] <filename1> <filename2>
 
@@ -48,30 +52,54 @@ Optional flags:
 			string file2 = args[args.Length - 1];
 			SetFlags(args, args.Length - 1);
 
-			string[] windiffpaths =
-            {
-                @"C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\windiff.exe",
-                @"C:\Utils\windiff.exe"
-            };
-
-			StringBuilder sb = new StringBuilder();
-
-			foreach (string windiffpath in windiffpaths)
+			string windiffpath = FindWinDiff();
+			if (windiffpath == null)
 			{
+				Console.WriteLine("Couldn't find windiff.exe, the following paths was searched:" + Environment.NewLine +
+					"'" + string.Join("'" + Environment.NewLine + "'", _searchPaths.ToArray()) + "'");
+				return -1;
+			}
+
+			Console.WriteLine("Using windiff: '" + windiffpath + "'");
+
+			bool result = DiffXml(windiffpath, file1, file2);
+
+			if (result)
+				return 1;
+			else
+				return 0;
+		}
+
+		static string FindWinDiff()
+		{
+			string[] windiffpaths =
+			{
+				Environment.CurrentDirectory,
+				@"C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin",
+				@"C:\Utils"
+			};
+
+			foreach (string path in windiffpaths)
+			{
+				_searchPaths.Add(path);
+			}
+			foreach (string path in Environment.GetEnvironmentVariable("path").Split(';'))
+			{
+				_searchPaths.Add(path);
+			}
+			string asspath = Assembly.GetExecutingAssembly().Location;
+			_searchPaths.Add(Path.GetDirectoryName(asspath));
+
+			foreach (string path in windiffpaths)
+			{
+				string windiffpath = Path.Combine(path, "windiff.exe");
 				if (File.Exists(windiffpath))
 				{
-					bool result = DiffXml(windiffpath, file1, file2);
-
-					if (result)
-						return 1;
-					else
-						return 0;
+					return windiffpath;
 				}
 			}
 
-			Console.WriteLine("Couldn't find windiff.exe, searched paths:" + Environment.NewLine +
-				"'" + string.Join("'" + Environment.NewLine + "'", windiffpaths) + "'");
-			return -1;
+			return null;
 		}
 
 		static bool CheckArg(string arg)
