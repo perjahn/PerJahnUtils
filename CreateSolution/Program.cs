@@ -38,7 +38,7 @@ namespace CreateSolution
             System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             string usage =
-@"CreateSolution 1.4 - Creates VS solution file.
+@"CreateSolution 1.5 - Creates VS solution file.
 
 Usage: CreateSolution [-g] [-vX] <path> <solutionfile> [excludeprojs...]
 
@@ -93,12 +93,13 @@ Example: CreateSolution . all.sln myproj1 myproj2";
         {
             List<string> files;
 
-            string[] exts = { ".csproj", ".vbproj", ".vcxproj", ".sqlproj" };
+            string[] exts = { ".csproj", ".vbproj", ".vcxproj", ".sqlproj", ".modelproj" };
             string[] typeguids = {
                 "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC",
                 "F184B08F-C81C-45F6-A57F-5ABD9991F28F",
                 "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942",
-                "00D1A9C2-B5F0-4AF3-8072-F6C62B433612" };
+                "00D1A9C2-B5F0-4AF3-8072-F6C62B433612",
+                "F088123C-0E9E-452A-89E6-6BA2F21D5CAC" };
 
             try
             {
