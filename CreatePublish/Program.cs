@@ -13,7 +13,7 @@ namespace CreatePublish
 		static void Main(string[] args)
 		{
 			string usage =
-@"CreatePublish 1.1 - Program for creating msbuild publishing script of Web/MVC projects.
+@"CreatePublish 1.2 - Program for creating msbuild publishing script of Web/MVC projects.
 
 Usage: CreatePublish <solutionfile> <msbuildfile> <publishfolder>
 
@@ -92,7 +92,11 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 				{
 					projname = projname.Substring(solutionname.Length);
 				}
-                projname = projname.Trim();
+
+				// Prevent leading/trailing spaces in output folders
+				projname = projname.Trim();
+
+				filename = Path.Combine(Path.GetDirectoryName(solutionfile), filename);
 
 				folder = Path.Combine(folder, projname);
 
