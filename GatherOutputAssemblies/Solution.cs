@@ -84,10 +84,13 @@ namespace GatherOutputAssemblies
 				}
 
 				ConsoleHelper.WriteLine(
-					"sln_path: '" + p._sln_path + "', proj_assemblynames: " + p2._proj_assemblynames.Count + ".",
-					true);
+						"sln_path: '" + p._sln_path + "', proj_assemblynames: " + p2._proj_assemblynames.Count + ".",
+						true);
 
 				p._proj_assemblynames = p2._proj_assemblynames;
+				p._proj_guids = p2._proj_guids;
+				p._proj_outputtypes = p2._proj_outputtypes;
+				p._ProjectTypeGuids = p2._ProjectTypeGuids;
 
 				p._outputpaths = p2._outputpaths;
 				p._projectReferences = p2._projectReferences;
@@ -107,22 +110,32 @@ namespace GatherOutputAssemblies
 			return projects;
 		}
 
-		public int CopyProjectOutput(List<Project> projects, string buildconfig, string outputpath, List<string> includeProjects, List<string> excludeProjects)
+		public int CopyProjectOutput(List<Project> projects, string buildconfig, string outputpath, List<string> includeProjects, List<string> excludeProjects, string[] webmvcguids, bool verbose)
 		{
 			int result = 0;
 
 			foreach (Project project in projects.OrderBy(p => p._sln_path))
 			{
-				if (
-					includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)) ||
-					!projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
-					&& !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path))
-					)
+				if (verbose)
 				{
-					bool projectresult = project.CopyOutput(_solutionfile, buildconfig, Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)));
-					if (!projectresult)
+					ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Parsing project: '" + project._sln_path + "'");
+				}
+
+				if (project._ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
+				{
+					ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '" + project._sln_path + "'");
+				}
+				else
+				{
+					if (includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)) ||
+						!projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
+						&& !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)))
 					{
-						result = 1;
+						bool projectresult = project.CopyOutput(_solutionfile, buildconfig, Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)));
+						if (!projectresult)
+						{
+							result = 1;
+						}
 					}
 				}
 			}

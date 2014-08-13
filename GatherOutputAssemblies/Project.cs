@@ -12,7 +12,14 @@ namespace GatherOutputAssemblies
 		public string _sln_path { get; set; }
 
 		public string _proj_assemblyname { get; set; }
-		public List<string> _proj_assemblynames { get; set; }  // Compacted into _proj_assemblyname after load.
+		public string _proj_guid { get; set; }
+		public string _proj_outputtype { get; set; }  // Not used, yet.
+		public List<string> _ProjectTypeGuids { get; set; }
+
+		// Compacted into non-List types after load.
+		public List<string> _proj_assemblynames { get; set; }
+		public List<string> _proj_guids { get; set; }
+		public List<string> _proj_outputtypes { get; set; }
 
 		public List<OutputPath> _outputpaths { get; set; }
 		public List<Reference> _projectReferences { get; set; }
@@ -60,6 +67,38 @@ namespace GatherOutputAssemblies
 			catch (System.NullReferenceException)
 			{
 				ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing AssemblyName.");
+				return null;
+			}
+			try
+			{
+				newproj._proj_guids = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").Select(g => g.Value).ToList();
+			}
+			catch (System.NullReferenceException)
+			{
+				ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing ProjectGuid.");
+				return null;
+			}
+			try
+			{
+				newproj._proj_outputtypes = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutputType").Select(o => o.Value).ToList();
+			}
+			catch (System.NullReferenceException)
+			{
+				ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing OutputType.");
+				return null;
+			}
+			try
+			{
+				newproj._ProjectTypeGuids = xdoc
+						.Element(ns + "Project")
+						.Elements(ns + "PropertyGroup")
+						.Elements(ns + "ProjectTypeGuids")
+						.SelectMany(g => g.Value.Split(';'))
+						.ToList();
+			}
+			catch (System.NullReferenceException)
+			{
+				ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing ProjectTypeGuids.");
 				return null;
 			}
 
@@ -114,6 +153,33 @@ namespace GatherOutputAssemblies
 				_proj_assemblyname = _proj_assemblynames[0];
 				_proj_assemblynames = null;
 			}
+
+			if (_proj_guids.Count > 1)
+			{
+				ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
+					"Warning: Corrupt project file: " + _sln_path +
+					", multiple guids: '" + _proj_guids.Count +
+					"', compacting HintPath elements.");
+			}
+			if (_proj_guids.Count >= 1)
+			{
+				_proj_guid = _proj_guids[0];
+				_proj_guids = null;
+			}
+
+			if (_proj_outputtypes.Count > 1)
+			{
+				ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
+						"Warning: Corrupt project file: " + _sln_path +
+						", multiple output types: '" + _proj_outputtypes.Count +
+						"', compacting Private elements.");
+			}
+			if (_proj_outputtypes.Count >= 1)
+			{
+				_proj_outputtype = _proj_outputtypes[0];
+				_proj_outputtypes = null;
+			}
+
 
 			foreach (Reference projref in _projectReferences)
 			{
