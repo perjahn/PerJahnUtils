@@ -13,7 +13,7 @@ namespace CreatePublish
 		static void Main(string[] args)
 		{
 			string usage =
-@"CreatePublish 1.2 - Program for creating msbuild publishing script of Web/MVC projects.
+@"CreatePublish 1.3 - Program for creating msbuild publishing script of Web/MVC projects.
 
 Usage: CreatePublish <solutionfile> <msbuildfile> <publishfolder>
 
@@ -29,6 +29,28 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 			string solutionfile = args[0];
 			string buildfile = args[1];
 			string publishfolder = args[2];
+
+			if (args[0] == "test" && args[1] == "test" && args[2] == "test")
+			{
+				Tuple<string, string, char[]>[] testvalues = new Tuple<string, string, char[]>[] {
+                    Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
+                    Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
+                    Tuple.Create<string, string, char[]>("wipcore.cuszto .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
+                    Tuple.Create<string, string, char[]>(". Wipco. reCustomer.app. sub. app, ","wipcore.custo .mer!.app.", new char[] { '.' })
+                };
+
+				foreach (var testvalue in testvalues)
+				{
+					string sol = testvalue.Item1;
+					string proj = testvalue.Item2;
+					char[] keep = testvalue.Item3;
+
+					string result = GetProjName(proj, sol, keep);
+					Console.WriteLine("'" + proj + "' '" + sol + "' '" + string.Join("", keep) + "' -> '" + result + "'");
+				}
+
+				return;
+			}
 
 			CreateBuildFile(solutionfile, buildfile, publishfolder);
 		}
@@ -74,7 +96,7 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 			string xml2 = "  </Target>" + Environment.NewLine + "</Project>" + Environment.NewLine;
 
 			string buf = xml1;
-			string solutionname = Path.GetFileNameWithoutExtension(solutionfile).Replace(".", "");
+			string solutionname = Path.GetFileNameWithoutExtension(solutionfile);
 
 			foreach (Project project in webmvcprojects.OrderBy(p => Path.GetFileNameWithoutExtension(p._sln_path)))
 			{
@@ -85,27 +107,94 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 					filename = filename.Substring(2);
 				}
 
-				string folder = FileHelper.GetRelativePath(Path.Combine(Path.GetDirectoryName(buildfile), project._sln_path), publishfolder);
+				string relpath = FileHelper.GetRelativePath(Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(buildfile), project._sln_path), publishfolder);
 
-				string projname = Path.GetFileNameWithoutExtension(project._sln_path).Replace(".", "");
-				if (projname.ToLower().StartsWith(solutionname.ToLower()) && projname.Length > solutionname.Length)
-				{
-					projname = projname.Substring(solutionname.Length);
-				}
-
-				// Prevent leading/trailing spaces in output folders
-				projname = projname.Trim();
+				string projectname = Path.GetFileNameWithoutExtension(project._sln_path);
+				string folder = GetProjName(projectname, solutionname, new char[] { '.' });
 
 				filename = Path.Combine(Path.GetDirectoryName(solutionfile), filename);
 
-				folder = Path.Combine(folder, projname);
+				relpath = Path.Combine(relpath, folder);
 
-				buf += "    <MSBuild Projects=\"" + filename + "\" Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir=" + folder + "\" />" + Environment.NewLine;
+				Console.WriteLine("'" + solutionname + "' + '" + projectname + "' -> '" + relpath + "' (" + filename + ")");
+
+				buf += "    <MSBuild Projects=\"" + filename + "\" Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir=" + relpath + "\" />" + Environment.NewLine;
 			}
 
 			buf += xml2;
 
 			File.WriteAllText(buildfile, buf);
+		}
+
+		// Trim solutionname from projectname.
+		static string GetProjName(string projectname, string solutionname, char[] keep)
+		{
+			//Console.WriteLine("'" + projectname + "' '" + solutionname + "': " + projectname.Length + ", " + solutionname.Length);
+
+
+			// Trim leading solution name and junk chars
+			int i, j;
+			for (i = j = 0; ; i++, j++)
+			{
+				/*Console.Write("i:" + i + ", j:" + j);
+				if (i < projectname.Length)
+				{
+						Console.Write(" '" + projectname[i] + "'");
+				}
+				if (j < solutionname.Length)
+				{
+						Console.Write(" '" + solutionname[j] + "'");
+				}
+				Console.WriteLine();*/
+
+				while (i < projectname.Length && !char.IsLetterOrDigit(projectname[i]))
+				{
+					//Console.WriteLine("x");
+					i++;
+				}
+				while (j < solutionname.Length && !char.IsLetterOrDigit(solutionname[j]))
+				{
+					//Console.WriteLine("y");
+					j++;
+				}
+
+				if (i == projectname.Length || j == solutionname.Length)
+				{
+					//Console.WriteLine("111: " + i + " " + j);
+					break;
+				}
+
+				if (string.Compare(projectname, i, solutionname, j, 1, true) != 0)
+				{
+					//Console.WriteLine("222: " + i + " " + j);
+					break;
+				}
+			}
+
+			string result = projectname.Substring(i);
+			//Console.WriteLine("--> i:" + i + ", j:" + j + " --> '" + result + "'");
+
+
+			// Trim trailing junk
+			i = result.Length;
+			while (i > 0 && !char.IsLetterOrDigit(result[i - 1]))
+			{
+				i--;
+			}
+
+			result = result.Substring(0, i);
+			//Console.WriteLine("--> i:" + i + ", j:" + j + " --> '" + result + "'");
+
+
+			// Remove all junk except keep chars
+			result = string.Join("", result.ToCharArray().Where(c => char.IsLetterOrDigit(c) || keep.Contains(c)));
+
+			if (result == "")
+			{
+				result = projectname;
+			}
+
+			return result;
 		}
 	}
 }
