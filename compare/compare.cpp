@@ -17,10 +17,14 @@ WIN32_FIND_DATA g_dir2[100000];
 bool g_verbose;
 
 __int64 g_sum_diffdirs;
-__int64 g_sum_difffiles_total;
+
+__int64 g_sum_difffiles_fail;
+__int64 g_sum_difffiles_identical;
 __int64 g_sum_difffiles_diff;
+
 __int64 g_sum_diffbytes_total;
 __int64 g_sum_diffbytes_diff;
+
 DWORD g_t1, g_t2;
 
 //**********************************************************
@@ -28,28 +32,28 @@ DWORD g_t1, g_t2;
 int main(int argc, char *argv[])
 {
 	char *usage =
-		"Compare 2.0\n"
+		"Compare 2.1\n"
 		"\n"
 		"Usage: compare [-v] <file pattern 1> <file pattern 2>\n"
 		"\n"
 		" -v: Verbose\n";
 
-	if(argc<3 || argc>4)
+	if (argc < 3 || argc>4)
 	{
 		printf(usage);
 		return 2;
 	}
 
 	g_sum_diffdirs = 0;
-	g_sum_difffiles_total = 0;
-	g_sum_difffiles_diff = 0;
-	g_sum_diffbytes_total = 0;
-	g_sum_diffbytes_diff = 0;
+
+	g_sum_difffiles_fail = g_sum_difffiles_identical = g_sum_difffiles_diff = 0;
+
+	g_sum_diffbytes_total = g_sum_diffbytes_diff = 0;
 
 
-	if(argc==4)
+	if (argc == 4)
 	{
-		if(strcmp(argv[1], "-v"))
+		if (strcmp(argv[1], "-v"))
 		{
 			printf(usage);
 			return 2;
@@ -59,12 +63,11 @@ int main(int argc, char *argv[])
 			g_verbose = true;
 		}
 
-		if(strchr(argv[2], '?') || strchr(argv[2], '*') || strchr(argv[3], '?') || strchr(argv[3], '*'))
+		if (strchr(argv[2], '?') || strchr(argv[2], '*') || strchr(argv[3], '?') || strchr(argv[3], '*'))
 		{
 			g_t1 = GetTickCount();
 			compare_files(argv[2], argv[3]);
 			g_t2 = GetTickCount();
-			g_sum_difffiles_total++;
 		}
 		else
 		{
@@ -77,12 +80,11 @@ int main(int argc, char *argv[])
 	{
 		g_verbose = false;
 
-		if(!strchr(argv[1], '?') && !strchr(argv[1], '*') && !strchr(argv[2], '?') && !strchr(argv[2], '*'))
+		if (!strchr(argv[1], '?') && !strchr(argv[1], '*') && !strchr(argv[2], '?') && !strchr(argv[2], '*'))
 		{
 			g_t1 = GetTickCount();
 			compare_files(argv[1], argv[2]);
 			g_t2 = GetTickCount();
-			g_sum_difffiles_total++;
 		}
 		else
 		{
@@ -94,7 +96,7 @@ int main(int argc, char *argv[])
 
 	print_stats();
 
-	if(g_sum_difffiles_diff>0)
+	if (g_sum_difffiles_diff > 0)
 		return 1;
 
 	return 0;
@@ -110,7 +112,7 @@ int compare(const void *arg1, const void *arg2)
 	pe2 = (WIN32_FIND_DATA*)arg2;
 
 	int result = _stricmp(pe1->cFileName, pe2->cFileName);
-	if(result)
+	if (result)
 		return result;
 
 	return strcmp(pe1->cFileName, pe2->cFileName);
@@ -124,55 +126,53 @@ void compare_paths(char *szPath1, char *szPath2)
 	int entries1, entries2;
 	WIN32_FIND_DATA *entries;
 
-/*
-	if(strchr(szPath1, '?') || strchr(szPath1, '*'))
+	/*
+		if(strchr(szPath1, '?') || strchr(szPath1, '*'))
 		many1 = true;
-	else
+		else
 		many1 = false;
 
-	if(strchr(szPath2, '?') || strchr(szPath2, '*'))
+		if(strchr(szPath2, '?') || strchr(szPath2, '*'))
 		many2 = true;
-	else
+		else
 		many2 = false;
 
-	if(!many1 && !many2)
-	{
+		if(!many1 && !many2)
+		{
 		compare_files(szPath1, szPath2);
 		return;
-	}
-*/
+		}
+		*/
 
 	// Else assume many-many comparison
 
 
 	// Enumerate entries in path1
 	entries1 = 0;
-	if((hFind=FindFirstFile(szPath1, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szPath1, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
 				g_dir1[entries1++] = Data;
 			}
-		}
-		while(FindNextFile(hFind, &Data) && entries1<100000);
+		} while (FindNextFile(hFind, &Data) && entries1 < 100000);
 
 		FindClose(hFind);
 	}
 
 	// Enumerate entries in path2
 	entries2 = 0;
-	if((hFind=FindFirstFile(szPath2, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szPath2, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
 				g_dir2[entries2++] = Data;
 			}
-		}
-		while(FindNextFile(hFind, &Data) && entries2<100000);
+		} while (FindNextFile(hFind, &Data) && entries2 < 100000);
 
 		FindClose(hFind);
 	}
@@ -184,12 +184,12 @@ void compare_paths(char *szPath1, char *szPath2)
 	qsort(g_dir2, entries2, sizeof(WIN32_FIND_DATA), compare);
 
 
-	unsigned e=0;
-	for(int e1=0; e1<entries1; e1++)
+	unsigned e = 0;
+	for (int e1 = 0; e1 < entries1; e1++)
 	{
-		for(int e2=0; e2<entries2; e2++)
+		for (int e2 = 0; e2 < entries2; e2++)
 		{
-			if(!_stricmp(g_dir1[e1].cFileName, g_dir2[e2].cFileName))
+			if (!_stricmp(g_dir1[e1].cFileName, g_dir2[e2].cFileName))
 			{
 				e++;
 			}
@@ -197,18 +197,18 @@ void compare_paths(char *szPath1, char *szPath2)
 	}
 
 	entries = new WIN32_FIND_DATA[e];
-	if(!entries)
+	if (!entries)
 	{
 		printf("Out of memory (%u).\n", e);
 		return;
 	}
 
-	e=0;
-	for(int e1=0; e1<entries1; e1++)
+	e = 0;
+	for (int e1 = 0; e1 < entries1; e1++)
 	{
-		for(int e2=0; e2<entries2; e2++)
+		for (int e2 = 0; e2 < entries2; e2++)
 		{
-			if(!_stricmp(g_dir1[e1].cFileName, g_dir2[e2].cFileName))
+			if (!_stricmp(g_dir1[e1].cFileName, g_dir2[e2].cFileName))
 			{
 				entries[e] = g_dir1[e1];
 				e++;
@@ -218,29 +218,29 @@ void compare_paths(char *szPath1, char *szPath2)
 
 
 	// Compare entries
-	if(g_verbose)
+	if (g_verbose)
 		printf("Comparing %u common entries between '%s' and '%s'...\n", e, szPath1, szPath2);
 
 	char szFileName1[1000], szFileName2[1000];
 
-	for(unsigned i=0; i<e; i++)
+	for (unsigned i = 0; i < e; i++)
 	{
 		strcpy(szFileName1, szPath1);
 		strcpy(szFileName2, szPath2);
 
-		for(p1=szFileName1+strlen(szFileName1); p1>szFileName1 && *(p1-1)!='\\' && *(p1-1)!=':'; p1--);
-		for(p2=szFileName2+strlen(szFileName2); p2>szFileName2 && *(p2-1)!='\\' && *(p2-1)!=':'; p2--);
+		for (p1 = szFileName1 + strlen(szFileName1); p1 > szFileName1 && *(p1 - 1) != '\\' && *(p1 - 1) != ':'; p1--);
+		for (p2 = szFileName2 + strlen(szFileName2); p2 > szFileName2 && *(p2 - 1) != '\\' && *(p2 - 1) != ':'; p2--);
 
 		strcpy(p1, entries[i].cFileName);
 		strcpy(p2, entries[i].cFileName);
 
-		if(entries[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		if (entries[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
 			// Dir
 
 			g_sum_diffdirs++;
 
-			if(g_verbose)
+			if (g_verbose)
 				printf("Recursing into '%s' and '%s'\n", szFileName1, szFileName2);
 
 			strcat(szFileName1, "\\*");
@@ -252,9 +252,7 @@ void compare_paths(char *szPath1, char *szPath2)
 		{
 			// File
 
-			g_sum_difffiles_total++;
-
-			if(g_verbose)
+			if (g_verbose)
 				printf("Comparing '%s' and '%s'\n", szFileName1, szFileName2);
 
 			compare_files(szFileName1, szFileName2);
@@ -279,17 +277,19 @@ void compare_files(char *szFileName1, char *szFileName2)
 
 
 	fh1 = fopen(szFileName1, "rb");
-	if(!fh1)
+	if (!fh1)
 	{
-		printf("Couldn't open file (%s).\n", szFileName1);
+		printf("Couldn't open file: '%s'.\n", szFileName1);
+		g_sum_difffiles_fail++;
 		return;
 	}
 
 	fh2 = fopen(szFileName2, "rb");
-	if(!fh2)
+	if (!fh2)
 	{
 		fclose(fh1);
-		printf("Couldn't open file (%s).\n", szFileName2);
+		printf("Couldn't open fils: '%s'.\n", szFileName2);
+		g_sum_difffiles_fail++;
 		return;
 	}
 
@@ -302,27 +302,29 @@ void compare_files(char *szFileName1, char *szFileName2)
 	l2 = _ftelli64(fh2);
 	fseek(fh2, 0, SEEK_SET);
 
-	l = l1<l2? l1: l2;
+	l = l1 < l2 ? l1 : l2;
 
 
 
-	unsigned bufsize = 16*1024*1024;
+	unsigned bufsize = 16 * 1024 * 1024;
 	unsigned char *buf1, *buf2;
 	buf1 = new unsigned char[bufsize];
-	if(!buf1)
+	if (!buf1)
 	{
 		fclose(fh1);
 		fclose(fh2);
 		printf("Out of memory (%u bytes).\n", bufsize);
+		g_sum_difffiles_fail++;
 		return;
 	}
 	buf2 = new unsigned char[bufsize];
-	if(!buf2)
+	if (!buf2)
 	{
 		fclose(fh1);
 		fclose(fh2);
 		delete[] buf1;
 		printf("Out of memory (%u bytes).\n", bufsize);
+		g_sum_difffiles_fail++;
 		return;
 	}
 
@@ -332,11 +334,11 @@ void compare_files(char *szFileName1, char *szFileName2)
 	__int64 i;
 
 	DWORD t1 = GetTickCount();
-	for(i=0; i<l; i+=bufsize)
+	for (i = 0; i<l; i += bufsize)
 	{
 		unsigned blocksize = bufsize;
-		if(i+bufsize>l)
-			blocksize = (unsigned)(l-i);
+		if (i + bufsize>l)
+			blocksize = (unsigned)(l - i);
 
 		fread(buf1, blocksize, 1, fh1);
 		fread(buf2, blocksize, 1, fh2);
@@ -352,12 +354,12 @@ void compare_files(char *szFileName1, char *szFileName2)
 	fclose(fh2);
 
 	unsigned percent;
-	if(l1!=l2)
+	if (l1 != l2)
 	{
-		if(g_diffbytes && l>0)
+		if (g_diffbytes && l > 0)
 		{
-			percent = (unsigned)(g_diffbytes*100/l);
-			if(percent>0)
+			percent = (unsigned)(g_diffbytes * 100 / l);
+			if (percent > 0)
 				printf("Size diff. Common part: %I64d bytes diff (%u%%).", g_diffbytes, percent);
 			else
 				printf("Size diff. Common part: %I64d bytes diff (<1%%).", g_diffbytes);
@@ -371,10 +373,10 @@ void compare_files(char *szFileName1, char *szFileName2)
 	}
 	else
 	{
-		if(g_diffbytes && l>0)
+		if (g_diffbytes && l > 0)
 		{
-			percent = (unsigned)(g_diffbytes*100/l);
-			if(percent>0)
+			percent = (unsigned)(g_diffbytes * 100 / l);
+			if (percent > 0)
 				printf("Size identical. %I64d bytes diff (%u%%).", g_diffbytes, percent);
 			else
 				printf("Size identical. %I64d bytes diff (<1%%).", g_diffbytes);
@@ -384,14 +386,16 @@ void compare_files(char *szFileName1, char *szFileName2)
 		else
 		{
 			printf("Identical.");
+
+			g_sum_difffiles_identical++;
 		}
 	}
 
-	if(t1!=t2)
+	if (t1 != t2)
 	{
-		double t = (t2-t1)/1000.0;
-		double mb = l*2.0/1024/1024;
-		printf(" Read %.1f mb/s.\n", mb/t);
+		double t = (t2 - t1) / 1000.0;
+		double mb = l*2.0 / 1024 / 1024;
+		printf(" Read %.1f mb/s.\n", mb / t);
 	}
 	else
 	{
@@ -411,9 +415,9 @@ void compare_bufs(unsigned char *buf1, unsigned char *buf2, unsigned bufsize)
 	unsigned char *p1, *p2;
 
 
-	for(p1=buf1,p2=buf2; p1<buf1+bufsize; p1++,p2++)
+	for (p1 = buf1, p2 = buf2; p1 < buf1 + bufsize; p1++, p2++)
 	{
-		if(*p1!=*p2)
+		if (*p1 != *p2)
 		{
 			g_diffbytes++;
 		}
@@ -427,12 +431,15 @@ void compare_bufs(unsigned char *buf1, unsigned char *buf2, unsigned bufsize)
 
 void print_stats(void)
 {
+	__int64 sum_difffiles_total = g_sum_difffiles_fail + g_sum_difffiles_identical + g_sum_difffiles_diff;
+
 	printf(
 		"\n"
 		"Sum:\n"
 		"Common directories scanned: %6I64d\n"
 		"\n"
 		"Common files compared:      %6I64d\n"
+		"Common files failed:        %6I64d\n"
 		"Common files identical:     %6I64d\n"
 		"Common files diffed:        %6I64d\n"
 		"\n"
@@ -443,15 +450,16 @@ void print_stats(void)
 		"Total time: %u s\n",
 		g_sum_diffdirs,
 
-		g_sum_difffiles_total,
-		g_sum_difffiles_total-g_sum_difffiles_diff,
+		sum_difffiles_total,
+		g_sum_difffiles_fail,
+		g_sum_difffiles_identical,
 		g_sum_difffiles_diff,
 
 		g_sum_diffbytes_total,
-		g_sum_diffbytes_total-g_sum_diffbytes_diff,
+		g_sum_diffbytes_total - g_sum_diffbytes_diff,
 		g_sum_diffbytes_diff,
 
-		(g_t2-g_t1)/1000);
+		(g_t2 - g_t1) / 1000);
 
 
 	return;
