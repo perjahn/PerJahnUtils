@@ -14,7 +14,9 @@ namespace RemoveMissingFiles
 		public List<string> _allfiles { get; set; }
 		public int _removedfiles { get; set; }
 
-		private static string[] excludedtags = { "Reference", "Folder", "Service" };
+		private static string[] excludedtags = {
+			"Reference", "Folder", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
+			"WCFMetadata", "WebReferences", "WCFMetadataStorage", "WebReferenceUrl" };
 
 		public static Project LoadProject(string solutionfile, string projectfilepath)
 		{
