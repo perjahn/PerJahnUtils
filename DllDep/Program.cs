@@ -12,13 +12,13 @@ namespace DllDep
 		// CharSet = CharSet.Auto,
 		[DllImport("kernel32.dll", SetLastError = true)]
 		public static extern IntPtr CreateFile(
-				 string filename,
-				 uint access,
-				 uint share,
-				 IntPtr securityAttributes,
-				 uint creationDisposition,
-				 uint flagsAndAttributes,
-				 IntPtr templateFile);
+			string filename,
+			uint access,
+			uint share,
+			IntPtr securityAttributes,
+			uint creationDisposition,
+			uint flagsAndAttributes,
+			IntPtr templateFile);
 
 		[DllImport("kernel32.dll", SetLastError = true)]
 		static extern bool CloseHandle(IntPtr hObject);
