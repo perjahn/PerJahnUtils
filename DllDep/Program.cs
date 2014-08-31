@@ -3,26 +3,46 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace DllDep
 {
 	class Program
 	{
+		// CharSet = CharSet.Auto,
+		[DllImport("kernel32.dll", SetLastError = true)]
+		public static extern IntPtr CreateFile(
+				 string filename,
+				 uint access,
+				 uint share,
+				 IntPtr securityAttributes,
+				 uint creationDisposition,
+				 uint flagsAndAttributes,
+				 IntPtr templateFile);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		static extern bool CloseHandle(IntPtr hObject);
+
+		const uint GENERIC_READ = 0x80000000;
+		const uint FILE_SHARE_READ = 1;
+		const uint OPEN_EXISTING = 3;
+
+
 		private static int Main(string[] args)
 		{
 			string usage =
-					"DllDep 1.6\n" +
-					"\n" +
-					"Usage: DllDep [path] [-rExcludeReferences] [-aExcludeAssemblies]\n" +
-					"path:         Path to directory of assemblies.\n" +
-					"exclude references: Comma separated list of references to exclude (without \".dll\").\n" +
-					"exclude assemblies: Comma separated list of assemblies to exclude (without \".dll\").\n" +
-					"\n" +
-					"Return values:\n" +
-					" 3 - Fatal errors occured.\n" +
-					" 2 - Missing dll files.\n" +
-					" 1 - Version mismatch (no missing files).\n" +
-					" 0 - Have a nice day!\n";
+@"DllDep 1.7
+
+Usage: DllDep [path] [-rExcludeReferences] [-aExcludeAssemblies]
+path:         Path to directory of assemblies.
+exclude references: Comma separated list of references to exclude (without "".dll"").
+exclude assemblies: Comma separated list of assemblies to exclude (without "".dll"").
+
+Return values:
+ 3 - Fatal errors occured.
+ 2 - Missing dll files.
+ 1 - Version mismatch (no missing files).
+ 0 - Have a nice day!";
 
 			string path = null;
 			string[] excluderefs = null, excludeassemblies = null;
@@ -120,13 +140,13 @@ namespace DllDep
 									Version existingfilever = GetAssemblyVersion(rootAssemblies, ass2);
 									mismatch = true;
 									ColorWrite(ConsoleColor.Yellow, "ERROR:\t{0} - {1} ({2})",
-											ass2.Name, ass2.Version.ToString(), existingfilever.ToString());
+										ass2.Name, ass2.Version.ToString(), existingfilever.ToString());
 								}
 								else
 								{
 									missing = true;
 									ColorWrite(ConsoleColor.Red, "ERROR:\t{0} - {1}",
-											ass2.Name, ass2.Version.ToString());
+										ass2.Name, ass2.Version.ToString());
 								}
 							}
 						}
@@ -187,6 +207,11 @@ namespace DllDep
 					catch
 					{
 						// Ignore junk files
+
+						if (IsFileBlocked(filename))
+						{
+							ColorWriteLine(ConsoleColor.Red, "File is blocked: '" + filename + "'");
+						}
 					}
 					if (ass != null)
 					{
@@ -194,6 +219,23 @@ namespace DllDep
 					}
 				}
 			}
+		}
+
+		private static bool IsFileBlocked(string filename)
+		{
+			PlatformID p = Environment.OSVersion.Platform;
+			if (p == PlatformID.Win32NT || p == PlatformID.Win32S || p == PlatformID.Win32Windows || p == PlatformID.WinCE)
+			{
+				IntPtr hStream = CreateFile(filename + ":Zone.Identifier", GENERIC_READ, FILE_SHARE_READ, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
+				IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+				if (hStream != INVALID_HANDLE_VALUE)
+				{
+					CloseHandle(hStream);
+					return true;
+				}
+				CloseHandle(hStream);
+			}
+			return false;
 		}
 
 		private static bool IncludeAssembly(AssemblyName assembyName, string[] excludes)
