@@ -11,7 +11,7 @@ namespace DllDep
 	{
 		// CharSet = CharSet.Auto,
 		[DllImport("kernel32.dll", SetLastError = true)]
-		public static extern IntPtr CreateFile(
+		static extern IntPtr CreateFile(
 			string filename,
 			uint access,
 			uint share,
@@ -27,16 +27,20 @@ namespace DllDep
 		const uint FILE_SHARE_READ = 1;
 		const uint OPEN_EXISTING = 3;
 
+		static bool _verbose = false;
+
 
 		private static int Main(string[] args)
 		{
 			string usage =
 @"DllDep 1.7
 
-Usage: DllDep [path] [-rExcludeReferences] [-aExcludeAssemblies]
+Usage: DllDep [-v] [path] [-rExcludeReferences] [-aExcludeAssemblies]
 path:         Path to directory of assemblies.
 exclude references: Comma separated list of references to exclude (without "".dll"").
 exclude assemblies: Comma separated list of assemblies to exclude (without "".dll"").
+
+-v:           Verbose logging.
 
 Return values:
  3 - Fatal errors occured.
@@ -49,7 +53,11 @@ Return values:
 
 			for (int arg = 0; arg < args.Length; arg++)
 			{
-				if (args[arg].StartsWith("-r") && excluderefs == null)
+				if (args[arg].StartsWith("-v") && excluderefs == null)
+				{
+					_verbose = true;
+				}
+				else if (args[arg].StartsWith("-r") && excluderefs == null)
 				{
 					excluderefs = args[arg].Substring(2).Split(',');
 				}
@@ -70,13 +78,13 @@ Return values:
 
 			if (path == null)
 			{
-				path = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+				path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 			}
 
 
 			int result;
 
-			if (!System.IO.Directory.Exists(path))
+			if (!Directory.Exists(path))
 			{
 				ColorWriteLine(ConsoleColor.Red, "ERROR: Couldn't find directory: '" + path + "'");
 				return 3;
@@ -204,9 +212,13 @@ Return values:
 					{
 						ass = Assembly.LoadFrom(filename);
 					}
-					catch
+					catch (System.Exception ex)
 					{
 						// Ignore junk files
+						if (_verbose)
+						{
+							ColorWriteLine(ConsoleColor.Red, ex.ToString());
+						}
 
 						if (IsFileBlocked(filename))
 						{
