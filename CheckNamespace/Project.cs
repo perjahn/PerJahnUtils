@@ -113,7 +113,7 @@ namespace CheckNamespace
 						}
 						if (ns != _rootnamespace && !ns.StartsWith(_rootnamespace + "."))
 						{
-							//Console.WriteLine("Inconsistent namespace: " + _sln_path + ", '" + filename + "' (" + rownum + "): '" + _rootnamespace + "' <-> '" + ns + "'");
+							Console.WriteLine("Inconsistent namespace: " + _sln_path + ", '" + filename + "' (" + rownum + "): '" + _rootnamespace + "' <-> '" + ns + "'");
 							failcount++;
 						}
 					}
