@@ -23,7 +23,7 @@ namespace CheckNamespace
 
 		static int RemoveFiles(string[] args)
 		{
-			string usage = @"RemoveMissingFiles 1.0
+			string usage = @"CheckNamespace 1.0
 
 Usage: CheckNamespace <solution file>
 
