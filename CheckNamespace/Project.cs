@@ -9,7 +9,7 @@ namespace CheckNamespace
 {
 	class Project
 	{
-		public string _sln_package { get; set; }
+		public string _solutionfile { get; set; }
 		public string _sln_path { get; set; }
 		public string _rootnamespace { get; set; }
 		public List<string> _allfiles { get; set; }
@@ -18,9 +18,11 @@ namespace CheckNamespace
 			"Reference", "Folder", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
 			"WCFMetadata", "WebReferences", "WCFMetadataStorage", "WebReferenceUrl" };
 
-		public static Project LoadProject(string solutionfile, string projectfilepath)
+		public Project(string solutionfile, string projectfilepath)
 		{
-			Project newproj = new Project();
+			_solutionfile = solutionfile;
+			_sln_path = projectfilepath;
+
 			XDocument xdoc;
 			XNamespace ns;
 
@@ -32,19 +34,19 @@ namespace CheckNamespace
 			}
 			catch (IOException ex)
 			{
-				throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+				throw new ApplicationException("Couldn't load project: '" + Path.GetFileName(solutionfile) + "/" + Path.GetFileName(fullfilename) + "': " + ex.Message, ex);
 			}
 			catch (UnauthorizedAccessException ex)
 			{
-				throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+				throw new ApplicationException("Couldn't load project: '" + Path.GetFileName(solutionfile) + "/" + Path.GetFileName(fullfilename) + "': " + ex.Message, ex);
 			}
 			catch (ArgumentException ex)
 			{
-				throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+				throw new ApplicationException("Couldn't load project: '" + Path.GetFileName(solutionfile) + "/" + Path.GetFileName(fullfilename) + "': " + ex.Message, ex);
 			}
 			catch (System.Xml.XmlException ex)
 			{
-				throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+				throw new ApplicationException("Couldn't load project: '" + Path.GetFileName(solutionfile) + "/" + Path.GetFileName(fullfilename) + "': " + ex.Message, ex);
 			}
 
 			ns = xdoc.Root.Name.Namespace;
@@ -52,8 +54,8 @@ namespace CheckNamespace
 			// File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
 
 			IEnumerable<string> namespaces =
-					from el in xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "RootNamespace")
-					select el.Value;
+				from el in xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "RootNamespace")
+				select el.Value;
 
 			int count = namespaces.Count();
 			if (count < 1)
@@ -66,40 +68,37 @@ namespace CheckNamespace
 			}
 			else
 			{
-				newproj._rootnamespace = namespaces.Single();
+				_rootnamespace = namespaces.Single();
 			}
 
-			newproj._allfiles =
-					(from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
-					 where el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName)
-					 orderby el.Attribute("Include").Value
-					 select System.Uri.UnescapeDataString(el.Attribute("Include").Value))
-					 .ToList();
-
-
-			return newproj;
+			_allfiles =
+				(from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
+				 where el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName)
+				 orderby el.Attribute("Include").Value
+				 select System.Uri.UnescapeDataString(el.Attribute("Include").Value))
+				 .ToList();
 		}
 
-		public int CheckNamespace(string solutionfile)
+		public int CheckNamespace()
 		{
 			int failcount = 0;
 
-			foreach (string filename in _allfiles.Where(f => System.IO.Path.GetExtension(f).ToLower() == ".cs"))
+			foreach (string filename in _allfiles.Where(f => Path.GetExtension(f).ToLower() == ".cs"))
 			{
 				// Files must exist in file system.
 				string fullfilename = Path.Combine(
-						Path.GetDirectoryName(solutionfile),
-						Path.GetDirectoryName(_sln_path),
-						filename);
+					Path.GetDirectoryName(_solutionfile),
+					Path.GetDirectoryName(_sln_path),
+					filename);
 				if (!File.Exists(fullfilename))
 				{
 					ConsoleHelper.WriteLineColor(
-							"File not found: Project path: '" + _sln_path + "', File path: '" + filename + "'.",
-							ConsoleColor.Red);
+						"File not found: Project path: '" + _sln_path + "', File path: '" + filename + "'.",
+						ConsoleColor.Red);
 					return 0;
 				}
 
-				string[] rows = System.IO.File.ReadAllLines(fullfilename);
+				string[] rows = File.ReadAllLines(fullfilename);
 				int rownum = 1;
 				foreach (string row in rows)
 				{
@@ -113,7 +112,21 @@ namespace CheckNamespace
 						}
 						if (ns != _rootnamespace && !ns.StartsWith(_rootnamespace + "."))
 						{
-							Console.WriteLine("Inconsistent namespace: " + _sln_path + ", '" + filename + "' (" + rownum + "): '" + _rootnamespace + "' <-> '" + ns + "'");
+							string commonns = GetCommonString(_rootnamespace, ns);
+
+							Console.Write(Path.GetDirectoryName(fullfilename) + Path.DirectorySeparatorChar);
+							ConsoleHelper.WriteColor(Path.GetFileName(fullfilename), ConsoleColor.White);
+							Console.Write("' (" + rownum + "): '");
+
+							Console.Write(commonns);
+							ConsoleHelper.WriteColor(_rootnamespace.Substring(commonns.Length), ConsoleColor.Magenta);
+
+							Console.Write("' <-> '");
+
+							Console.Write(commonns);
+							ConsoleHelper.WriteColor(ns.Substring(commonns.Length), ConsoleColor.Magenta);
+
+							Console.WriteLine("'");
 							failcount++;
 						}
 					}
@@ -122,6 +135,23 @@ namespace CheckNamespace
 			}
 
 			return failcount;
+		}
+
+		private string GetCommonString(string a, string b)
+		{
+			int i, j;
+			StringBuilder sb = new StringBuilder();
+
+			for (i = j = 0; i < a.Length && j < b.Length; i++, j++)
+			{
+				if (a[i] != b[j])
+				{
+					return sb.ToString();
+				}
+				sb.Append(a[i]);
+			}
+
+			return sb.ToString();
 		}
 	}
 }
