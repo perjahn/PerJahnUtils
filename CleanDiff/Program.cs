@@ -79,18 +79,14 @@ Optional flags:
 				@"C:\Utils"
 			};
 
-			foreach (string path in windiffpaths)
-			{
-				_searchPaths.Add(path);
-			}
-			foreach (string path in Environment.GetEnvironmentVariable("path").Split(';'))
-			{
-				_searchPaths.Add(path);
-			}
+			_searchPaths.AddRange(windiffpaths);
+
+			_searchPaths.AddRange(Environment.GetEnvironmentVariable("path").Split(';'));
+
 			string asspath = Assembly.GetExecutingAssembly().Location;
 			_searchPaths.Add(Path.GetDirectoryName(asspath));
 
-			foreach (string path in windiffpaths)
+			foreach (string path in _searchPaths)
 			{
 				string windiffpath = Path.Combine(path, "windiff.exe");
 				if (File.Exists(windiffpath))
