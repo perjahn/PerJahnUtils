@@ -29,11 +29,10 @@ namespace DllDep
 
 		static bool _verbose = false;
 
-
 		private static int Main(string[] args)
 		{
 			string usage =
-@"DllDep 1.8
+@"DllDep 1.9
 
 Usage: DllDep [-v] [path] [-rExcludeReferences] [-aExcludeAssemblies]
 path:         Path to directory of assemblies.
@@ -49,21 +48,21 @@ Return values:
  0 - Have a nice day!";
 
 			string path = null;
-			string[] excluderefs = null, excludeassemblies = null;
+			string[] excludeReferences = null, excludeAssemblies = null;
 
 			for (int arg = 0; arg < args.Length; arg++)
 			{
-				if (args[arg].StartsWith("-v") && excluderefs == null)
+				if (args[arg].StartsWith("-v"))
 				{
 					_verbose = true;
 				}
-				else if (args[arg].StartsWith("-r") && excluderefs == null)
+				else if (args[arg].StartsWith("-r") && excludeReferences == null)
 				{
-					excluderefs = args[arg].Substring(2).Split(',');
+					excludeReferences = args[arg].Substring(2).Split(',');
 				}
-				else if (args[arg].StartsWith("-a") && excludeassemblies == null)
+				else if (args[arg].StartsWith("-a") && excludeAssemblies == null)
 				{
-					excludeassemblies = args[arg].Substring(2).Split(',');
+					excludeAssemblies = args[arg].Substring(2).Split(',');
 				}
 				else if (path == null)
 				{
@@ -95,16 +94,16 @@ Return values:
 				Console.WriteLine(usage);
 			}
 
-			if (excluderefs == null)
+			if (excludeReferences == null)
 			{
-				excluderefs = new string[] { };
+				excludeReferences = new string[] { };
 			}
-			if (excludeassemblies == null)
+			if (excludeAssemblies == null)
 			{
-				excludeassemblies = new string[] { };
+				excludeAssemblies = new string[] { };
 			}
 
-			result = ParseDirectory(path, excluderefs, excludeassemblies);
+			result = ParseDirectory(path, excludeReferences, excludeAssemblies);
 
 			if (args.Length < 1)
 			{
@@ -115,7 +114,7 @@ Return values:
 			return result;
 		}
 
-		private static int ParseDirectory(string path, string[] excluderefs, string[] excludeassemblies)
+		private static int ParseDirectory(string path, string[] excludeReferences, string[] excludeAssemblies)
 		{
 			bool mismatch = false;
 			bool missing = false;
@@ -126,42 +125,86 @@ Return values:
 			var rootAssemblies = GetRootAssemblies(path);
 
 
+			List<string> excludedAssemblies = excludeAssemblies.ToList();
+			List<string> excludedReferences = excludeReferences.ToList();
+
 			foreach (Assembly assembly in rootAssemblies.OrderBy(a => a.FullName))
 			{
 				AssemblyName ass1 = assembly.GetName();
 
-				if (IncludeAssembly(ass1, excludeassemblies))
+				if (IncludeAssembly(ass1))
 				{
 					if (ass1.Name != "vshost" && ass1.Name != "vshost32")
 					{
-						Console.WriteLine("{0} - {1}", ass1.Name, ass1.Version.ToString());
+						if (!excludeAssemblies.Contains(ass1.Name))
+						{
+							Console.WriteLine("{0} - {1}", ass1.Name, ass1.Version.ToString());
+						}
+
 						foreach (AssemblyName ass2 in assembly.GetReferencedAssemblies().OrderBy(a => a.FullName))
 						{
-							if (IncludeAssembly(ass2, excluderefs))
+							if (IncludeAssembly(ass2))
 							{
-								if (rootAssemblies.Any(a => { return a.GetName().FullName == ass2.FullName; }))
+								if (rootAssemblies.Any(a => a.GetName().FullName == ass2.FullName))
 								{
+									if (excludeAssemblies.Contains(ass1.Name) || excludeReferences.Contains(ass2.Name))
+									{
+										continue;
+									}
+
 									Console.WriteLine("\t{0} - {1}", ass2.Name, ass2.Version.ToString());
 								}
-								else if (rootAssemblies.Any(a => { return a.GetName().Name == ass2.Name; }))
+								else if (rootAssemblies.Any(a => a.GetName().Name == ass2.Name))
 								{
+									if (excludedAssemblies.Contains(ass1.Name))
+									{
+										excludedAssemblies.Remove(ass1.Name);
+									}
+									else if (excludedReferences.Contains(ass2.Name))
+									{
+										excludedReferences.Remove(ass2.Name);
+									}
+
+									if (excludeAssemblies.Contains(ass1.Name) || excludeReferences.Contains(ass2.Name))
+									{
+										continue;
+									}
+
 									Version existingfilever = GetAssemblyVersion(rootAssemblies, ass2);
 									mismatch = true;
-									ColorWrite(ConsoleColor.Yellow, "ERROR:\t{0} - {1} ({2})",
+									ColorWrite(ConsoleColor.Yellow, "ERROR:\t{0} - {1} ({2} found on disk)",
 										ass2.Name, ass2.Version.ToString(), existingfilever.ToString());
 								}
 								else
 								{
+									if (excludedAssemblies.Contains(ass1.Name))
+									{
+										excludedAssemblies.Remove(ass1.Name);
+									}
+									else if (excludedReferences.Contains(ass2.Name))
+									{
+										excludedReferences.Remove(ass2.Name);
+									}
+
+									if (excludeAssemblies.Contains(ass1.Name) || excludeReferences.Contains(ass2.Name))
+									{
+										continue;
+									}
+
 									missing = true;
 									ColorWrite(ConsoleColor.Red, "ERROR:\t{0} - {1}",
 										ass2.Name, ass2.Version.ToString());
 								}
 							}
 						}
+
+						Console.WriteLine();
 					}
-					Console.WriteLine();
 				}
 			}
+
+			CheckExcessive("Excessive excluded Assemblies:", excludedAssemblies);
+			CheckExcessive("Excessive excluded References:", excludedReferences);
 
 			if (missing)
 			{
@@ -250,7 +293,7 @@ Return values:
 			return false;
 		}
 
-		private static bool IncludeAssembly(AssemblyName assembyName, string[] excludes)
+		private static bool IncludeAssembly(AssemblyName assembyName)
 		{
 			if (assembyName != null)
 			{
@@ -258,13 +301,23 @@ Return values:
 				string dummy;
 				if (!gac.IsSystemAssembly(name, out dummy, true))
 				{
-					if (!excludes.Contains(name))
-					{
-						return true;
-					}
+					return true;
 				}
 			}
 			return false;
+		}
+
+		private static void CheckExcessive(string msg, List<string> excludedAssemblies)
+		{
+			if (excludedAssemblies.Count() > 0)
+			{
+				ColorWrite(ConsoleColor.Red, msg);
+			}
+
+			foreach (string ass in excludedAssemblies)
+			{
+				Console.WriteLine(ass);
+			}
 		}
 	}
 }
