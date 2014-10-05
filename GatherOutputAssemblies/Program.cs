@@ -14,13 +14,31 @@ namespace GatherOutputAssemblies
 			System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
 			string usage =
-@"GatherOutputAssemblies 1.1 - Program for gathering compiled output from Visual Studio.
+@"GatherOutputAssemblies 1.2 - Program for gathering compiled output from Visual Studio.
 
-Usage: GatherOutputAssemblies [-v] <solutionfile> <buildconfig> <outputfolder> +include1... -exclude1...
+Usage: GatherOutputAssemblies [-a] [-v] [-w] <solutionfile> <buildconfig> <outputfolder> +include1... -exclude1...
 
+-a:    Copy all projects. TODO
 -v:    Verbose logging.
+-w:    Also include Web/Mvc projects. Instead of using this flag, please consider TODO
+       to *Publish* Web/Mvc projects, that's the better approach because only VS
+       knows how to publish/gather a Web/Mvc project, it's not easy to do this right.
+       Of course, some time in the future this program might do exactly that, i.e.
+       call VS to perform a publish by the book.
 
-Example: GatherOutputAssemblies mysol.sln ""Release|AnyCPU"" artifacts";
++/-:   Additional projects which should always be included/excluded.
+       Wild cards? Not yet implemented, maybe later (*test* should be useful)
+
+Example: GatherOutputAssemblies mysol.sln ""Release|AnyCPU"" artifacts
+
+This program copies files from project output folders. Although not from all projects
+included in the solution, only from the *resulting* subset. It is useful when you have
+a solution with many projects and doesn't want to maintain hard coded project names or
+paths.
+
+Resulting projects are projects which doesn't have any reference to them, it is
+usually exe and web projects, although test projects usually wreak havoc with
+this assumption and usually needs to be excluded.";
 
 
 			bool verbose = false;

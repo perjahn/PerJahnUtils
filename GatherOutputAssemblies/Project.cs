@@ -90,11 +90,11 @@ namespace GatherOutputAssemblies
 			try
 			{
 				newproj._ProjectTypeGuids = xdoc
-						.Element(ns + "Project")
-						.Elements(ns + "PropertyGroup")
-						.Elements(ns + "ProjectTypeGuids")
-						.SelectMany(g => g.Value.Split(';'))
-						.ToList();
+					.Element(ns + "Project")
+					.Elements(ns + "PropertyGroup")
+					.Elements(ns + "ProjectTypeGuids")
+					.SelectMany(g => g.Value.Split(';'))
+					.ToList();
 			}
 			catch (System.NullReferenceException)
 			{
@@ -170,9 +170,9 @@ namespace GatherOutputAssemblies
 			if (_proj_outputtypes.Count > 1)
 			{
 				ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-						"Warning: Corrupt project file: " + _sln_path +
-						", multiple output types: '" + _proj_outputtypes.Count +
-						"', compacting Private elements.");
+					"Warning: Corrupt project file: " + _sln_path +
+					", multiple output types: '" + _proj_outputtypes.Count +
+					"', compacting Private elements.");
 			}
 			if (_proj_outputtypes.Count >= 1)
 			{
@@ -203,15 +203,28 @@ namespace GatherOutputAssemblies
 		public bool CopyOutput(string solutionfile, string buildconfig, string targetpath)
 		{
 			var outputpaths = _outputpaths.Where(o => MatchCondition(o.Condition, buildconfig, false));
-
-			if (outputpaths.Count() > 1)
-			{
-				outputpaths = _outputpaths.Where(o => MatchCondition(o.Condition, buildconfig, true));
-			}
+			int debug1 = outputpaths.Count();
 
 			if (outputpaths.Count() != 1)
 			{
-				ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + _sln_path + "': Couldn't find an unambiguous PropertyGroup Condition");
+				outputpaths = _outputpaths.Where(o => MatchCondition(o.Condition, buildconfig, true));
+			}
+			int debug2 = outputpaths.Count();
+
+			if (outputpaths.Count() != 1)
+			{
+				outputpaths = _outputpaths
+					.Where(o => ContainsFiles(solutionfile, o.Path))
+					.GroupBy(o => o.Path)
+					.Select(g => g.First());
+			}
+			int debug3 = outputpaths.Count();
+
+
+			if (outputpaths.Count() != 1)
+			{
+				ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + _sln_path + "': Couldn't find an unambiguous PropertyGroup Condition (" + debug1 + "," + debug2 + "," + debug3 + ")");
+
 				return false;
 			}
 
@@ -242,6 +255,12 @@ namespace GatherOutputAssemblies
 				string[] values = c.Split('|');
 				return values.Contains(buildconfig);
 			}
+		}
+
+		private bool ContainsFiles(string solutionfile, string outputpath)
+		{
+			string sourcepath = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), outputpath);
+			return Directory.Exists(sourcepath) && Directory.GetFiles(sourcepath, "*", SearchOption.AllDirectories).Length > 0;
 		}
 
 		private static bool CopyFolder(DirectoryInfo source, DirectoryInfo target)
