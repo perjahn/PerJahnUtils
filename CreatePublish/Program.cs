@@ -33,11 +33,14 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 			if (args[0] == "test" && args[1] == "test" && args[2] == "test")
 			{
 				Tuple<string, string, char[]>[] testvalues = new Tuple<string, string, char[]>[] {
-                    Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>("wipcore.cuszto .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>(". Wipco. reCustomer.app. sub. app, ","wipcore.custo .mer!.app.", new char[] { '.' })
-                };
+					Tuple.Create<string, string, char[]>("waaa", "wbbb, ", new char[] { '.' }),
+					Tuple.Create<string, string, char[]>("w.aaa", "w.bbb, ", new char[] { '.' }),
+					Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
+					Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
+					Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
+					Tuple.Create<string, string, char[]>("wipcore.cuszto .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
+					Tuple.Create<string, string, char[]>(". Wipco. reCustomer.app. sub. app, ","wipcore.custo .mer!.app.", new char[] { '.' })
+				};
 
 				foreach (var testvalue in testvalues)
 				{
