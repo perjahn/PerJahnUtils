@@ -27,18 +27,20 @@ namespace DllDep
 		const uint FILE_SHARE_READ = 1;
 		const uint OPEN_EXISTING = 3;
 
+		static bool _gac = false;
 		static bool _verbose = false;
 
 		private static int Main(string[] args)
 		{
 			string usage =
-@"DllDep 1.9
+@"DllDep 1.10
 
-Usage: DllDep [-v] [path] [-rExcludeReferences] [-aExcludeAssemblies]
+Usage: DllDep [-gac] [-v] [path] [-rExcludeReferences] [-aExcludeAssemblies]
 path:         Path to directory of assemblies.
 exclude references: Comma separated list of references to exclude (without "".dll"").
 exclude assemblies: Comma separated list of assemblies to exclude (without "".dll"").
 
+-gac          Include GACed assemblies.
 -v:           Verbose logging.
 
 Return values:
@@ -52,7 +54,11 @@ Return values:
 
 			for (int arg = 0; arg < args.Length; arg++)
 			{
-				if (args[arg].StartsWith("-v"))
+				if (args[arg].StartsWith("-gac"))
+				{
+					_gac = true;
+				}
+				else if (args[arg].StartsWith("-v"))
 				{
 					_verbose = true;
 				}
@@ -132,17 +138,20 @@ Return values:
 			{
 				AssemblyName ass1 = assembly.GetName();
 
+				bool ass1gaced = IsGaced(ass1);
 				if (IncludeAssembly(ass1))
 				{
 					if (ass1.Name != "vshost" && ass1.Name != "vshost32")
 					{
 						if (!excludeAssemblies.Contains(ass1.Name))
 						{
-							Console.WriteLine("{0} - {1}", ass1.Name, ass1.Version.ToString());
+							ColorWrite(ass1gaced ? ConsoleColor.Magenta : ConsoleColor.Gray,
+								ass1.Name + " - " + ass1.Version.ToString());
 						}
 
 						foreach (AssemblyName ass2 in assembly.GetReferencedAssemblies().OrderBy(a => a.FullName))
 						{
+							bool ass2gaced = IsGaced(ass2);
 							if (IncludeAssembly(ass2))
 							{
 								if (rootAssemblies.Any(a => a.GetName().FullName == ass2.FullName))
@@ -152,7 +161,8 @@ Return values:
 										continue;
 									}
 
-									Console.WriteLine("\t{0} - {1}", ass2.Name, ass2.Version.ToString());
+									ColorWrite(ass2gaced ? ConsoleColor.Magenta : ConsoleColor.Gray,
+										"\t" + ass2.Name + " - " + ass2.Version.ToString());
 								}
 								else if (rootAssemblies.Any(a => a.GetName().Name == ass2.Name))
 								{
@@ -172,8 +182,18 @@ Return values:
 
 									Version existingfilever = GetAssemblyVersion(rootAssemblies, ass2);
 									mismatch = true;
-									ColorWrite(ConsoleColor.Yellow, "ERROR:\t{0} - {1} ({2} found on disk)",
-										ass2.Name, ass2.Version.ToString(), existingfilever.ToString());
+									if (ass2gaced)
+									{
+										ColorWrite(ConsoleColor.Yellow,
+											"ERROR:\t" + ass2.Name + " - " + ass2.Version.ToString() + " (" + existingfilever.ToString() + " found on disk)");
+										ColorWrite(ConsoleColor.DarkMagenta,
+											" (Assembly also exists in GAC)");
+									}
+									else
+									{
+										ColorWrite(ConsoleColor.Yellow,
+											"ERROR:\t" + ass2.Name + " - " + ass2.Version.ToString() + " (" + existingfilever.ToString() + " found on disk)");
+									}
 								}
 								else
 								{
@@ -192,8 +212,19 @@ Return values:
 									}
 
 									missing = true;
-									ColorWrite(ConsoleColor.Red, "ERROR:\t{0} - {1}",
-										ass2.Name, ass2.Version.ToString());
+									if (ass2gaced)
+									{
+										if (_gac)
+										{
+											ColorWrite(ConsoleColor.DarkMagenta,
+												"\t" + ass2.Name + " - " + ass2.Version.ToString());
+										}
+									}
+									else
+									{
+										ColorWrite(ConsoleColor.Red,
+											"ERROR:\t" + ass2.Name + " - " + ass2.Version.ToString());
+									}
 								}
 							}
 						}
@@ -293,18 +324,15 @@ Return values:
 			return false;
 		}
 
-		private static bool IncludeAssembly(AssemblyName assembyName)
+		private static bool IncludeAssembly(AssemblyName assemblyName)
 		{
-			if (assembyName != null)
-			{
-				string name = assembyName.Name;
-				string dummy;
-				if (!gac.IsSystemAssembly(name, out dummy, true))
-				{
-					return true;
-				}
-			}
-			return false;
+			return assemblyName != null ? true : false;
+		}
+
+		private static bool IsGaced(AssemblyName assemblyName)
+		{
+			string dummy;
+			return gac.IsSystemAssembly(assemblyName.Name, out dummy, true);
 		}
 
 		private static void CheckExcessive(string msg, List<string> excludedAssemblies)
