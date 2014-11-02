@@ -185,9 +185,9 @@ Return values:
 									if (ass2gaced)
 									{
 										ColorWrite(ConsoleColor.Yellow,
-											"ERROR:\t" + ass2.Name + " - " + ass2.Version.ToString() + " (" + existingfilever.ToString() + " found on disk)");
-										ColorWrite(ConsoleColor.DarkMagenta,
-											" (Assembly also exists in GAC)");
+											"ERROR:\t" + ass2.Name + " - " + ass2.Version.ToString() + " (" + existingfilever.ToString() + " found on disk)", true);
+										ColorWrite(ConsoleColor.Magenta,
+											" (Assembly exists in GAC)");
 									}
 									else
 									{
@@ -250,16 +250,23 @@ Return values:
 
 		private static void ColorWriteLine(ConsoleColor color, string s, params object[] args)
 		{
-			ColorWrite(color, s + Environment.NewLine, args);
+			ColorWrite(color, s + Environment.NewLine, false, args);
 		}
 
-		private static void ColorWrite(ConsoleColor color, string s, params object[] args)
+		private static void ColorWrite(ConsoleColor color, string s, bool dontwritextraline = false, params object[] args)
 		{
 			ConsoleColor oldColor = Console.ForegroundColor;
 			Console.ForegroundColor = color;
 			try
 			{
-				Console.WriteLine(s, args);
+				if (dontwritextraline)
+				{
+					Console.Write(s, args);
+				}
+				else
+				{
+					Console.WriteLine(s, args);
+				}
 			}
 			finally
 			{
