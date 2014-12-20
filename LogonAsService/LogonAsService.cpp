@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include <string.h>
 #include <ntsecapi.h>
 
 int wmain(int argc, wchar_t *argv[])
@@ -10,7 +11,7 @@ int wmain(int argc, wchar_t *argv[])
 		return 0;
 	}
 
-	wchar_t *username = argv[1];
+	wchar_t *AccountName = argv[1];
 
 
 	LSA_HANDLE handle;
@@ -27,6 +28,7 @@ int wmain(int argc, wchar_t *argv[])
 	}
 
 
+	wchar_t *SystemName = NULL;
 	unsigned char buf[1000];
 	SID *psid = (SID*)buf;
 	DWORD sidsize = 1000;
@@ -36,19 +38,43 @@ int wmain(int argc, wchar_t *argv[])
 
 	ZeroMemory(psid, 1000);
 
-	if (!LookupAccountName(NULL, username, psid, &sidsize, ReferencedDomainName, &cchReferencedDomainName, &eUse))
+	wchar_t *backslash = wcschr(AccountName, '\\');
+	wchar_t *at = wcschr(AccountName, '@');
+	if (backslash)
+	{
+		SystemName = AccountName;
+		*backslash = 0;
+		AccountName = backslash + 1;
+	}
+	else if (at)
+	{
+		SystemName = at + 1;
+		*at = 0;
+	}
+
+	if (!LookupAccountName(SystemName, AccountName, psid, &sidsize, ReferencedDomainName, &cchReferencedDomainName, &eUse))
 	{
 		DWORD error = GetLastError();
 		LsaClose(handle);
-		printf("Couldn't lookup account name: %d\n", error);
+
+		if (SystemName)
+		{
+			printf("Couldn't lookup account name: SystemName: '%S', AccountName: '%S', Error: %d\n",
+				SystemName, AccountName, error);
+		}
+		else
+		{
+			printf("Couldn't lookup account name: SystemName: <null>, AccountName: '%S', Error: %d\n",
+				AccountName, error);
+		}
 		return 2;
 	}
 
 
 	LSA_UNICODE_STRING rights;
 	rights.Buffer = SE_SERVICE_LOGON_NAME;
-	rights.Length = wcslen(rights.Buffer)*2;
-	rights.MaximumLength = (rights.Length + 1)*2;
+	rights.Length = wcslen(rights.Buffer) * 2;
+	rights.MaximumLength = (rights.Length + 1) * 2;
 
 	if ((status = LsaAddAccountRights(handle, psid, &rights, 1)) != ERROR_SUCCESS)
 	{
