@@ -44,7 +44,7 @@ namespace GatherOutputAssemblies
 				// Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCsProject", "Folder\Folder\MyCsProject.csproj", "{01010101-0101-0101-0101-010101010101}"
 				// Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "MyVbProject", "Folder\Folder\MyVbProject.vbproj", "{02020202-0202-0202-0202-020202020202}"
 
-				string[] projtypeguids = { "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}", "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}" };
+                string[] projtypeguids = { "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}", "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}", "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}" };
 
 				foreach (string projtypeguid in projtypeguids)
 				{
@@ -92,7 +92,8 @@ namespace GatherOutputAssemblies
 				p._proj_outputtypes = p2._proj_outputtypes;
 				p._ProjectTypeGuids = p2._ProjectTypeGuids;
 
-				p._outputpaths = p2._outputpaths;
+                p._outputpaths = p2._outputpaths;
+                p._outdirs = p2._outdirs;
 				p._projectReferences = p2._projectReferences;
 			}
 
@@ -131,7 +132,11 @@ namespace GatherOutputAssemblies
 						!projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
 						&& !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)))
 					{
-						bool projectresult = project.CopyOutput(_solutionfile, buildconfig, Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)));
+						bool projectresult = project.CopyOutput(
+                            _solutionfile,
+                            buildconfig,
+                            Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)),
+                            verbose);
 						if (!projectresult)
 						{
 							result = 1;
