@@ -24,7 +24,7 @@ namespace CreateSolution
         static void Main(string[] args)
         {
             ParseArguments(args);
-            if (Environment.UserInteractive)
+            if (Environment.UserInteractive && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadKey();
@@ -38,7 +38,7 @@ namespace CreateSolution
             System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             string usage =
-@"CreateSolution 1.5 - Creates VS solution file.
+@"CreateSolution 1.6 - Creates VS solution file.
 
 Usage: CreateSolution [-g] [-vX] <path> <solutionfile> [excludeprojs...]
 
