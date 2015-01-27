@@ -102,12 +102,12 @@ namespace RemoveMissingFiles
             }
             catch (IOException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
                 return;
             }
             catch (System.Xml.XmlException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
                 return;
             }
 
@@ -115,7 +115,7 @@ namespace RemoveMissingFiles
             UpdateFiles(xdoc, solutionfile);
 
 
-            Console.WriteLine("Writing file: '" + fullfilename + "'.");
+            ConsoleHelper.WriteLine("Writing file: '" + fullfilename + "'.");
             if (!simulate)
             {
                 FileHelper.RemoveRO(fullfilename);

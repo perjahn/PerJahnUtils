@@ -125,7 +125,7 @@ namespace RemoveMissingFiles
 
             if (count2 != 0)
             {
-                Console.WriteLine("Fixed " + count2 + " of " + count1 + " projects, removed " + count3 + " file references.");
+                ConsoleHelper.WriteLine("Fixed " + count2 + " of " + count1 + " projects, removed " + count3 + " file references.");
             }
 
             return;

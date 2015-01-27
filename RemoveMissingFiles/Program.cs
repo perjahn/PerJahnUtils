@@ -10,9 +10,13 @@ namespace RemoveMissingFiles
     {
         static int Main(string[] args)
         {
+            ConsoleHelper.HasWritten = false;
+
             int result = RemoveFiles(args);
 
-            if (Environment.UserInteractive && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
+            if (ConsoleHelper.HasWritten &&
+                Environment.UserInteractive &&
+                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine(Environment.NewLine + "Press any key to continue...");
                 Console.ReadKey(true);
@@ -23,7 +27,7 @@ namespace RemoveMissingFiles
 
         static int RemoveFiles(string[] args)
         {
-            string usage = @"RemoveMissingFiles 1.0
+            string usage = @"RemoveMissingFiles 1.1
 
 Usage: RemoveMissingFiles [-s] <solution file>
 
@@ -38,7 +42,7 @@ Example: RemoveMissingFiles hello.sln
 
             if (args.Length != 1)
             {
-                Console.WriteLine(usage);
+                ConsoleHelper.WriteLine(usage);
                 return 1;
             }
 
@@ -49,7 +53,7 @@ Example: RemoveMissingFiles hello.sln
 
             try
             {
-                ConsoleHelper.deferredLine = solutionfile;
+                ConsoleHelper.DeferredLine = solutionfile;
                 s.LoadProjects();
             }
             catch (ApplicationException)
