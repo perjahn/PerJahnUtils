@@ -1,0 +1,13 @@
+<environments xmlns="http://wipcore.se/schemas/environment">
+	<environment name="Production">
+		<server brand="MyBrand" type="bs">prodserver.wipcorehosted.local</server>
+
+		<filesync brand="MyBrand" path="D:\Content" serverType="bs" />
+	</environment>
+
+	<environment name="Develop">
+		<server brand="MyBrand" type="web">devserver.wipcorehosted.local</server>
+
+		<filesync brand="MyBrand" path="D:\Content" serverType="web" />
+	</environment>
+</environments>
