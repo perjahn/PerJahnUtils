@@ -34,7 +34,7 @@ namespace SyncFiles
 			if (args == null || args.Length != 4)
 			{
 				string usage =
-@"SyncFiles 1.0
+@"SyncFiles 1.1
 
 Usage: SyncFiles [-eEXCLUDE] [-iIDENTIFERFILE] [-mMAXSIZE] [-s] <sourcefile> <targetfile> <sourcepath> <targetpath>
 
