@@ -34,10 +34,11 @@ namespace SyncFiles
 			if (args == null || args.Length != 4)
 			{
 				string usage =
-@"SyncFiles 1.1
+@"SyncFiles 1.2
 
-Usage: SyncFiles [-eEXCLUDE] [-iIDENTIFERFILE] [-mMAXSIZE] [-s] <sourcefile> <targetfile> <sourcepath> <targetpath>
+Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-mMAXSIZE] [-s] <sourcefile> <targetfile> <sourcepath> <targetpath>
 
+-d  Also compare actual metadata (filetime+filesize) from file systems before copying.
 -e  Exclude file pattern.
 -i  File including an identifer per line.
 -m  Max file size in bytes.
@@ -52,6 +53,17 @@ Usage: SyncFiles [-eEXCLUDE] [-iIDENTIFERFILE] [-mMAXSIZE] [-s] <sourcefile> <ta
 
 		static string[] ParseOptions(string[] args)
 		{
+			if (args.Contains("-d"))
+			{
+				CopyFiles.compareMetadata = true;
+				args = args.Except(new string[] { "-d" }).ToArray();
+			}
+			else
+			{
+				CopyFiles.compareMetadata = false;
+			}
+
+
 			string[] argsExclude = args.Where(a => a.ToLower().StartsWith("-e")).ToArray();
 			if (argsExclude.Length > 1)
 			{

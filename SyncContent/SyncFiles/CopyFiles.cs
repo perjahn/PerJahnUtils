@@ -10,6 +10,7 @@ namespace SyncFiles
 {
 	class CopyFiles
 	{
+		public static bool compareMetadata { get; set; }
 		public static bool simulate { get; set; }
 		public static string[] identifiers { get; set; }
 		public static long maxsize { get; set; }
@@ -308,7 +309,19 @@ namespace SyncFiles
 				{
 					try
 					{
-						RemoveRO(filename);
+						if (compareMetadata)
+						{
+							FileInfo fiSource = new FileInfo(sourcepath2);
+							FileInfo fiTarget = new FileInfo(targetpath2);
+
+							if (fiSource.LastWriteTime == fiTarget.LastWriteTime && fiSource.Length == fiTarget.Length)
+							{
+								Log("  Files appears equal after all...", false, ConsoleColor.Yellow);
+								continue;
+							}
+						}
+
+						RemoveRO(targetpath2);
 						File.Copy(sourcepath2, targetpath2, true);
 						copiedfiles++;
 						copiedsize += filesize;
