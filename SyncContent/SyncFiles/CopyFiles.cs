@@ -43,11 +43,21 @@ namespace SyncFiles
 				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
 				return;
 			}
+			catch (DirectoryNotFoundException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return;
+			}
 			try
 			{
 				targetfiles = File.ReadAllLines(targetfile).Where(l => l != string.Empty).ToArray();
 			}
 			catch (FileNotFoundException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return;
+			}
+			catch (DirectoryNotFoundException ex)
 			{
 				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
 				return;
@@ -309,19 +319,23 @@ namespace SyncFiles
 				{
 					try
 					{
-						if (compareMetadata)
+						if (File.Exists(targetpath2))
 						{
-							FileInfo fiSource = new FileInfo(sourcepath2);
-							FileInfo fiTarget = new FileInfo(targetpath2);
-
-							if (fiSource.LastWriteTime == fiTarget.LastWriteTime && fiSource.Length == fiTarget.Length)
+							if (compareMetadata)
 							{
-								Log("  Files appears equal after all...", false, ConsoleColor.Yellow);
-								continue;
+								FileInfo fiSource = new FileInfo(sourcepath2);
+								FileInfo fiTarget = new FileInfo(targetpath2);
+
+								if (fiSource.LastWriteTime == fiTarget.LastWriteTime && fiSource.Length == fiTarget.Length)
+								{
+									Log("  Files appears equal after all...", false, ConsoleColor.Yellow);
+									continue;
+								}
 							}
+
+							RemoveRO(targetpath2);
 						}
 
-						RemoveRO(targetpath2);
 						File.Copy(sourcepath2, targetpath2, true);
 						copiedfiles++;
 						copiedsize += filesize;
