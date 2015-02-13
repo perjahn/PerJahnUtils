@@ -34,6 +34,7 @@ namespace SyncFiles
 		{
 			string[] sourcefiles;
 			string[] targetfiles;
+
 			try
 			{
 				sourcefiles = File.ReadAllLines(sourcefile).Where(l => l != string.Empty).ToArray();
@@ -48,6 +49,11 @@ namespace SyncFiles
 				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
 				return;
 			}
+			catch (UnauthorizedAccessException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return;
+			}
 			try
 			{
 				targetfiles = File.ReadAllLines(targetfile).Where(l => l != string.Empty).ToArray();
@@ -58,6 +64,11 @@ namespace SyncFiles
 				return;
 			}
 			catch (DirectoryNotFoundException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return;
+			}
+			catch (UnauthorizedAccessException ex)
 			{
 				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
 				return;
@@ -315,46 +326,50 @@ namespace SyncFiles
 				string targetpath2 = Path.Combine(targetpath, filename);
 
 				Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "'");
-				if (!simulate)
+
+				try
 				{
-					try
+					if (File.Exists(targetpath2))
 					{
-						if (File.Exists(targetpath2))
+						if (compareMetadata)
 						{
-							if (compareMetadata)
+							FileInfo fiSource = new FileInfo(sourcepath2);
+							FileInfo fiTarget = new FileInfo(targetpath2);
+
+							if (fiSource.LastWriteTime == fiTarget.LastWriteTime && fiSource.Length == fiTarget.Length)
 							{
-								FileInfo fiSource = new FileInfo(sourcepath2);
-								FileInfo fiTarget = new FileInfo(targetpath2);
-
-								if (fiSource.LastWriteTime == fiTarget.LastWriteTime && fiSource.Length == fiTarget.Length)
-								{
-									Log("  Files appears equal after all...", false, ConsoleColor.Yellow);
-									continue;
-								}
+								Log("  Files appears equal after all...", false, ConsoleColor.Yellow);
+								continue;
 							}
-
-							RemoveRO(targetpath2);
 						}
 
+						if (!simulate)
+						{
+							RemoveRO(targetpath2);
+						}
+					}
+
+					if (!simulate)
+					{
 						File.Copy(sourcepath2, targetpath2, true);
-						copiedfiles++;
-						copiedsize += filesize;
 					}
-					catch (FileNotFoundException ex)
-					{
-						Log(ex.Message);
-						errors++;
-					}
-					catch (UnauthorizedAccessException ex)
-					{
-						Log(ex.Message);
-						errors++;
-					}
-					catch (IOException ex)
-					{
-						Log(ex.Message);
-						errors++;
-					}
+					copiedfiles++;
+					copiedsize += filesize;
+				}
+				catch (FileNotFoundException ex)
+				{
+					Log(ex.Message);
+					errors++;
+				}
+				catch (UnauthorizedAccessException ex)
+				{
+					Log(ex.Message);
+					errors++;
+				}
+				catch (IOException ex)
+				{
+					Log(ex.Message);
+					errors++;
 				}
 			}
 
