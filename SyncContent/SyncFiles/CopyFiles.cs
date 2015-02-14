@@ -32,45 +32,11 @@ namespace SyncFiles
 
 		public static void SyncFiles(string sourcefile, string targetfile, string sourcepath, string targetpath)
 		{
-			string[] sourcefiles;
-			string[] targetfiles;
+			string[] sourcefiles = GetLines(sourcefile);
+			string[] targetfiles = GetLines(targetfile);
 
-			try
+			if (sourcefiles == null || targetfiles == null)
 			{
-				sourcefiles = File.ReadAllLines(sourcefile).Where(l => l != string.Empty).ToArray();
-			}
-			catch (FileNotFoundException ex)
-			{
-				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-				return;
-			}
-			catch (DirectoryNotFoundException ex)
-			{
-				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-				return;
-			}
-			catch (UnauthorizedAccessException ex)
-			{
-				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-				return;
-			}
-			try
-			{
-				targetfiles = File.ReadAllLines(targetfile).Where(l => l != string.Empty).ToArray();
-			}
-			catch (FileNotFoundException ex)
-			{
-				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-				return;
-			}
-			catch (DirectoryNotFoundException ex)
-			{
-				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-				return;
-			}
-			catch (UnauthorizedAccessException ex)
-			{
-				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
 				return;
 			}
 
@@ -120,6 +86,34 @@ namespace SyncFiles
 			CreateFolders(targetpath, missingfolders);
 
 			Copy(sourcepath, targetpath, filestocopy);
+		}
+
+		static string[] GetLines(string filename)
+		{
+			try
+			{
+				return File.ReadAllLines(filename).Where(l => l != string.Empty).ToArray();
+			}
+			catch (FileNotFoundException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return null;
+			}
+			catch (DirectoryNotFoundException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return null;
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return null;
+			}
+			catch (IOException ex)
+			{
+				LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
+				return null;
+			}
 		}
 
 		static bool ShouldCopyProductFile(string path)
@@ -317,6 +311,7 @@ namespace SyncFiles
 			int copiedfiles = 0;
 			long copiedsize = 0;
 			int errors = 0;
+			int equalfilecount = 0;
 
 			foreach (string row in filestocopy)
 			{
@@ -325,30 +320,69 @@ namespace SyncFiles
 				string sourcepath2 = Path.Combine(sourcepath, filename);
 				string targetpath2 = Path.Combine(targetpath, filename);
 
-				Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "'");
+				FileInfo fiSource = null;
+				FileInfo fiTarget = null;
 
 				try
 				{
-					if (File.Exists(targetpath2))
+					if (compareMetadata && File.Exists(targetpath2))
 					{
-						if (compareMetadata)
-						{
-							FileInfo fiSource = new FileInfo(sourcepath2);
-							FileInfo fiTarget = new FileInfo(targetpath2);
+						fiSource = new FileInfo(sourcepath2);
+						fiTarget = new FileInfo(targetpath2);
+					}
+				}
+				catch (FileNotFoundException ex)
+				{
+					Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "'");
+					Log(ex.Message);
+					errors++;
+					continue;
+				}
+				catch (DirectoryNotFoundException ex)
+				{
+					Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "'");
+					Log(ex.Message);
+					errors++;
+					continue;
+				}
+				catch (UnauthorizedAccessException ex)
+				{
+					Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "'");
+					Log(ex.Message);
+					errors++;
+					continue;
+				}
+				catch (IOException ex)
+				{
+					Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "'");
+					Log(ex.Message);
+					errors++;
+					continue;
+				}
 
-							if (fiSource.LastWriteTime == fiTarget.LastWriteTime && fiSource.Length == fiTarget.Length)
-							{
-								Log("  Files appears equal after all...", false, ConsoleColor.Yellow);
-								continue;
-							}
+
+				try
+				{
+					if (fiSource != null && fiTarget != null)
+					{
+						if (fiSource.LastWriteTime == fiTarget.LastWriteTime && fiSource.Length == fiTarget.Length)
+						{
+							Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "': Files appears equal after all.", true, ConsoleColor.Yellow);
+							equalfilecount++;
+							continue;
 						}
 
-						if (!simulate)
+						RemoveRO(targetpath2);
+					}
+					else
+					{
+						if (File.Exists(targetpath2))
 						{
 							RemoveRO(targetpath2);
 						}
 					}
 
+					Log("Copying: '" + sourcepath2 + "' -> '" + targetpath2 + "'");
 					if (!simulate)
 					{
 						File.Copy(sourcepath2, targetpath2, true);
@@ -357,6 +391,11 @@ namespace SyncFiles
 					copiedsize += filesize;
 				}
 				catch (FileNotFoundException ex)
+				{
+					Log(ex.Message);
+					errors++;
+				}
+				catch (DirectoryNotFoundException ex)
 				{
 					Log(ex.Message);
 					errors++;
@@ -379,6 +418,7 @@ namespace SyncFiles
 
 			Log("Copied files: " + copiedfiles + " (of " + filestocopy.Length + ")");
 			Log("Copied size: " + copiedsize / 1024 / 1024 + " mb (of " + copysize / 1024 / 1024 + " mb)");
+			Log("Unexpected identical files: " + equalfilecount);
 			Log("Time: " + ts);
 			Log("Speed: " + (ts == TimeSpan.Zero ? 0 : (copysize / 1024 / 1024 / ts.TotalSeconds)) + " mb/s");
 			Log("Errors: " + errors);
@@ -389,7 +429,10 @@ namespace SyncFiles
 			FileAttributes fa = File.GetAttributes(filename);
 			if ((fa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
 			{
-				File.SetAttributes(filename, fa & ~FileAttributes.ReadOnly);
+				if (!simulate)
+				{
+					File.SetAttributes(filename, fa & ~FileAttributes.ReadOnly);
+				}
 			}
 		}
 	}

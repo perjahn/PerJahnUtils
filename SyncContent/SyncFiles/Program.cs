@@ -17,6 +17,7 @@ namespace SyncFiles
 		static void Main(string[] args)
 		{
 			Run(args);
+			Log("-=-=- Ending: " + DateTime.Now.ToString("yyyyMMdd HHmmss") + " -=-=-");
 
 			if (Environment.UserInteractive)
 			{
@@ -27,24 +28,9 @@ namespace SyncFiles
 
 		static void Run(string[] args)
 		{
-			string date = DateTime.Now.ToString("yyyyMMdd");
-			string filename = "SyncFiles_" + date + ".txt";
-			string backup = null;
-
-			if (File.Exists(filename))
-			{
-				int i = 1;
-				do
-				{
-					backup = "SyncFiles_" + date + "_" + i + ".txt";
-					i++;
-				}
-				while (File.Exists(backup));
-
-				File.Move(filename, backup);
-			}
-
+			string filename = "SyncFiles_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
 			LogWriter.logfile = filename;
+			Log("-=-=- Starting: " + DateTime.Now.ToString("yyyyMMdd HHmmss") + " -=-=-");
 
 
 			args = ParseOptions(args);
