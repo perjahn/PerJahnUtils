@@ -27,7 +27,25 @@ namespace SyncFiles
 
 		static void Run(string[] args)
 		{
-			LogWriter.logfile = "logfile_" + DateTime.Now.ToString("HHmmss") + ".txt";
+			string date = DateTime.Now.ToString("yyyyMMdd");
+			string filename = "SyncFiles_" + date + ".txt";
+			string backup = null;
+
+			if (File.Exists(filename))
+			{
+				int i = 1;
+				do
+				{
+					backup = "SyncFiles_" + date + "_" + i + ".txt";
+					i++;
+				}
+				while (File.Exists(backup));
+
+				File.Move(filename, backup);
+			}
+
+			LogWriter.logfile = filename;
+
 
 			args = ParseOptions(args);
 
