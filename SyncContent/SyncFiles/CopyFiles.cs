@@ -40,9 +40,9 @@ namespace SyncFiles
 				return;
 			}
 
-			string source = sourcepath.StartsWith(@"\\") ? sourcepath.TrimStart('\\').Split('\\')[0].Split('.')[0] : sourcepath;
-			string target = sourcepath.StartsWith(@"\\") ? targetpath.TrimStart('\\').Split('\\')[0].Split('.')[0] : targetpath;
-			Log("Syncing: " + source + " -> " + target, false, ConsoleColor.Magenta);
+			//string source = sourcepath.StartsWith(@"\\") ? sourcepath.TrimStart('\\').Split('\\')[0].Split('.')[0] : sourcepath;
+			//string target = sourcepath.StartsWith(@"\\") ? targetpath.TrimStart('\\').Split('\\')[0].Split('.')[0] : targetpath;
+			Log("Syncing: " + sourcepath + " -> " + targetpath, false, ConsoleColor.Magenta);
 
 			Log("Source files: " + sourcefiles.Length);
 			Log("Target files: " + targetfiles.Length);
