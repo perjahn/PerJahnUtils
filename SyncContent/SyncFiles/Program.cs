@@ -41,7 +41,7 @@ namespace SyncFiles
 Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s] <sourcefile> <targetfile> <sourcepath> <targetpath>
 
 -d  Also compare actual metadata (filetime+filesize) from file systems before copying.
--e  Exclude file regex pattern.
+-e  Exclude file regex pattern (multiple -e can be specified).
 -i  File including an identifer per line.
 -l  Log folder.
 -m  Max file size in bytes.
@@ -71,16 +71,9 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
 			}
 
 
-			string[] argsExclude = args.Where(a => a.ToLower().StartsWith("-e")).ToArray();
-			if (argsExclude.Length > 1)
-			{
-				return null;
-			}
-			if (argsExclude.Length == 1)
-			{
-				CopyFiles.exclude = argsExclude[0].Substring(2);
-				args = args.Where(a => !a.ToLower().StartsWith("-e")).ToArray();
-			}
+			string[] argsExcludes = args.Where(a => a.ToLower().StartsWith("-e")).ToArray();
+			CopyFiles.excludes = argsExcludes.Select(a => a.Substring(2)).ToArray();
+			args = args.Where(a => !a.ToLower().StartsWith("-e")).ToArray();
 
 
 			string[] argsIdentifierfile = args.Where(a => a.ToLower().StartsWith("-i")).ToArray();

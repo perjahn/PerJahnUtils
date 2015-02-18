@@ -14,7 +14,7 @@ namespace SyncFiles
 		public static bool simulate { get; set; }
 		public static string[] identifiers { get; set; }
 		public static long maxsize { get; set; }
-		public static string exclude { get; set; }
+		public static string[] excludes { get; set; }
 
 		static void Log(string message, bool verbose = false, ConsoleColor? color = null)
 		{
@@ -47,9 +47,9 @@ namespace SyncFiles
 			Log("Source files: " + sourcefiles.Length);
 			Log("Target files: " + targetfiles.Length);
 
-			if (!string.IsNullOrEmpty(exclude))
+			if (excludes != null && excludes.Length > 0)
 			{
-				Log("Exclude file pattern: '" + exclude + "'");
+				Log("Exclude file pattern: '" + string.Join("', '", excludes) + "'");
 			}
 			if (identifiers != null)
 			{
@@ -157,22 +157,25 @@ namespace SyncFiles
 			}
 
 
-			if (!string.IsNullOrEmpty(exclude))
+			if (excludes != null && excludes.Length > 0)
 			{
-				if (LogWriter.verbose)
+				foreach (string exclude in excludes)
 				{
-					string[] junk = filestocopy.Where(f => Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase)).ToArray();
-					Log("Excluded files (file pattern): " + junk.Length, true);
-					foreach (string filerow in junk)
+					if (LogWriter.verbose)
 					{
-						Log("Exclude file: '" + filerow + "'", true);
+						string[] junk = filestocopy.Where(f => Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase)).ToArray();
+						Log("Excluded files (file pattern: '" + exclude + "'): " + junk.Length, true);
+						foreach (string filerow in junk)
+						{
+							Log("Exclude file: '" + filerow + "'", true);
+						}
 					}
-				}
 
-				count1 = filestocopy.Length;
-				filestocopy = filestocopy.Where(f => !Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase)).ToArray();
-				count2 = filestocopy.Length;
-				Log("Excluded files (file pattern): " + (count1 - count2));
+					count1 = filestocopy.Length;
+					filestocopy = filestocopy.Where(f => !Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase)).ToArray();
+					count2 = filestocopy.Length;
+					Log("Excluded files (file pattern: '" + exclude + "'): " + (count1 - count2));
+				}
 			}
 
 
