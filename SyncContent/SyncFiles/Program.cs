@@ -16,8 +16,11 @@ namespace SyncFiles
 
 		static void Main(string[] args)
 		{
-			Run(args);
-			Log("-=-=- Ending: " + DateTime.Now.ToString("yyyyMMdd HHmmss") + " -=-=-");
+			bool result = Run(args);
+			if (result)
+			{
+				Log("-=-=- Ending: " + DateTime.Now.ToString("yyyyMMdd HHmmss") + " -=-=-");
+			}
 
 			if (Environment.UserInteractive)
 			{
@@ -26,12 +29,10 @@ namespace SyncFiles
 			}
 		}
 
-		static void Run(string[] args)
+		static bool Run(string[] args)
 		{
 			string filename = "SyncFiles_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
 			LogWriter.logfile = filename;
-			Log("-=-=- Starting: " + DateTime.Now.ToString("yyyyMMdd HHmmss") + " -=-=-");
-
 
 			args = ParseOptions(args);
 
@@ -49,10 +50,14 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-mMAXSIZE] [-s] <sourcefile
 -s  Simulate.";
 
 				Log(usage);
-				return;
+				return false;
 			}
 
+			Log("-=-=- Starting: " + DateTime.Now.ToString("yyyyMMdd HHmmss") + " -=-=-");
+
 			CopyFiles.SyncFiles(args[0], args[1], args[2], args[3]);
+
+			return true;
 		}
 
 		static string[] ParseOptions(string[] args)
