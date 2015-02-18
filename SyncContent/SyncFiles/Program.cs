@@ -31,9 +31,6 @@ namespace SyncFiles
 
 		static bool Run(string[] args)
 		{
-			string filename = "SyncFiles_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
-			LogWriter.logfile = filename;
-
 			args = ParseOptions(args);
 
 			if (args == null || args.Length != 4)
@@ -41,11 +38,12 @@ namespace SyncFiles
 				string usage =
 @"SyncFiles 1.2
 
-Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-mMAXSIZE] [-s] <sourcefile> <targetfile> <sourcepath> <targetpath>
+Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s] <sourcefile> <targetfile> <sourcepath> <targetpath>
 
 -d  Also compare actual metadata (filetime+filesize) from file systems before copying.
--e  Exclude file pattern.
+-e  Exclude file regex pattern.
 -i  File including an identifer per line.
+-l  Log folder.
 -m  Max file size in bytes.
 -s  Simulate.";
 
@@ -104,6 +102,30 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-mMAXSIZE] [-s] <sourcefile
 				}
 
 				args = args.Where(a => !a.ToLower().StartsWith("-i")).ToArray();
+			}
+
+
+			string[] argsLogpath = args.Where(a => a.ToLower().StartsWith("-l")).ToArray();
+			if (argsLogpath.Length > 1)
+			{
+				return null;
+			}
+			string logfile = "SyncFiles_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
+			if (argsLogpath.Length == 1)
+			{
+				string logpath = argsLogpath[0].Substring(2);
+				if (!Directory.Exists(logpath))
+				{
+					Console.WriteLine("Creating log folder: '" + logpath + "'." + Environment.NewLine);
+					Directory.CreateDirectory(logpath);
+				}
+
+				LogWriter.logfile = Path.Combine(logpath, logfile);
+				args = args.Where(a => !a.ToLower().StartsWith("-l")).ToArray();
+			}
+			else
+			{
+				LogWriter.logfile = logfile;
 			}
 
 
