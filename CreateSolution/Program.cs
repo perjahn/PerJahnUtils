@@ -38,7 +38,7 @@ namespace CreateSolution
             System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             string usage =
-@"CreateSolution 1.6 - Creates VS solution file.
+@"CreateSolution 1.7 - Creates VS solution file.
 
 Usage: CreateSolution [-g] [-vX] <path> <solutionfile> [excludeprojs...]
 
@@ -84,12 +84,12 @@ Example: CreateSolution . all.sln myproj1 myproj2";
 
             string path = argsWithoutFlags[0];
             string solutionfile = argsWithoutFlags[1];
-            IEnumerable<string> excludeprojects = argsWithoutFlags.Skip(2);
+            List<string> excludeprojects = argsWithoutFlags.Skip(2).ToList();
 
             CreateSolution(path, solutionfile, generateGlobalSection, vsVersion, excludeprojects);
         }
 
-        static void CreateSolution(string path, string solutionfile, bool generateGlobalSection, VSVersion vsVersion, IEnumerable<string> excludeprojects)
+        static void CreateSolution(string path, string solutionfile, bool generateGlobalSection, VSVersion vsVersion, List<string> excludeprojects)
         {
             List<string> files;
 
@@ -133,7 +133,7 @@ Example: CreateSolution . all.sln myproj1 myproj2";
             }
 
 
-            IEnumerable<proj> projs = GetProjects(files, solutionfile);
+            List<proj> projs = GetProjects(files, solutionfile);
 
 
             projs = RemoveDups(projs);
@@ -201,8 +201,10 @@ Example: CreateSolution . all.sln myproj1 myproj2";
             return;
         }
 
-        static IEnumerable<proj> GetProjects(List<string> files, string solutionfile)
+        static List<proj> GetProjects(List<string> files, string solutionfile)
         {
+            List<proj> projects = new List<proj>();
+
             foreach (string file in files)
             {
                 proj newproj;
@@ -261,14 +263,18 @@ Example: CreateSolution . all.sln myproj1 myproj2";
                     continue;
                 }
 
-                yield return newproj;
+                projects.Add(newproj);
             }
+
+            return projects;
         }
 
-        private IEnumerable<proj> GetDuplicates(IEnumerable<proj> projs)
+        private List<proj> GetDuplicates(List<proj> projects)
         {
+            List<proj> dups = new List<proj>();
+
             var results =
-                    from proj a in projs
+                    from proj a in projects
                     group a by a.guid into g
                     where g.Count() > 1
                     select g;
@@ -277,51 +283,25 @@ Example: CreateSolution . all.sln myproj1 myproj2";
             {
                 foreach (var item in group)
                 {
-                    yield return item;
+                    dups.Add(item);
                 }
             }
+
+            return dups;
         }
 
-        static IEnumerable<string> GetAllTargets(IEnumerable<proj> projs)
+        static List<string> GetAllTargets(List<proj> projs)
         {
-            List<string> targets = new List<string>();
-
-            foreach (proj p in projs)
-            {
-                foreach (string target in p.targets)
-                {
-                    targets.Add(target);
-                }
-            }
-
-            IEnumerable<string> targets2 =
-                    from t in targets
-                    select t;
-
-            List<string> targets3 = targets2.Distinct().ToList();
-
-            List<string> targets4 = new List<string>();
+            var targets = projs
+                .SelectMany(t => t.targets)
+                .Distinct()
+                .ToList();
 
             // Remove lowercase dups (keep most uppercased)
-            foreach (string target in targets3)
-            {
-                bool add = true;
-                foreach (string target2 in targets3)
-                {
-                    if (string.Compare(target, target2, StringComparison.InvariantCultureIgnoreCase) == 0 &&
-                            string.Compare(target, target2) < 0)
-                    {
-                        add = false;
-                        break;
-                    }
-                }
-                if (add)
-                {
-                    targets4.Add(target);
-                }
-            }
-
-            return targets4;
+            return targets
+                .Where(t => !targets
+                    .Any(tt => string.Compare(t, tt, StringComparison.InvariantCultureIgnoreCase) == 0 && string.Compare(t, tt) < 0))
+                .ToList();
         }
 
         // " '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "
@@ -343,7 +323,7 @@ Example: CreateSolution . all.sln myproj1 myproj2";
             return s.Substring(pos2 + 1, pos3 - pos2 - 1);
         }
 
-        static IEnumerable<proj> RemoveDups(IEnumerable<proj> projs)
+        static List<proj> RemoveDups(List<proj> projs)
         {
             List<proj> projs2 = projs.ToList();
 
@@ -351,13 +331,9 @@ Example: CreateSolution . all.sln myproj1 myproj2";
             RemoveByAssemblyName(projs2);
             RemoveByFileName(projs2);
 
-            foreach (proj p in projs2)
-            {
-                if (p != null)
-                {
-                    yield return p;
-                }
-            }
+            return projs2
+                .Where(p => p != null)
+                .ToList();
         }
 
         private static void RemoveByGuid(List<proj> projs2)
@@ -494,7 +470,7 @@ Example: CreateSolution . all.sln myproj1 myproj2";
             return s4;
         }
 
-        static string GenerateGlobalSection(IEnumerable<proj> projs)
+        static string GenerateGlobalSection(List<proj> projs)
         {
             // TODO: Analyze why this algorithm is different from VS,
             // it's noticeable on projects with more complex configs
@@ -508,7 +484,9 @@ Example: CreateSolution . all.sln myproj1 myproj2";
                     "Global" + Environment.NewLine +
                     "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
 
-            IEnumerable<string> targets = GetAllTargets(projs).OrderBy(t => t).Distinct();
+            var targets = GetAllTargets(projs)
+                .OrderBy(t => t)
+                .Distinct();
 
             foreach (string target in targets)
             {
