@@ -10,11 +10,13 @@ namespace CheckMissingFiles
     class Project
     {
         public string _projectfilepath { get; set; }
-        public List<string> _allfiles { get; set; }
-        public int _missingfiles { get; set; }
+        public List<string> _allfilesError { get; set; }
+        public List<string> _allfilesWarning { get; set; }
+        public int _missingfilesError { get; set; }
+        public int _missingfilesWarning { get; set; }
 
         private static string[] excludedtags = {
-			"Reference", "Folder", "Import", "None", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
+            "Reference", "Folder", "Import", "None", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
             "COMReference", "WCFMetadata", "WebReferences", "WCFMetadataStorage", "WebReferenceUrl" };
 
         public static Project LoadProject(string solutionfile, string projectfilepath)
@@ -52,9 +54,16 @@ namespace CheckMissingFiles
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
 
-            newproj._allfiles =
+            newproj._allfilesError =
                 (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
                  where el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName)
+                 orderby el.Attribute("Include").Value
+                 select System.Uri.UnescapeDataString(el.Attribute("Include").Value))
+                 .ToList();
+
+            newproj._allfilesWarning =
+                (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
+                 where el.Attribute("Include") != null && el.Name.LocalName == "None"
                  orderby el.Attribute("Include").Value
                  select System.Uri.UnescapeDataString(el.Attribute("Include").Value))
                  .ToList();
@@ -65,7 +74,7 @@ namespace CheckMissingFiles
 
         public void Check(string solutionfile)
         {
-            foreach (string include in _allfiles)
+            foreach (string include in _allfilesError)
             {
                 // Files must exist in file system.
                 string fullfilename = Path.Combine(
@@ -74,13 +83,26 @@ namespace CheckMissingFiles
                     include);
                 if (!File.Exists(fullfilename))
                 {
-                    //ConsoleHelper.WriteLineColor(
-                    //     "'" + _projectfilepath + "' --> '" + include + "'",
-                    //     ConsoleColor.Red);
                     ConsoleHelper.WriteLineColor(
                          "##teamcity[message text='" + _projectfilepath + " --> " + include + "' status='ERROR']",
                          ConsoleColor.Red);
-                    _missingfiles++;
+                    _missingfilesError++;
+                }
+            }
+
+            foreach (string include in _allfilesWarning)
+            {
+                // Files should exist in file system.
+                string fullfilename = Path.Combine(
+                    Path.GetDirectoryName(solutionfile),
+                    Path.GetDirectoryName(_projectfilepath),
+                    include);
+                if (!File.Exists(fullfilename))
+                {
+                    ConsoleHelper.WriteLineColor(
+                         "##teamcity[message text='" + _projectfilepath + " --> " + include + "' status='WARNING']",
+                         ConsoleColor.Yellow);
+                    _missingfilesWarning++;
                 }
             }
 

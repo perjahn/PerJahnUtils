@@ -97,16 +97,43 @@ namespace CheckMissingFiles
                 p.Check(_solutionfile);
             }
 
-            int missingfiles = _projects.Select(p => p._missingfiles).Sum();
+            int missingfilesError = _projects.Select(p => p._missingfilesError).Sum();
+            int missingfilesWarning = _projects.Select(p => p._missingfilesWarning).Sum();
 
-            if (missingfiles == 0)
+            string msg = "Parsed " + _projects.Count + " projects, found ";
+
+            if (missingfilesError == 0)
             {
-                ConsoleHelper.WriteLine("Parsed " + _projects.Count + " projects found no missing files.");
-                return 0;
+                if (missingfilesWarning == 0)
+                {
+                    ConsoleHelper.WriteLine(msg + "no missing files.");
+                }
+                else
+                {
+                    ConsoleHelper.WriteLine(msg + "no missing files (although " + missingfilesWarning + " missing files with None build action).");
+                }
+            }
+            else
+            {
+                if (missingfilesWarning == 0)
+                {
+                    ConsoleHelper.WriteLine(msg + missingfilesError + " missing files.");
+                }
+                else
+                {
+                    ConsoleHelper.WriteLine(msg + missingfilesError + " missing files (and " + missingfilesWarning + " missing files with None build action).");
+                }
             }
 
-            ConsoleHelper.WriteLine("Parsed " + _projects.Count + " projects, found " + missingfiles + " missing files.");
-            return 3;
+
+            if (missingfilesError == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return 3;
+            }
         }
     }
 }
