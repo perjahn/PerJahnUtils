@@ -27,7 +27,7 @@ namespace CheckMissingFiles
 
         static int RemoveFiles(string[] args)
         {
-            string usage = @"CheckMissingFiles 1.1
+            string usage = @"CheckMissingFiles 1.2
 
 Usage: CheckMissingFiles <solution file>
 
@@ -50,8 +50,9 @@ Example: CheckMissingFiles hello.sln";
                 ConsoleHelper.DeferredLine = solutionfile;
                 s.LoadProjects();
             }
-            catch (ApplicationException)
+            catch (ApplicationException ex)
             {
+                ConsoleHelper.WriteLineColor(ex.Message, ConsoleColor.Red);
                 return 2;
             }
 
