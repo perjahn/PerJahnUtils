@@ -16,12 +16,14 @@ namespace CheckMissingFiles
         public int _missingfilesError { get; set; }
         public int _missingfilesWarning { get; set; }
         public bool _parseError { get; set; }
+        private string _formatStringError { get; set; }
+        private string _formatStringWarning { get; set; }
 
         private static string[] excludedtags = {
             "Reference", "Folder", "Import", "None", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
             "COMReference", "ProjectConfiguration", "WCFMetadata", "WebReferences", "WCFMetadataStorage", "WebReferenceUrl" };
 
-        public Project(string solutionfile, string projectfilepath)
+        public Project(string solutionfile, string projectfilepath, bool teamcityErrorMessage)
         {
             _solutionfile = solutionfile;
 
@@ -71,6 +73,16 @@ namespace CheckMissingFiles
                  select System.Uri.UnescapeDataString(el.Attribute("Include").Value))
                  .ToList();
 
+            if (teamcityErrorMessage)
+            {
+                _formatStringError = "##teamcity[message text='{0} --> {1}' status='ERROR']";
+                _formatStringWarning = "##teamcity[message text='{0} --> {1}' status='WARNING']";
+            }
+            else
+            {
+                _formatStringError = "'{0}' --> '{1}'";
+                _formatStringWarning = "'{0}' --> '{1}'";
+            }
 
             return;
         }
@@ -93,7 +105,8 @@ namespace CheckMissingFiles
                 catch (System.ArgumentException ex)
                 {
                     ConsoleHelper.WriteLineColor(
-                        "Couldn't construct file name: '" + _solutionfile + "' + '" + _projectfilepath + "' + '" + include + "': " + ex.Message, ConsoleColor.Red
+                        "Couldn't construct file name: '" + _solutionfile + "' + '" + _projectfilepath + "' + '" + include + "': " + ex.Message,
+                        ConsoleColor.Red
                         );
                     _parseError = true;
                     continue;
@@ -101,9 +114,8 @@ namespace CheckMissingFiles
 
                 if (!File.Exists(fullfilename))
                 {
-                    ConsoleHelper.WriteLineColor(
-                         "##teamcity[message text='" + _projectfilepath + " --> " + include + "' status='ERROR']",
-                         ConsoleColor.Red);
+                    string message = string.Format(_formatStringError, _projectfilepath, include);
+                    ConsoleHelper.WriteLineColor(message, ConsoleColor.Red);
                     _missingfilesError++;
                 }
             }
@@ -122,16 +134,16 @@ namespace CheckMissingFiles
                 catch (System.ArgumentException ex)
                 {
                     ConsoleHelper.WriteLineColor(
-                        "Couldn't construct file name: '" + _solutionfile + "' + '" + _projectfilepath + "' + '" + include + "': " + ex.Message, ConsoleColor.Red
+                        "Couldn't construct file name: '" + _solutionfile + "' + '" + _projectfilepath + "' + '" + include + "': " + ex.Message,
+                        ConsoleColor.Red
                         );
                     _parseError = true;
                     continue;
                 }
                 if (!File.Exists(fullfilename))
                 {
-                    ConsoleHelper.WriteLineColor(
-                         "##teamcity[message text='" + _projectfilepath + " --> " + include + "' status='WARNING']",
-                         ConsoleColor.Yellow);
+                    string message = string.Format(_formatStringWarning, _projectfilepath, include);
+                    ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
                     _missingfilesWarning++;
                 }
             }

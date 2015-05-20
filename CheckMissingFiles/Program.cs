@@ -27,11 +27,18 @@ namespace CheckMissingFiles
 
         static int RemoveFiles(string[] args)
         {
-            string usage = @"CheckMissingFiles 1.2
+            string usage = @"CheckMissingFiles 1.3
 
-Usage: CheckMissingFiles <solution file>
+Usage: CheckMissingFiles [-t] <solution file>
+
+-t:  Teamcity error and warning messages.
 
 Example: CheckMissingFiles hello.sln";
+
+
+            bool teamcityErrorMessage = args.Any(a => a == "-t");
+
+            args = args.Except(new string[] { "-t" }).ToArray();
 
 
             if (args.Length != 1)
@@ -48,7 +55,7 @@ Example: CheckMissingFiles hello.sln";
             try
             {
                 ConsoleHelper.DeferredLine = solutionfile;
-                s = new Solution(solutionfile);
+                s = new Solution(solutionfile, teamcityErrorMessage);
             }
             catch (ApplicationException ex)
             {
@@ -58,6 +65,5 @@ Example: CheckMissingFiles hello.sln";
 
             return s.CheckProjects();
         }
-
     }
 }

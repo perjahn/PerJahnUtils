@@ -10,7 +10,7 @@ namespace CheckMissingFiles
         private string _solutionfile;
         private List<Project> _projects;
 
-        public Solution(string solutionfile)
+        public Solution(string solutionfile, bool teamcityErrorMessage)
         {
             _solutionfile = solutionfile;
 
@@ -69,7 +69,7 @@ namespace CheckMissingFiles
                 Project p;
                 try
                 {
-                    p = new Project(_solutionfile, projpath);
+                    p = new Project(_solutionfile, projpath, teamcityErrorMessage);
                 }
                 catch (ApplicationException ex)
                 {
