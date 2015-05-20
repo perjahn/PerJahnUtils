@@ -43,12 +43,12 @@ Example: CheckMissingFiles hello.sln";
             string solutionfile = args[0];
 
 
-            Solution s = new Solution(solutionfile);
+            Solution s;
 
             try
             {
                 ConsoleHelper.DeferredLine = solutionfile;
-                s.LoadProjects();
+                s = new Solution(solutionfile);
             }
             catch (ApplicationException ex)
             {

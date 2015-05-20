@@ -13,10 +13,7 @@ namespace CheckMissingFiles
         public Solution(string solutionfile)
         {
             _solutionfile = solutionfile;
-        }
 
-        public void LoadProjects()
-        {
             string[] rows;
             try
             {
@@ -72,7 +69,7 @@ namespace CheckMissingFiles
                 Project p;
                 try
                 {
-                    p = Project.LoadProject(_solutionfile, projpath);
+                    p = new Project(_solutionfile, projpath);
                 }
                 catch (ApplicationException ex)
                 {
@@ -94,8 +91,10 @@ namespace CheckMissingFiles
         {
             foreach (Project p in _projects.OrderBy(p => p._projectfilepath))
             {
-                p.Check(_solutionfile);
+                p.Check();
             }
+
+            bool parseError = _projects.Any(p => p._parseError);
 
             int missingfilesError = _projects.Select(p => p._missingfilesError).Sum();
             int missingfilesWarning = _projects.Select(p => p._missingfilesWarning).Sum();
@@ -125,6 +124,10 @@ namespace CheckMissingFiles
                 }
             }
 
+            if (parseError)
+            {
+                return 2;
+            }
 
             if (missingfilesError == 0)
             {
