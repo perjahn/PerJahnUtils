@@ -9,10 +9,12 @@ namespace CheckMissingFiles
     {
         private string _solutionfile;
         private List<Project> _projects;
+        private bool _reverseCheck { get; set; }
 
-        public Solution(string solutionfile, bool teamcityErrorMessage)
+        public Solution(string solutionfile, bool teamcityErrorMessage, bool reverseCheck)
         {
             _solutionfile = solutionfile;
+            _reverseCheck = reverseCheck;
 
             string[] rows;
             try
@@ -69,7 +71,7 @@ namespace CheckMissingFiles
                 Project p;
                 try
                 {
-                    p = new Project(_solutionfile, projpath, teamcityErrorMessage);
+                    p = new Project(_solutionfile, projpath, teamcityErrorMessage, reverseCheck);
                 }
                 catch (ApplicationException ex)
                 {
@@ -98,29 +100,50 @@ namespace CheckMissingFiles
 
             int missingfilesError = _projects.Select(p => p._missingfilesError).Sum();
             int missingfilesWarning = _projects.Select(p => p._missingfilesWarning).Sum();
+            int existingfiles = _projects.Select(p => p._existingfiles).Sum();
 
             string msg = "Parsed " + _projects.Count + " projects, found ";
+            string msg2 = "";
 
-            if (missingfilesError == 0)
+            if (existingfiles > 0)
             {
-                if (missingfilesWarning == 0)
+                msg2 = "";
+            }
+
+            if (_reverseCheck)
+            {
+                if (existingfiles == 0)
                 {
                     ConsoleHelper.WriteLine(msg + "no missing files.");
                 }
                 else
                 {
-                    ConsoleHelper.WriteLine(msg + "no missing files (although " + missingfilesWarning + " missing files with None build action).");
+                    ConsoleHelper.WriteLine(msg + missingfilesWarning + " files in file system that wasn't included in project files.");
                 }
             }
             else
             {
-                if (missingfilesWarning == 0)
+                if (missingfilesError == 0)
                 {
-                    ConsoleHelper.WriteLine(msg + missingfilesError + " missing files.");
+                    if (missingfilesWarning == 0)
+                    {
+                        ConsoleHelper.WriteLine(msg + "no missing files.");
+                    }
+                    else
+                    {
+                        ConsoleHelper.WriteLine(msg + "no missing files (although " + missingfilesWarning + " missing files with None build action).");
+                    }
                 }
                 else
                 {
-                    ConsoleHelper.WriteLine(msg + missingfilesError + " missing files (and " + missingfilesWarning + " missing files with None build action).");
+                    if (missingfilesWarning == 0)
+                    {
+                        ConsoleHelper.WriteLine(msg + missingfilesError + " missing files.");
+                    }
+                    else
+                    {
+                        ConsoleHelper.WriteLine(msg + missingfilesError + " missing files (and " + missingfilesWarning + " missing files with None build action).");
+                    }
                 }
             }
 
