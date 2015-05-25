@@ -11,10 +11,9 @@ namespace CheckMissingFiles
         private List<Project> _projects;
         private bool _reverseCheck { get; set; }
 
-        public Solution(string solutionfile, bool teamcityErrorMessage, bool reverseCheck)
+        public Solution(string solutionfile, bool teamcityErrorMessage)
         {
             _solutionfile = solutionfile;
-            _reverseCheck = reverseCheck;
 
             string[] rows;
             try
@@ -71,7 +70,7 @@ namespace CheckMissingFiles
                 Project p;
                 try
                 {
-                    p = new Project(_solutionfile, projpath, teamcityErrorMessage, reverseCheck);
+                    p = new Project(_solutionfile, projpath, teamcityErrorMessage);
                 }
                 catch (ApplicationException ex)
                 {
@@ -89,36 +88,30 @@ namespace CheckMissingFiles
             }
         }
 
-        public int CheckProjects()
+        public int CheckProjects(bool reverseCheck)
         {
             foreach (Project p in _projects.OrderBy(p => p._projectfilepath))
             {
-                p.Check();
+                p.Check(reverseCheck);
             }
 
             bool parseError = _projects.Any(p => p._parseError);
 
             int missingfilesError = _projects.Select(p => p._missingfilesError).Sum();
             int missingfilesWarning = _projects.Select(p => p._missingfilesWarning).Sum();
-            int existingfiles = _projects.Select(p => p._existingfiles).Sum();
+            int excessfiles = _projects.Select(p => p._excessfiles).Sum();
 
             string msg = "Parsed " + _projects.Count + " projects, found ";
-            string msg2 = "";
 
-            if (existingfiles > 0)
+            if (reverseCheck)
             {
-                msg2 = "";
-            }
-
-            if (_reverseCheck)
-            {
-                if (existingfiles == 0)
+                if (excessfiles == 0)
                 {
-                    ConsoleHelper.WriteLine(msg + "no missing files.");
+                    ConsoleHelper.WriteLine(msg + "no excess files.");
                 }
                 else
                 {
-                    ConsoleHelper.WriteLine(msg + missingfilesWarning + " files in file system that wasn't included in project files.");
+                    ConsoleHelper.WriteLine(msg + excessfiles + " files in file system that wasn't included in project files.");
                 }
             }
             else

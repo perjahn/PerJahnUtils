@@ -58,7 +58,7 @@ Example: CheckMissingFiles hello.sln";
             try
             {
                 ConsoleHelper.DeferredLine = solutionfile;
-                s = new Solution(solutionfile, teamcityErrorMessage, reverseCheck);
+                s = new Solution(solutionfile, teamcityErrorMessage);
             }
             catch (ApplicationException ex)
             {
@@ -66,7 +66,7 @@ Example: CheckMissingFiles hello.sln";
                 return 2;
             }
 
-            return s.CheckProjects();
+            return s.CheckProjects(reverseCheck);
         }
     }
 }
