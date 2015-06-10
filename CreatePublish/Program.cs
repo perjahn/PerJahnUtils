@@ -101,7 +101,7 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             string buf = xml1;
             string solutionname = Path.GetFileNameWithoutExtension(solutionfile);
 
-            if (!Path.IsPathRooted(publishfolder))
+            if (Path.IsPathRooted(solutionfile) && !Path.IsPathRooted(publishfolder))
             {
                 publishfolder = FileHelper.CompactPath(Path.Combine(Environment.CurrentDirectory, publishfolder));
             }
