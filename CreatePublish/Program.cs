@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Mail;
 using System.Xml.Linq;
 
 namespace CreatePublish
@@ -13,7 +14,7 @@ namespace CreatePublish
         static void Main(string[] args)
         {
             string usage =
-@"CreatePublish 1.4 - Program for creating msbuild publishing script of Web/MVC projects.
+@"CreatePublish 1.5 - Program for creating msbuild publishing script of Web/MVC projects.
 
 Usage: CreatePublish <solutionfile> <msbuildfile> <publishfolder>
 
@@ -45,11 +46,11 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
                 foreach (var testvalue in testvalues)
                 {
                     string sol = testvalue.Item1;
-                    string proj = testvalue.Item2;
+                    string projectname = testvalue.Item2;
                     char[] keep = testvalue.Item3;
 
-                    string result = GetProjName(proj, sol, keep);
-                    Console.WriteLine("'" + proj + "' '" + sol + "' '" + string.Join("", keep) + "' -> '" + result + "'");
+                    string result = string.Join(string.Empty, projectname.ToCharArray().Where(c => !char.IsWhiteSpace(c)));
+                    Console.WriteLine("'" + projectname + "' '" + sol + "' '" + string.Join("", keep) + "' -> '" + result + "'");
                 }
 
                 return;
@@ -118,7 +119,7 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
                 string relpath = FileHelper.GetRelativePath(Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(buildfile), project._sln_path), publishfolder);
 
                 string projectname = Path.GetFileNameWithoutExtension(project._sln_path);
-                string folder = GetProjName(projectname, solutionname, new char[] { '.' });
+                string folder = string.Join(string.Empty, projectname.ToCharArray().Where(c => !char.IsWhiteSpace(c)));
 
                 filename = Path.Combine(Path.GetDirectoryName(solutionfile), filename);
 
@@ -132,77 +133,6 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             buf += xml2;
 
             File.WriteAllText(buildfile, buf);
-        }
-
-        // Trim solutionname from projectname.
-        static string GetProjName(string projectname, string solutionname, char[] keep)
-        {
-            //Console.WriteLine("'" + projectname + "' '" + solutionname + "': " + projectname.Length + ", " + solutionname.Length);
-
-
-            // Trim leading solution name and junk chars
-            int i, j;
-            for (i = j = 0; ; i++, j++)
-            {
-                /*Console.Write("i:" + i + ", j:" + j);
-                if (i < projectname.Length)
-                {
-                        Console.Write(" '" + projectname[i] + "'");
-                }
-                if (j < solutionname.Length)
-                {
-                        Console.Write(" '" + solutionname[j] + "'");
-                }
-                Console.WriteLine();*/
-
-                while (i < projectname.Length && !char.IsLetterOrDigit(projectname[i]))
-                {
-                    //Console.WriteLine("x");
-                    i++;
-                }
-                while (j < solutionname.Length && !char.IsLetterOrDigit(solutionname[j]))
-                {
-                    //Console.WriteLine("y");
-                    j++;
-                }
-
-                if (i == projectname.Length || j == solutionname.Length)
-                {
-                    //Console.WriteLine("111: " + i + " " + j);
-                    break;
-                }
-
-                if (string.Compare(projectname, i, solutionname, j, 1, true) != 0)
-                {
-                    //Console.WriteLine("222: " + i + " " + j);
-                    break;
-                }
-            }
-
-            string result = projectname.Substring(i);
-            //Console.WriteLine("--> i:" + i + ", j:" + j + " --> '" + result + "'");
-
-
-            // Trim trailing junk
-            i = result.Length;
-            while (i > 0 && !char.IsLetterOrDigit(result[i - 1]))
-            {
-                i--;
-            }
-
-            result = result.Substring(0, i);
-            //Console.WriteLine("--> i:" + i + ", j:" + j + " --> '" + result + "'");
-
-
-            // Remove all junk except keep chars
-            result = string.Join("", result.ToCharArray().Where(c => char.IsLetterOrDigit(c) || keep.Contains(c)));
-
-            if (result == "")
-            {
-                result = projectname;
-            }
-
-            return result;
         }
     }
 }
