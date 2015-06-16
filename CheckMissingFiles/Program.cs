@@ -12,7 +12,7 @@ namespace CheckMissingFiles
         {
             ConsoleHelper.HasWritten = false;
 
-            int result = RemoveFiles(args);
+            int result = CheckFiles(args);
 
             if (ConsoleHelper.HasWritten &&
                 Environment.UserInteractive &&
@@ -25,7 +25,7 @@ namespace CheckMissingFiles
             return result;
         }
 
-        static int RemoveFiles(string[] args)
+        static int CheckFiles(string[] args)
         {
             string usage = @"CheckMissingFiles 2.0
 
