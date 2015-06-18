@@ -14,11 +14,18 @@ namespace CreatePublish
         static void Main(string[] args)
         {
             string usage =
-@"CreatePublish 1.5 - Program for creating msbuild publishing script of Web/MVC projects.
+@"CreatePublish 1.6 - Program for creating msbuild publishing script of Web/MVC projects.
 
-Usage: CreatePublish <solutionfile> <msbuildfile> <publishfolder>
+Usage: CreatePublish [-e] <solutionfile> <msbuildfile> <publishfolder>
 
 Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
+
+            bool writeemptyfile = false;
+            if (args.Contains("-e"))
+            {
+                writeemptyfile = true;
+                args = args.Where(a => a != "-e").ToArray();
+            }
 
             if (args.Length != 3)
             {
@@ -56,12 +63,12 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
                 return;
             }
 
-            CreateBuildFile(solutionfile, buildfile, publishfolder);
+            CreateBuildFile(solutionfile, buildfile, publishfolder, writeemptyfile);
         }
 
-        static void CreateBuildFile(string solutionfile, string buildfile, string publishfolder)
+        static void CreateBuildFile(string solutionfile, string buildfile, string publishfolder, bool writeemptyfile)
         {
-            Solution s = new Solution(solutionfile);
+            Solution solution = new Solution(solutionfile);
 
             string[] webmvcguids =
             {
@@ -73,7 +80,7 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             };
             webmvcguids = webmvcguids.Select(g => g.ToLower()).ToArray();
 
-            List<Project> projects = s.LoadProjects();
+            List<Project> projects = solution.LoadProjects();
             if (projects == null)
             {
                 return;
@@ -90,7 +97,7 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             }
 
 
-            if (webmvcprojects.Count == 0)
+            if (!writeemptyfile && webmvcprojects.Count == 0)
             {
                 Console.WriteLine("No Web/MVC projects found.");
                 return;
