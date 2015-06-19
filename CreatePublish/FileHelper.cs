@@ -13,12 +13,39 @@ namespace CreatePublish
             ConsoleHelper.WriteLine("Testing GetRelativePath():", false);
             string[] paths =
             {
-                @"Folder1\Folder2\File1.csproj",
-                @"Folder3\Folder4\File2.csproj",
-                @"..\..\Folder3\Folder4\File2.csproj",
+                @"Folder1\Folder2\Folder3",
+                @"Folder1\Folder4\File1.csproj",
+                @"..\..\Folder4\File1.csproj",
+                
+                @"dir1\dir2\dir3\dir4",
+                @"dir1\dir5",
+                @"..\..\..\dir5",
+                
+                @"c:\dir1\dir2",
+                @"c:\dir1\dir3",
+                @"..\dir3",
+                
+                @"c:\dir1\dir2",
+                @"d:\dir1\dir3",
+                @"d:\dir1\dir3",
+                
+                @"dir1\dir2",
+                @"dir1\dir3\dir4\dir5",
+                @"..\dir3\dir4\dir5",
 
-                @"dir1\file1", @"dir2\file2", @"..\dir2\file2",
-                @"dir1\", @"dir2\file2", @"..\dir2\file2"
+                @"dir1\dir1", @"dir2\file2", @"..\..\dir2\file2",
+                @"dir1\", @"dir2\file2", @"..\..\dir2\file2",
+
+                @"c:\dir1\dir1", @"c:\dir2\file2.txt", @"..\..\dir2\file2.txt",
+                @"c:\dir1", @"c:\dir2\file2.txt", @"..\dir2\file2.txt",
+                
+                @"Wipcore.WebFoundation\Wipcore.WebFoundation.sln",
+                @"Wipcore.WebFoundation\My.Web\My.Web.csproj",
+                @"..\My.Web\My.Web.csproj",
+                
+                @"Wipcore.WebFoundation",
+                @"Wipcore.WebFoundation\My.Web",
+                @"My.Web"
             };
 
             for (int i = 0; i < paths.Length; i += 3)
@@ -29,49 +56,59 @@ namespace CreatePublish
                 else
                     ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + s + "' (" + paths[i + 2] + ")");
             }
+
+
+            string path1 = @"d:\dir1\dir3";
+            string path2 = @"dir1\dir2";
+            try
+            {
+                string s = FileHelper.GetRelativePath(path1, path2);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + path1 + "' -> '" + path2 + "' = 'ArgumentException' (" + s + ")");
+            }
+            catch (System.Exception ex)
+            {
+                if (ex.GetType() == typeof(ArgumentException))
+                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + path1 + "' -> '" + path2 + "' = '" + ex.Message + "'");
+                else
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + path1 + "' -> '" + path2 + "' = 'ArgumentException' (" + ex.ToString() + ")");
+            }
         }
 
-        // Assumes absolute paths (not good), and the same drive letter in both paths.
-        // Sorry, code is not 100% robust.
+        // Handles both absolute and relative paths.
+        // Caution: Assumes pathFrom is a folder!
+        // Does not remove redundant ..
+        // Does not touch the file system.
         public static string GetRelativePath(string pathFrom, string pathTo)
         {
-            string s = pathFrom;
-
-            int pos = 0, dirs = 0;
-            while (!pathTo.StartsWith(s + Path.DirectorySeparatorChar, StringComparison.InvariantCultureIgnoreCase) && s.Length > 0)
+            if (Path.IsPathRooted(pathFrom) && !Path.IsPathRooted(pathTo))
             {
-                pos = s.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos == -1)
+                // Not obvious what to do here, using the current
+                // directory can sometimes be dangerous, because
+                // some processes execute in the OS system dir, and
+                // you don't want to mess with that folder.
+                throw new ArgumentException("If pathFrom is absolute, pathTo must be it too. Path.GetFullPath might be of use.");
+            }
+
+            string[] dirsFrom = pathFrom.Split(Path.DirectorySeparatorChar);
+            string[] dirsTo = pathTo.Split(Path.DirectorySeparatorChar);
+
+            int dirs = 0;
+            for (int i = 0; i < dirsFrom.Length && i < dirsTo.Length; i++)
+            {
+                if (dirsFrom[i] == dirsTo[i])
                 {
-                    s = string.Empty;
+                    dirs++;
                 }
                 else
                 {
-                    s = s.Substring(0, pos);
+                    break;
                 }
-
-                dirs++;
             }
 
-            dirs--;
+            string s1 = string.Join(Path.DirectorySeparatorChar.ToString(), Enumerable.Repeat("..", dirsFrom.Length - dirs).ToArray());
+            string s2 = string.Join(Path.DirectorySeparatorChar.ToString(), dirsTo.Skip(dirs));
 
-            string s2 = GetDirs(dirs);
-            string s3 = pathTo.Substring(pos + 1);
-            string s4 = s2 + s3;
-
-            return s4;
-        }
-
-        private static string GetDirs(int count)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < count; i++)
-            {
-                sb.Append(".." + Path.DirectorySeparatorChar);
-            }
-
-            return sb.ToString();
+            return Path.Combine(s1, s2);
         }
 
         public static void TestCompactPath()

@@ -3,20 +3,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Text;
 using System.Xml.Linq;
 
 namespace CreatePublish
 {
     class Program
     {
-        private static string eol = Environment.NewLine;
-
         static void Main(string[] args)
         {
             string usage =
-@"CreatePublish 1.6 - Program for creating msbuild publishing script of Web/MVC projects.
+@"CreatePublish 1.7 - Program for creating msbuild publishing script of Web/MVC projects.
 
 Usage: CreatePublish [-e] <solutionfile> <msbuildfile> <publishfolder>
+
+-e:  Write empty file even if no valid projects found.
 
 Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 
@@ -40,33 +41,31 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 
             if (args[0] == "test" && args[1] == "test" && args[2] == "test")
             {
-                Tuple<string, string, char[]>[] testvalues = new Tuple<string, string, char[]>[] {
-                    Tuple.Create<string, string, char[]>("waaa", "wbbb, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>("w.aaa", "w.bbb, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>("wipcore.custo .mer!.app", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>("wipcore.cuszto .mer!.app.", ". Wipco. reCustomer.app. sub. app, ", new char[] { '.' }),
-                    Tuple.Create<string, string, char[]>(". Wipco. reCustomer.app. sub. app, ","wipcore.custo .mer!.app.", new char[] { '.' })
-                };
-
-                foreach (var testvalue in testvalues)
-                {
-                    string sol = testvalue.Item1;
-                    string projectname = testvalue.Item2;
-                    char[] keep = testvalue.Item3;
-
-                    string result = string.Join(string.Empty, projectname.ToCharArray().Where(c => !char.IsWhiteSpace(c)));
-                    Console.WriteLine("'" + projectname + "' '" + sol + "' '" + string.Join("", keep) + "' -> '" + result + "'");
-                }
-
+                Test.Test1();
+                return;
+            }
+            else if (args[0] == "test" && args[1] == "test" && args[2] == "test2")
+            {
+                Test.Test2();
+                return;
+            }
+            else if (args[0] == "test" && args[1] == "test" && args[2] == "test3")
+            {
+                FileHelper.TestGetRelativePath();
                 return;
             }
 
             CreateBuildFile(solutionfile, buildfile, publishfolder, writeemptyfile);
         }
 
-        static void CreateBuildFile(string solutionfile, string buildfile, string publishfolder, bool writeemptyfile)
+        public static void CreateBuildFile(string solutionfile, string buildfile, string publishfolder, bool writeemptyfile)
+        {
+            string content = GenerateBuildFileContent(solutionfile, buildfile, publishfolder, writeemptyfile);
+
+            File.WriteAllText(buildfile, content);
+        }
+
+        public static string GenerateBuildFileContent(string solutionfile, string buildfile, string publishfolder, bool generateemptyfile)
         {
             Solution solution = new Solution(solutionfile);
 
@@ -83,7 +82,7 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             List<Project> projects = solution.LoadProjects();
             if (projects == null)
             {
-                return;
+                return null;
             }
 
             List<Project> webmvcprojects = new List<Project>();
@@ -97,49 +96,52 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             }
 
 
-            if (!writeemptyfile && webmvcprojects.Count == 0)
+            if (!generateemptyfile && webmvcprojects.Count == 0)
             {
                 Console.WriteLine("No Web/MVC projects found.");
-                return;
+                return string.Empty;
             }
 
-            string xml1 = "<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">" + Environment.NewLine + "  <Target Name=\"Build\">" + Environment.NewLine;
-            string xml2 = "  </Target>" + Environment.NewLine + "</Project>" + Environment.NewLine;
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
+            sb.AppendLine("  <Target Name=\"Build\">");
 
-            string buf = xml1;
             string solutionname = Path.GetFileNameWithoutExtension(solutionfile);
 
-            if (Path.IsPathRooted(solutionfile) && !Path.IsPathRooted(publishfolder))
+            if (Path.IsPathRooted(solutionfile) || Path.IsPathRooted(buildfile) || Path.IsPathRooted(publishfolder))
             {
-                publishfolder = FileHelper.CompactPath(Path.Combine(Environment.CurrentDirectory, publishfolder));
+                solutionfile = Path.GetFullPath(solutionfile);
+                buildfile = Path.GetFullPath(buildfile);
+                publishfolder = Path.GetFullPath(publishfolder);
             }
 
             foreach (Project project in webmvcprojects.OrderBy(p => Path.GetFileNameWithoutExtension(p._sln_path)))
             {
-                string filename = project._sln_path;
+                string slnpath = project._sln_path;
 
-                if (filename.StartsWith(@".\"))
+                if (slnpath.StartsWith(@".\"))
                 {
-                    filename = filename.Substring(2);
+                    slnpath = slnpath.Substring(2);
                 }
 
-                string relpath = FileHelper.GetRelativePath(Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(buildfile), project._sln_path), publishfolder);
-
                 string projectname = Path.GetFileNameWithoutExtension(project._sln_path);
-                string folder = string.Join(string.Empty, projectname.ToCharArray().Where(c => !char.IsWhiteSpace(c)));
+                string publishfolder2 = string.Join(string.Empty, projectname.ToCharArray().Where(c => !char.IsWhiteSpace(c)));
 
-                filename = Path.Combine(Path.GetDirectoryName(solutionfile), filename);
+                // projfilename = (curdir -> ) buildfile -> project
+                string projfilename = FileHelper.GetRelativePath(Path.GetDirectoryName(buildfile), Path.Combine(Path.GetDirectoryName(solutionfile), slnpath));
 
-                relpath = Path.Combine(relpath, folder);
+                // publishfolder = (curdir -> ) project -> publishfolder
+                string publishfolder3 = FileHelper.GetRelativePath(Path.GetDirectoryName(Path.Combine(Path.GetDirectoryName(solutionfile), slnpath)), Path.Combine(publishfolder, publishfolder2));
 
-                Console.WriteLine("'" + solutionname + "' + '" + projectname + "' -> '" + relpath + "' (" + filename + ")");
+                Console.WriteLine("'" + solutionname + "' + '" + projectname + "' -> '" + publishfolder3 + "' (" + projfilename + ")");
 
-                buf += "    <MSBuild Projects=\"" + filename + "\" Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir=" + relpath + "\" />" + Environment.NewLine;
+                sb.AppendLine("    <MSBuild Projects=\"" + projfilename + "\" Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir=" + publishfolder3 + "\" />");
             }
 
-            buf += xml2;
+            sb.AppendLine("  </Target>");
+            sb.AppendLine("</Project>");
 
-            File.WriteAllText(buildfile, buf);
+            return sb.ToString();
         }
     }
 }
