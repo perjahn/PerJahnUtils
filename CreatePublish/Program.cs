@@ -115,6 +115,13 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
                 publishfolder = Path.GetFullPath(publishfolder);
             }
 
+            if (Environment.GetEnvironmentVariable("VerbosePublish") == "true")
+            {
+                Console.WriteLine("solutionfile:  '" + solutionfile + "'");
+                Console.WriteLine("buildfile:     '" + buildfile + "'");
+                Console.WriteLine("publishfolder: '" + publishfolder + "'");
+            }
+
             foreach (Project project in webmvcprojects.OrderBy(p => Path.GetFileNameWithoutExtension(p._sln_path)))
             {
                 string slnpath = project._sln_path;

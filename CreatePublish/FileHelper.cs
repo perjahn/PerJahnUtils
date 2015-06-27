@@ -39,22 +39,26 @@ namespace CreatePublish
                 @"c:\dir1\dir1", @"c:\dir2\file2.txt", @"..\..\dir2\file2.txt",
                 @"c:\dir1", @"c:\dir2\file2.txt", @"..\dir2\file2.txt",
                 
-                @"Wipcore.WebFoundation\Wipcore.WebFoundation.sln",
-                @"Wipcore.WebFoundation\My.Web\My.Web.csproj",
+                @"dir1\file.sln",
+                @"dir1\My.Web\My.Web.csproj",
                 @"..\My.Web\My.Web.csproj",
                 
-                @"Wipcore.WebFoundation",
-                @"Wipcore.WebFoundation\My.Web",
-                @"My.Web"
+                @"dir1",
+                @"dir1\My.Web",
+                @"My.Web",
+                
+                @"",
+                @"dir1\My.Web",
+                @"dir1\My.Web"
             };
 
             for (int i = 0; i < paths.Length; i += 3)
             {
-                string s = FileHelper.GetRelativePath(paths[i], paths[i + 1]);
-                if (s == paths[i + 2])
-                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + s + "'");
+                string relpath = FileHelper.GetRelativePath(paths[i], paths[i + 1]);
+                if (relpath == paths[i + 2])
+                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + relpath + "'");
                 else
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + s + "' (" + paths[i + 2] + ")");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + relpath + "' (" + paths[i + 2] + ")");
             }
 
 
@@ -62,8 +66,8 @@ namespace CreatePublish
             string path2 = @"dir1\dir2";
             try
             {
-                string s = FileHelper.GetRelativePath(path1, path2);
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + path1 + "' -> '" + path2 + "' = 'ArgumentException' (" + s + ")");
+                string relpath = FileHelper.GetRelativePath(path1, path2);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + path1 + "' -> '" + path2 + "' = 'ArgumentException' (" + relpath + ")");
             }
             catch (System.Exception ex)
             {
@@ -87,6 +91,11 @@ namespace CreatePublish
                 // some processes execute in the OS system dir, and
                 // you don't want to mess with that folder.
                 throw new ArgumentException("If pathFrom is absolute, pathTo must be it too. Path.GetFullPath might be of use.");
+            }
+
+            if (pathFrom == string.Empty)
+            {
+                return pathTo;
             }
 
             string[] dirsFrom = pathFrom.Split(Path.DirectorySeparatorChar);

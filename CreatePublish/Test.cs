@@ -66,6 +66,23 @@ namespace CreatePublish
                 Validate(buildfile, buildtoproject, buildtopublish);
                 Cleanup(solutionfile, projectfile, buildfile);
             }
+
+            Console.WriteLine();
+
+            {
+                string solutionfile = @"aa.bb\cc.dd.sln";
+                string projectfile = @"aa.bb\My.Web\My.Web .csproj";
+                string buildfile = @"web.build";
+                string publishfolder = @"Artifacts";
+
+                string buildtoproject = @"aa.bb\My.Web\My.Web .csproj";
+                string buildtopublish = @"Artifacts\My.Web";
+
+                Setup(solutionfile, projectfile, buildfile, publishfolder);
+                Program.CreateBuildFile(solutionfile, buildfile, publishfolder, false);
+                Validate(buildfile, buildtoproject, buildtopublish);
+                Cleanup(solutionfile, projectfile, buildfile);
+            }
         }
 
         private static void Setup(string solutionfile, string projectfile, string buildfile, string publishfolder)
