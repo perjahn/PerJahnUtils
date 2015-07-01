@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 
 function Main()
 {
-    # Restructure output
+    # Restructure output in Artifacts folder
     cd Artifacts
 
     Write-Host ("Current directory: '" + (pwd).Path + "'")
@@ -27,7 +27,7 @@ function Main()
     }
 
     LogSection "Removing junk files" {
-        dir PerJahnUtils -i *.pdb,*.config | {
+        dir PerJahnUtils -i *.pdb,*.config | % {
             [string] $filename = $_.FullName
             Write-Host ("Removing file: '" + $filename + "'")
             del $filename
