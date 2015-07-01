@@ -10,7 +10,9 @@ function Main()
 
 function Create-BuildFile([string] $buildfile)
 {
-    $files = dir -r -i *.sln
+    $files = @(dir -r -i *.sln)
+
+    Write-Host ("Found " + $files.Count + " solutions.")
 
     [string] $xml = '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">' + "`n" + '  <Target Name="Build">' + "`n"
 
