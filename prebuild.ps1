@@ -26,7 +26,7 @@ function Create-BuildFile([string] $buildfile)
 
     $xml += '  </Target>' + "`n" + '</Project>' + "`n"
 
-    sc $xml $buildfile
+    sc $buildfile $xml
 }
 
 Main
