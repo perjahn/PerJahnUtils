@@ -14,10 +14,15 @@ function Main()
     #md PerJahnUtils
     New-Item 'PerJahnUtils' -Type Directory | Out-Null
 
-    $files = dir -r
-    $files | % {
-        Write-Host ("Moving file: '" + $_.FullName + "' -> 'PerJahnUtils'")
-        move $_.FullName PerJahnUtils
+    $folders = dir
+    $folders | % {
+        [string] $source = $_.Name + "\*"
+        [string] $target = "PerJahnUtils"
+        Write-Host ("Moving file: '" + $source + "' -> '" + $target "'")
+        move $source $target
+
+        Write-Host ("Deleting directory: '" + $_.Name + "'")
+        rd $_.Name
     }
 }
 
