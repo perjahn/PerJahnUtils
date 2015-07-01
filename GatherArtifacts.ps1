@@ -25,6 +25,8 @@ function Main()
         Write-Host ("Deleting directory: '" + $_.Name + "'")
         rd $_.Name
     }
+
+    cd ..
 }
 
 Main
