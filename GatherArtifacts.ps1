@@ -10,7 +10,9 @@ function Main()
 
     Write-Host ("Current directory: '" + (pwd).Path + "'")
     
-    $folders = dir
+    $folders = @(dir)
+    
+    Write-Host ("Found " + $folders.Count + " artifact folders.")
 
     Write-Host ("Creating directory: 'PerJahnUtils'")
     #md PerJahnUtils
@@ -29,7 +31,7 @@ function Main()
     }
 
     LogSection "Removing junk files" {
-        dir PerJahnUtils -i *.pdb,*.config | % {
+        dir PerJahnUtils\* -i *.pdb,*.config | % {
             [string] $filename = $_.FullName
             Write-Host ("Removing file: '" + $filename + "'")
             del $filename
