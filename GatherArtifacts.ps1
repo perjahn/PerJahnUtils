@@ -16,14 +16,16 @@ function Main()
     #md PerJahnUtils
     New-Item 'PerJahnUtils' -Type Directory | Out-Null
 
-    $folders | % {
-        [string] $source = $_.Name + "\*"
-        [string] $target = "PerJahnUtils"
-        Write-Host ("Moving files: '" + $source + "' -> '" + $target + "'")
-        move $source $target
+    LogSection "Moving artifacts" {
+        $folders | % {
+            [string] $source = $_.Name + "\*"
+            [string] $target = "PerJahnUtils"
+            Write-Host ("Moving files: '" + $source + "' -> '" + $target + "'")
+            move $source $target
 
-        Write-Host ("Deleting directory: '" + $_.Name + "'")
-        rd $_.Name
+            Write-Host ("Deleting directory: '" + $_.Name + "'")
+            rd $_.Name
+        }
     }
 
     LogSection "Removing junk files" {
