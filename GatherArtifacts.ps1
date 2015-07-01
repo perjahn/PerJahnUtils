@@ -10,11 +10,12 @@ function Main()
 
     Write-Host ("Current directory: '" + (pwd).Path + "'")
     
+    $folders = dir
+
     Write-Host ("Creating directory: 'PerJahnUtils'")
     #md PerJahnUtils
     New-Item 'PerJahnUtils' -Type Directory | Out-Null
 
-    $folders = dir
     $folders | % {
         [string] $source = $_.Name + "\*"
         [string] $target = "PerJahnUtils"
