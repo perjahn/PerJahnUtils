@@ -26,10 +26,34 @@ function Main()
         rd $_.Name
     }
 
-    Write-Host ("Gathered files:")
-    dir PerJahnUtils | % { $_.FullName }
+    LogSection "Removing junk files" {
+        dir PerJahnUtils -i *.pdb,*.config | {
+            [string] $filename = $_.FullName
+            Write-Host ("Removing file: '" + $filename + "'")
+            del $filename
+        }
+    }
+
+    LogSection "Gathered files" {
+        dir PerJahnUtils | % { $_.FullName }
+    }
 
     cd ..
+}
+
+function LogSection([string] $message, [ScriptBlock] $sb)
+{
+    if ([System.Environment]::UserInteractive -and !$env:TEAMCITY_PROJECT_NAME)
+    {
+        Write-Host ("*** " + $message + "...") -f Cyan
+        &$sb
+    }
+    else
+    {
+        Write-Host ("##teamcity[blockOpened name='" + $message + "']")
+        &$sb
+        Write-Host ("##teamcity[blockClosed name='" + $message + "']")
+    }
 }
 
 Main
