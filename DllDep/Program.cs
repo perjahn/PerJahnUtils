@@ -33,7 +33,7 @@ namespace DllDep
 		private static int Main(string[] args)
 		{
 			string usage =
-@"DllDep 1.10
+@"DllDep 1.11
 
 Usage: DllDep [-gac] [-v] [path] [-rExcludeReferences] [-aExcludeAssemblies]
 path:         Path to directory of assemblies.
