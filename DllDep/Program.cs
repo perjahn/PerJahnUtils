@@ -291,7 +291,7 @@ Return values:
 					Assembly ass = null;
 					try
 					{
-						ass = Assembly.LoadFrom(filename);
+                        ass = Assembly.ReflectionOnlyLoadFrom(filename);
 					}
 					catch (System.Exception ex)
 					{
