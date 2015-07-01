@@ -19,12 +19,15 @@ function Main()
     $folders | % {
         [string] $source = $_.Name + "\*"
         [string] $target = "PerJahnUtils"
-        Write-Host ("Moving file: '" + $source + "' -> '" + $target + "'")
+        Write-Host ("Moving files: '" + $source + "' -> '" + $target + "'")
         move $source $target
 
         Write-Host ("Deleting directory: '" + $_.Name + "'")
         rd $_.Name
     }
+
+    Write-Host ("Gathered files:")
+    dir PerJahnUtils | % { $_.FullName }
 
     cd ..
 }
