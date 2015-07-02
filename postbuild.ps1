@@ -17,6 +17,7 @@ function Move-PublicArtifacts([string] $buildfile)
         del $target
     }
     move $source $target
+    rd (Split-Path (Split-Path $source)) -Recurse
 }
 
 Main
