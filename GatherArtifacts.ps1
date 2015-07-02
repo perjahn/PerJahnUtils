@@ -20,21 +20,13 @@ function Main()
 
     LogSection "Moving artifacts" {
         $folders | % {
-            [string] $source = $_.Name + "\*"
+            [string] $source = $_.Name + "\*.exe"
             [string] $target = "PerJahnUtils"
             Write-Host ("Moving files: '" + $source + "' -> '" + $target + "'")
             move $source $target
 
             Write-Host ("Deleting directory: '" + $_.Name + "'")
-            rd $_.Name
-        }
-    }
-
-    LogSection "Removing junk files" {
-        dir PerJahnUtils\* -i *.pdb,*.config | % {
-            [string] $filename = $_.FullName
-            Write-Host ("Removing file: '" + $filename + "'")
-            del $filename
+            rd $_.Name -Recurse
         }
     }
 

@@ -14,7 +14,9 @@ function Create-BuildFile([string] $buildfile)
 
     Write-Host ("Found " + $files.Count + " solutions.")
 
-    [string] $xml = '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">' + "`n" + '  <Target Name="Build">' + "`n"
+    [string[]] $xml = @()
+    $xml += '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'
+    $xml += '  <Target Name="Build">'
 
     $files | % {
         [string] $filename = $_
@@ -23,10 +25,11 @@ function Create-BuildFile([string] $buildfile)
             $filename = $filename.Substring(2)
         }
 
-        $xml += '    <MSBuild Projects="' + $filename + '" Properties="Configuration=Release" ContinueOnError="true" />' + "`n"
+        $xml += '    <MSBuild Projects="' + $filename + '" Properties="Configuration=Release" ContinueOnError="true" />'
     }
 
-    $xml += '  </Target>' + "`n" + '</Project>' + "`n"
+    $xml += '  </Target>'
+    $xml += '</Project>'
 
     sc $buildfile $xml
 }
