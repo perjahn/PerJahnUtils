@@ -17,7 +17,10 @@ function Move-PublicArtifacts([string] $buildfile)
         del $target
     }
     move $source $target
-    rd (Split-Path (Split-Path $source)) -Recurse
+
+    [string] $folder = Split-Path (Split-Path $source)
+    Write-Host ("Removing folder: '" + $folder + "'")
+    rd $folder -Recurse
 }
 
 Main
