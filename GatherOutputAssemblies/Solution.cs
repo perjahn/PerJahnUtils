@@ -128,15 +128,15 @@ namespace GatherOutputAssemblies
 
                 if (project._ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
                 {
-					ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '" + project._sln_path + "'");
-				}
-				else
-				{
-					if (includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)) ||
-						!projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
-						&& !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)))
-					{
-						bool projectresult = project.CopyOutput(
+                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '" + project._sln_path + "'");
+                }
+                else
+                {
+                    if (includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)) ||
+                        !projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
+                        && !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)))
+                    {
+                        bool projectresult = project.CopyOutput(
                             _solutionfile,
                             buildconfig,
                             Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)),
