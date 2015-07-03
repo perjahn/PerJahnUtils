@@ -11,15 +11,10 @@ namespace GatherOutputAssemblies
     {
         public string _sln_path { get; set; }
 
-        public string _proj_assemblyname { get; set; }
         public string _proj_guid { get; set; }
-        public string _proj_outputtype { get; set; }  // Not used, yet.
         public List<string> _ProjectTypeGuids { get; set; }
 
-        // Compacted into non-List types after load.
-        public List<string> _proj_assemblynames { get; set; }
         public List<string> _proj_guids { get; set; }
-        public List<string> _proj_outputtypes { get; set; }
 
         public List<OutputPath> _outputpaths { get; set; }
         public List<OutputPath> _outdirs { get; set; }
@@ -63,29 +58,11 @@ namespace GatherOutputAssemblies
 
             try
             {
-                newproj._proj_assemblynames = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").Select(a => a.Value).ToList();
-            }
-            catch (System.NullReferenceException)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing AssemblyName.");
-                return null;
-            }
-            try
-            {
                 newproj._proj_guids = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").Select(g => g.Value).ToList();
             }
             catch (System.NullReferenceException)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing ProjectGuid.");
-                return null;
-            }
-            try
-            {
-                newproj._proj_outputtypes = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutputType").Select(o => o.Value).ToList();
-            }
-            catch (System.NullReferenceException)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing OutputType.");
                 return null;
             }
             try
@@ -147,19 +124,6 @@ namespace GatherOutputAssemblies
 
         public void Compact()
         {
-            if (_proj_assemblynames.Count > 1)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    "Warning: Corrupt project file: " + _sln_path +
-                    ", multiple assembly names: '" + _proj_assemblynames.Count +
-                    "', compacting Name elements.");
-            }
-            if (_proj_assemblynames.Count >= 1)
-            {
-                _proj_assemblyname = _proj_assemblynames[0];
-                _proj_assemblynames = null;
-            }
-
             if (_proj_guids.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
@@ -172,20 +136,6 @@ namespace GatherOutputAssemblies
                 _proj_guid = _proj_guids[0];
                 _proj_guids = null;
             }
-
-            if (_proj_outputtypes.Count > 1)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    "Warning: Corrupt project file: " + _sln_path +
-                    ", multiple output types: '" + _proj_outputtypes.Count +
-                    "', compacting Private elements.");
-            }
-            if (_proj_outputtypes.Count >= 1)
-            {
-                _proj_outputtype = _proj_outputtypes[0];
-                _proj_outputtypes = null;
-            }
-
 
             foreach (Reference projref in _projectReferences)
             {
@@ -206,49 +156,52 @@ namespace GatherOutputAssemblies
             return;
         }
 
+        public void FixVariables(string solutionfile, string buildconfig)
+        {
+            string SolutionDir = Path.GetDirectoryName(solutionfile);
+
+            foreach (var path in _outputpaths)
+            {
+                path.Path = path.Path
+                        .Replace("$(SolutionDir)", SolutionDir + Path.DirectorySeparatorChar)
+                        .Replace("$(Configuration)", buildconfig);
+            }
+
+            foreach (var path in _outdirs)
+            {
+                path.Path = path.Path
+                        .Replace("$(SolutionDir)", SolutionDir + Path.DirectorySeparatorChar)
+                        .Replace("$(Configuration)", buildconfig);
+            }
+        }
+
         public bool CopyOutput(string solutionfile, string buildconfig, string targetpath, bool verbose)
         {
-            var outputpaths = _outputpaths.Where(o => MatchCondition(o.Condition, buildconfig, false));
-            int debug1 = outputpaths.Count();
+            string path1, path2, path3;
 
-            if (outputpaths.Count() != 1)
+            List<List<OutputPath>> matchresults = new List<List<OutputPath>>();
+
+            path1 = GetDistinctPath(solutionfile, buildconfig, _outputpaths, matchresults);
+
+            path2 = GetDistinctPath(solutionfile, buildconfig, _outdirs, matchresults);
+
+            path3 = null;
+            if (path1 == null && path2 == null)
             {
-                outputpaths = _outputpaths.Where(o => MatchCondition(o.Condition, buildconfig, true));
+                string SolutionDir = Path.GetDirectoryName(solutionfile);
+                path3 = Path.Combine(SolutionDir, buildconfig);
+                if (!Directory.Exists(path3) || Directory.GetFiles(path3, "*", SearchOption.AllDirectories).Length == 0)
+                {
+                    path3 = null;
+                }
             }
-            int debug2 = outputpaths.Count();
 
-            if (outputpaths.Count() != 1)
+            string path = path1 ?? path2 ?? path3;
+
+
+            if (path == null)
             {
-                outputpaths = _outputpaths
-                    .Where(o => ContainsFiles(solutionfile, o.Path))
-                    .GroupBy(o => o.Path)
-                    .Select(g => g.First());
-            }
-            int debug3 = outputpaths.Count();
-
-
-            var outdirs = _outdirs.Where(o => MatchCondition(o.Condition, buildconfig, false));
-            int debug4 = outdirs.Count();
-
-            if (outdirs.Count() != 1)
-            {
-                outdirs = _outdirs.Where(o => MatchCondition(o.Condition, buildconfig, true));
-            }
-            int debug5 = outdirs.Count();
-
-            if (outdirs.Count() != 1)
-            {
-                outdirs = _outdirs
-                    .Where(o => ContainsFiles(solutionfile, o.Path))
-                    .GroupBy(o => o.Path)
-                    .Select(g => g.First());
-            }
-            int debug6 = outdirs.Count();
-
-
-            if (outputpaths.Count() != 1 && outdirs.Count() != 1)
-            {
-                if (debug1 == 0 && debug2 == 0 && debug3 == 0 && debug4 == 0 && debug5 == 0 && debug6 == 0)
+                if (matchresults.All(m => m.Count() == 0))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
                         "'" + _sln_path + "': Couldn't find any matching OutputPath or OutDir in the project file. " +
@@ -284,26 +237,16 @@ namespace GatherOutputAssemblies
                     });
 
                     ConsoleHelper.ColorWrite(ConsoleColor.Red, "  Resulting matches:");
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutputPath count (unstrict)  : " + debug1);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutputPath count (strict)    : " + debug2);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutputPath count (has files) : " + debug3);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutDir count (unstrict)      : " + debug4);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutDir count (strict)        : " + debug5);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutDir count (has files)     : " + debug6);
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutputPath count (unstrict)  : " + matchresults[0].Count());
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutputPath count (strict)    : " + matchresults[1].Count());
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutputPath count (has files) : " + matchresults[2].Count());
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutDir count (unstrict)      : " + matchresults[3].Count());
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutDir count (strict)        : " + matchresults[4].Count());
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    OutDir count (has files)     : " + matchresults[5].Count());
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "    VC default count (has files) : 0");
                 }
 
                 return false;
-            }
-
-
-            string path;
-            if (outputpaths.Count() == 1)
-            {
-                path = outputpaths.Single().Path;
-            }
-            else
-            {
-                path = outdirs.Single().Path;
             }
 
             if (path.Contains("$(Configuration)") && buildconfig.Contains("|"))
@@ -317,6 +260,44 @@ namespace GatherOutputAssemblies
             ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "Copying folder: '" + sourcepath + "' -> '" + targetpath + "'");
 
             return CopyFolder(new DirectoryInfo(sourcepath), new DirectoryInfo(targetpath));
+        }
+
+        private string GetDistinctPath(string solutionfile, string buildconfig, List<OutputPath> possiblepaths,
+            List<List<OutputPath>> matchresults)
+        {
+            var paths = possiblepaths
+                .Where(o => MatchCondition(o.Condition, buildconfig, false))
+                .GroupBy(o => o.Path)
+                .Select(g => g.First())
+                .ToList();
+            matchresults.Add(paths);
+
+            if (paths.Count() > 1)
+            {
+                paths = possiblepaths
+                    .Where(o => MatchCondition(o.Condition, buildconfig, true))
+                    .GroupBy(o => o.Path)
+                    .Select(g => g.First())
+                    .ToList();
+            }
+            matchresults.Add(paths);
+
+            if (paths.Count() > 1)
+            {
+                paths = possiblepaths
+                    .Where(o => ContainsFiles(solutionfile, o.Path))
+                    .GroupBy(o => o.Path)
+                    .Select(g => g.First())
+                    .ToList();
+            }
+            matchresults.Add(paths);
+
+            if (paths.Count() == 1)
+            {
+                return paths.Single().Path;
+            }
+
+            return null;
         }
 
         //  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

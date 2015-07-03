@@ -5,16 +5,16 @@ using System.Xml.Linq;
 
 namespace GatherOutputAssemblies
 {
-	class Program
-	{
-		static int Main(string[] args)
-		{
-			// Make all string comparisons (and sort/order) invariant of current culture
-			// Thus, project output files is written in a consistent manner
-			System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+    class Program
+    {
+        static int Main(string[] args)
+        {
+            // Make all string comparisons (and sort/order) invariant of current culture
+            // Thus, project output files is written in a consistent manner
+            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
-			string usage =
-@"GatherOutputAssemblies 1.2 - Program for gathering compiled output from Visual Studio.
+            string usage =
+@"GatherOutputAssemblies 1.4 - Program for gathering compiled output from Visual Studio.
 
 Usage: GatherOutputAssemblies [-a] [-v] [-w] <solutionfile> <buildconfig> <outputfolder> +include1... -exclude1...
 
@@ -41,64 +41,64 @@ usually exe and web projects, although test projects usually wreak havoc with
 this assumption and usually needs to be excluded.";
 
 
-			bool verbose = false;
+            bool verbose = false;
 
-			if (args.Contains("-v"))
-			{
-				verbose = true;
-				args = args.Where(a => a != "-v").ToArray();
-			}
-
-
-			List<string> includeProjects =
-				args
-				.Where(a => a.StartsWith("+"))
-				.Select(a => a.Substring(1))
-				.ToList();
-
-			List<string> excludeProjects =
-				args
-				.Where(a => a.StartsWith("-"))
-				.Select(a => a.Substring(1))
-				.ToList();
-
-			args =
-				args
-				.Where(a => !a.StartsWith("+"))
-				.Where(a => !a.StartsWith("-"))
-				.ToArray();
-
-			if (args.Length != 3)
-			{
-				Console.WriteLine(usage);
-				return 0;
-			}
-
-			string solutionfile = args[0];
-			string buildconfig = args[1];
-			string outputpath = args[2];
+            if (args.Contains("-v"))
+            {
+                verbose = true;
+                args = args.Where(a => a != "-v").ToArray();
+            }
 
 
-			Solution s = new Solution(solutionfile);
+            List<string> includeProjects =
+                args
+                .Where(a => a.StartsWith("+"))
+                .Select(a => a.Substring(1))
+                .ToList();
 
-			string[] webmvcguids =
-			{
-				"{603C0E0B-DB56-11DC-BE95-000D561079B0}",
-				"{F85E285D-A4E0-4152-9332-AB1D724D3325}",
-				"{E53F8FEA-EAE0-44A6-8774-FFD645390401}",
-				"{E3E379DF-F4C6-4180-9B81-6769533ABE47}",
-				"{349C5851-65DF-11DA-9384-00065B846F21}"
-			};
+            List<string> excludeProjects =
+                args
+                .Where(a => a.StartsWith("-"))
+                .Select(a => a.Substring(1))
+                .ToList();
 
-			List<Project> projects = s.LoadProjects();
-			if (projects == null)
-			{
-				return 1;
-			}
+            args =
+                args
+                .Where(a => !a.StartsWith("+"))
+                .Where(a => !a.StartsWith("-"))
+                .ToArray();
 
-			int result = s.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, webmvcguids, verbose);
+            if (args.Length != 3)
+            {
+                Console.WriteLine(usage);
+                return 0;
+            }
 
-			return result;
-		}
-	}
+            string solutionfile = args[0];
+            string buildconfig = args[1];
+            string outputpath = args[2];
+
+
+            Solution s = new Solution(solutionfile);
+
+            string[] webmvcguids =
+            {
+                "{603C0E0B-DB56-11DC-BE95-000D561079B0}",
+                "{F85E285D-A4E0-4152-9332-AB1D724D3325}",
+                "{E53F8FEA-EAE0-44A6-8774-FFD645390401}",
+                "{E3E379DF-F4C6-4180-9B81-6769533ABE47}",
+                "{349C5851-65DF-11DA-9384-00065B846F21}"
+            };
+
+            List<Project> projects = s.LoadProjects();
+            if (projects == null)
+            {
+                return 1;
+            }
+
+            int result = s.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, webmvcguids, verbose);
+
+            return result;
+        }
+    }
 }
