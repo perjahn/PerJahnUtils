@@ -200,7 +200,7 @@ namespace ProjFix
 				ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
 					"Warning: Corrupt project file: " + _sln_path +
 					", multiple guids: '" + _proj_guids.Count +
-					"', compacting HintPath elements.");
+					"', compacting ProjectGuid elements.");
 				_modified = true;
 			}
 			if (_proj_guids.Count >= 1)
