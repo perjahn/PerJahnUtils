@@ -21,7 +21,7 @@ namespace ListProjects
         {
             if (args.Length != 3)
             {
-                Console.WriteLine("Usage: ListProjects <domain> <username> <password");
+                Console.WriteLine("Usage: ListProjects <domain> <username> <password>");
                 return;
             }
 
