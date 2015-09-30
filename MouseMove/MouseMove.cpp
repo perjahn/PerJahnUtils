@@ -1,6 +1,6 @@
 //**********************************************************
 //
-// MouseMove 1.1
+// MouseMove 1.2
 //
 // Written by Per Jahn
 //
@@ -28,9 +28,10 @@
 
 struct movenode
 {
+	int x, y;
 	unsigned long long time;
-	movenode *pNext;
-} *pStart, *pEnd;
+	movenode *next;
+} *start, *end;
 
 //**********************************************************
 
@@ -41,7 +42,7 @@ int        g_widthcount;
 //**********************************************************
 
 BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void UpdateCount(void);
+void UpdateCount(int x, int y);
 void UpdateTimer(HWND hwnd);
 
 //**********************************************************
@@ -50,7 +51,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LPSTR lpszCmdLine, int nCmdShow)
 {
 	g_hInstance = hInstance;
-	pStart = pEnd = NULL;
+	start = end = NULL;
 	g_widthcount = 0;
 
 	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG), NULL, (DLGPROC)DlgProc);
@@ -76,7 +77,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 
 	case WM_MOUSEMOVE:
-		UpdateCount();
+		UpdateCount(LOWORD(lParam), HIWORD(lParam));
 		return TRUE;
 
 	case WM_COMMAND:
@@ -101,22 +102,24 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 //**********************************************************
 
-void UpdateCount(void)
+void UpdateCount(int x, int y)
 {
 	auto time = GetTickCount64();
 
-	movenode *pNode = new movenode;
-	pNode->time = time;
-	pNode->pNext = NULL;
+	movenode *node = new movenode;
+	node->x = x;
+	node->y = y;
+	node->time = time;
+	node->next = NULL;
 
-	if (pStart)
+	if (start)
 	{
-		pEnd->pNext = pNode;
-		pEnd = pNode;
+		end->next = node;
+		end = node;
 	}
 	else
 	{
-		pStart = pEnd = pNode;
+		start = end = node;
 	}
 }
 
@@ -126,25 +129,31 @@ void UpdateTimer(HWND hwnd)
 {
 	auto time = GetTickCount64();
 
-	int count = 0;
-	for (movenode *pNode = pStart; pNode;)
+	int count1 = 0, count2 = 0, x = 0, y = 0;
+	for (movenode *node = start; node;)
 	{
-		if (pNode->time < time - 1000)
+		if (node->time < time - 1000)
 		{
-			pStart = pNode->pNext;
-			delete pNode;
-			pNode = pStart;
+			start = node->next;
+			delete node;
+			node = start;
 		}
 		else
 		{
-			count++;
-			pNode = pNode->pNext;
+			count1++;
+			if (node->x != x && node->y != y)
+			{
+				count2++;
+			}
+			x = node->x;
+			y = node->y;
+			node = node->next;
 		}
 	}
 
 
 	char counttext[100];
-	sprintf_s(counttext, 100, "%d", count);
+	sprintf_s(counttext, 100, "%d (Move coords: %d)", count1, count2);
 	SetWindowText(hwnd, counttext);
 
 
@@ -162,7 +171,7 @@ void UpdateTimer(HWND hwnd)
 	if (hdc = GetDC(hwnd))
 	{
 		MoveToEx(hdc, g_widthcount, rc.bottom, NULL);
-		LineTo(hdc, g_widthcount, rc.bottom - count);
+		LineTo(hdc, g_widthcount, rc.bottom - count1);
 		ReleaseDC(hwnd, hdc);
 	}
 
