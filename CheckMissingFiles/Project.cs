@@ -61,11 +61,26 @@ namespace CheckMissingFiles
 
             ns = xdoc.Root.Name.Namespace;
 
-            _allfiles =
-                xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
+            try
+            {
+                _allfiles =
+                xdoc
+                    .Elements(ns + "Project")
+                    .Elements(ns + "ItemGroup")
+                    .Elements()
                     .Where(el => el.Attribute("Include") != null)
                     .OrderBy(el => el.Attribute("Include").Value)
                     .ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Couldn't parse project: '" + fullfilename + "': " + ex.Message);
+            }
+
+            if (_allfiles.Count() == 0)
+            {
+                ConsoleHelper.WriteLine("No files found: '" + fullfilename + "'");
+            }
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
             _allfiles
