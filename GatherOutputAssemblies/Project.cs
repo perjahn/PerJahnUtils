@@ -58,7 +58,12 @@ namespace GatherOutputAssemblies
 
             try
             {
-                newproj._proj_guids = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").Select(g => g.Value).ToList();
+                newproj._proj_guids = xdoc
+                    .Element(ns + "Project")
+                    .Elements(ns + "PropertyGroup")
+                    .Elements(ns + "ProjectGuid")
+                    .Select(g => g.Value)
+                    .ToList();
             }
             catch (System.NullReferenceException)
             {
@@ -88,7 +93,7 @@ namespace GatherOutputAssemblies
 
             newproj._outdirs =
                 (from el in xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutDir")
-                 select new OutputPath() { Condition = GetCondition(el), Path = el.Value })
+                 select new OutputPath() { Condition = GetCondition(el.Parent), Path = el.Value })
                 .ToList();
 
 

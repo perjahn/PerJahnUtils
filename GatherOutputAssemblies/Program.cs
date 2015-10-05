@@ -14,7 +14,7 @@ namespace GatherOutputAssemblies
             System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             string usage =
-@"GatherOutputAssemblies 1.4 - Program for gathering compiled output from Visual Studio.
+@"GatherOutputAssemblies 1.5 - Program for gathering compiled output from Visual Studio.
 
 Usage: GatherOutputAssemblies [-a] [-v] [-w] <solutionfile> <buildconfig> <outputfolder> +include1... -exclude1...
 
