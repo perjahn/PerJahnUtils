@@ -44,7 +44,7 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
             string[] wrows = File.ReadAllLines(BuildLogFilename);
             List<string> warnings = wrows
                 .Where(w => Regex.IsMatch(w, "^.*warning CS.*$"))
-                .Select(w => w.Trim().Replace(@"^\s*\d+>", ""))
+                .Select(w => Regex.Replace(w.Trim(), @"^\s*\d+>", ""))
                 .Distinct()
                 .OrderBy(w => w)
                 .ToList();
@@ -69,33 +69,36 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
                 Console.WriteLine("Reading Teamcity properties file: '" + propfile + "'");
                 string[] prows = File.ReadAllLines(propfile);
 
-                string buildtypid = prows
+                string buildtypeid = prows
                     .Where(p => p.StartsWith("teamcity.buildType.id="))
-                    .Select(p => Regex.Replace(p.Substring(22), "\\.", "."))
+                    .Select(p => Regex.Unescape(p.Substring(22)))
                     .First();
                 string username = prows
                     .Where(p => p.StartsWith("teamcity.auth.userId="))
-                    .Select(p => Regex.Replace(p.Substring(21), "\\.", ""))
+                    .Select(p => Regex.Unescape(p.Substring(21)))
                     .First();
                 string password = prows
                     .Where(p => p.StartsWith("teamcity.auth.password="))
-                    .Select(p => p.Substring(23))
+                    .Select(p => Regex.Unescape(p.Substring(23)))
                     .First();
 
-                string tcurl = ServerUrl + "/httpAuth/repository/download/" + buildtypid + "/.lastSuccessful/" + RawOutputFile;
+                string tcurl = ServerUrl + "/httpAuth/repository/download/" + buildtypeid + "/.lastSuccessful/" + RawOutputFile;
+                //Console.WriteLine("Teamcity username: '" + username + "'");
+                //Console.WriteLine("Teamcity password: '" + password + "'");
                 Console.WriteLine("Teamcity url: '" + tcurl + "'");
 
                 using (var webclient = new WebClient())
                 {
-                    webclient.Credentials = new NetworkCredential(username, password);
+                    string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(username + ":" + password));
+                    webclient.Headers[HttpRequestHeader.Authorization] = "Basic " + credentials;
 
                     try
                     {
                         string content = webclient.DownloadString(tcurl);
 
                         previousWarnings = content
-                            .Trim()
                             .Split(new char[] { '\r', '\n' })
+                            .Select(w => w.Trim())
                             .Where(w => !string.IsNullOrEmpty(w))
                             .ToList();
                     }
@@ -142,16 +145,26 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
             {
                 Directory.CreateDirectory(ReportFolder);
             }
-            using (var sw = new StreamWriter(Path.Combine(ReportFolder + "index.html")))
+            string htmlfile = Path.Combine(ReportFolder, "index.html");
+            Console.WriteLine("Writing to html file: '" + htmlfile + "'");
+            using (var sw = new StreamWriter(htmlfile))
             {
-                sw.WriteLine("<html><head></head><body><h1>" + warnings.Count + " Build Warnings</h1>");
+                sw.WriteLine("<html><head><base target='_parent' /></head><body><h1>" + warnings.Count + " Build Warnings</h1>");
 
                 if (newwarnings.Count > 0)
                 {
                     sw.WriteLine("New warnings:<ul>");
                     foreach (var warning in newwarnings)
                     {
-                        sw.WriteLine("<li style='color:red'>" + warning + "</li>");
+                        string cleanwarning = string.Join("", warning.Substring(warning.IndexOf("):") + 3)
+                            .ToCharArray()
+                            .Select(c => char.IsLetterOrDigit(c) ? c : ' '))
+                            .Replace("  ", " ")
+                            .Replace("  ", " ")
+                            .Trim()
+                            .Replace(" ", "%20");
+
+                        sw.WriteLine("<li style='color:red'><a href='https://www.google.com/search?q=" + cleanwarning + "'>" + warning + "</a></li>");
                     }
                     sw.WriteLine("</ul>");
                 }
@@ -160,7 +173,15 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
                     sw.WriteLine("Old warnings:<ul>");
                     foreach (var warning in oldwarnings)
                     {
-                        sw.WriteLine("<li>_</li>");
+                        string cleanwarning = string.Join("", warning.Substring(warning.IndexOf("):") + 3)
+                            .ToCharArray()
+                            .Select(c => char.IsLetterOrDigit(c) ? c : ' '))
+                            .Replace("  ", " ")
+                            .Replace("  ", " ")
+                            .Trim()
+                            .Replace(" ", "%20");
+
+                        sw.WriteLine("<li><a href='https://www.google.com/search?q=" + cleanwarning + "'>" + warning + "</a></li>");
                     }
                     sw.WriteLine("</ul>");
                 }
