@@ -11,5 +11,7 @@
 Debug
 Release
 ipch
+bin
 obj
 packages
+.vs
