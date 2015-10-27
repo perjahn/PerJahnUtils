@@ -149,7 +149,7 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
             Console.WriteLine("Writing to html file: '" + htmlfile + "'");
             using (var sw = new StreamWriter(htmlfile))
             {
-                sw.WriteLine("<html><head><base target='_parent' /></head><body><h1>" + warnings.Count + " Build Warnings</h1>");
+                sw.WriteLine("<html><head><base target='_blank' /></head><body><h1>" + warnings.Count + " Build Warnings</h1>");
 
                 if (newwarnings.Count > 0)
                 {
