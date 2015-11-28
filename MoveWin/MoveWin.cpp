@@ -14,7 +14,7 @@ void main(int argc, char *argv[])
 
 	if (!hwnd)
 	{
-		printf("Couldn't find window, trying as handle value.\n", argv[1]);
+		printf("Couldn't find window, trying as handle value.\n");
 		hwnd = (HWND)atoi(argv[1]);
 	}
 
