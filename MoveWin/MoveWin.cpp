@@ -14,10 +14,9 @@ void main(int argc, char *argv[])
 
 	if (!hwnd)
 	{
-		printf("Couldn't find window: '%s'\n", argv[1]);
+		printf("Couldn't find window, trying as handle value.\n", argv[1]);
+		hwnd = (HWND)atoi(argv[1]);
 	}
-
-	hwnd = (HWND)atoi(argv[1]);
 
 	int x = atoi(argv[2]);
 	int y = atoi(argv[3]);
