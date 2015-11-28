@@ -10,7 +10,7 @@ void main(int argc, char *argv[])
 		return;
 	}
 
-	HWND hwnd = FindWindow(argv[1], NULL);
+	HWND hwnd = FindWindow(NULL, argv[1]);
 
 	if (!hwnd)
 	{
