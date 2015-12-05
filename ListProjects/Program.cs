@@ -52,7 +52,6 @@ namespace ListProjects
                 }
                 page++;
             } while (found);
-
         }
 
         public static dynamic GetData(string url, NameValueCollection values = null)
