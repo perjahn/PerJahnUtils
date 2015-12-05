@@ -14,7 +14,7 @@ void process_file(char *szFileName);
 
 void main(int argc, char *argv[])
 {
-	if(argc!=2)
+	if (argc != 2)
 	{
 		printf("usage: sloc <path>\n");
 		return;
@@ -26,21 +26,21 @@ void main(int argc, char *argv[])
 
 	// Fix end of pattern to do what's expected.
 	int length = strlen(szPath);
-	if(!strcmp(szPath, "."))
+	if (!strcmp(szPath, "."))
 	{
-		strcpy(szPath+length, "\\*");
+		strcpy(szPath + length, "\\*");
 	}
-	else if(length>=2 && !strcmp(szPath+length-2, "\\."))
+	else if (length >= 2 && !strcmp(szPath + length - 2, "\\."))
 	{
-		strcpy(szPath+length-1, "*");
+		strcpy(szPath + length - 1, "*");
 	}
-	else if(!strcmp(szPath, ".."))
+	else if (!strcmp(szPath, ".."))
 	{
-		strcpy(szPath+length, "\\*");
+		strcpy(szPath + length, "\\*");
 	}
-	else if(length>=3 && !strcmp(szPath+length-3, "\\.."))
+	else if (length >= 3 && !strcmp(szPath + length - 3, "\\.."))
 	{
-		strcpy(szPath+length-2, "*");
+		strcpy(szPath + length - 2, "*");
 	}
 
 	g_filecount = 0;
@@ -64,20 +64,19 @@ void recurse_dir(char *szPath)
 
 	char *p, *p2;
 
-	for(p=szPath+strlen(szPath); p>szPath && *(p-1)!='\\' && *(p-1)!=':'; p--)
+	for (p = szPath + strlen(szPath); p > szPath && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
-	
-	strcpy(szSubPath, szPath);
-	p2 = szSubPath+(p-szPath);
 
-	if((hFind=FindFirstFile(szPath, &Data))!=INVALID_HANDLE_VALUE)
+	strcpy(szSubPath, szPath);
+	p2 = szSubPath + (p - szPath);
+
+	if ((hFind = FindFirstFile(szPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-
-				if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					// File
 
@@ -85,31 +84,29 @@ void recurse_dir(char *szPath)
 					process_file(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
-	
+
 
 	strcpy(p2, "*");
 
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
 					// Dir
-					
+
 					sprintf(p2, "%s\\%s", Data.cFileName, p);
 					recurse_dir(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -127,7 +124,7 @@ void process_file(char *szFileName)
 
 	fh = fopen(szFileName, "rb");
 
-	if(!fh)
+	if (!fh)
 	{
 		printf("Couldn't open file (%s).\n", szFileName);
 		return;
@@ -150,9 +147,9 @@ void process_file(char *szFileName)
 
 	long count = 1;
 
-	for(int i=0; i<size; i++)
+	for (int i = 0; i < size; i++)
 	{
-		if(buf[i]=='\n')
+		if (buf[i] == '\n')
 		{
 			count++;
 		}
