@@ -8,6 +8,7 @@
 *.user
 *.vspscc
 *.vssscc
+*.opendb
 Debug
 Release
 ipch
