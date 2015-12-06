@@ -31,6 +31,7 @@ function Create-BuildFile([string] $buildfile)
     $xml += '  </Target>'
     $xml += '</Project>'
 
+    Write-Host ("Saving build file: '" + $buildfile + "'")
     sc $buildfile $xml
 }
 
