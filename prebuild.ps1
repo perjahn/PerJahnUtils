@@ -5,12 +5,22 @@ $ErrorActionPreference = "Stop"
 
 function Main()
 {
+    Clean
+
     Create-BuildFile "all.build"
+}
+
+function Clean()
+{
+    dir -r -i obj,bin | ? { $_.Attributes -band [IO.FileAttributes]::Directory } | % {
+        Write-Host ("Deleting folder: '" + $_.FullName + "'")
+        rd -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
+    }
 }
 
 function Create-BuildFile([string] $buildfile)
 {
-    $files = @(dir -r -i *.sln)
+    $files = @(dir -r -i *.sln | ? { !($_.Attributes -band [IO.FileAttributes]::Directory) })
 
     Write-Host ("Found " + $files.Count + " solutions.")
 
