@@ -7,8 +7,8 @@
 long g_filecount;
 long g_rowcount;
 
-void recurse_dir(char *szPath);
-void process_file(char *szFileName);
+void recurse_dir(char *path);
+void process_file(char *filename);
 
 //**********************************************************
 
@@ -20,33 +20,33 @@ void main(int argc, char *argv[])
 		return;
 	}
 
-	char szPath[1000];
+	char path[1000];
 
-	strcpy(szPath, argv[1]);
+	strcpy(path, argv[1]);
 
 	// Fix end of pattern to do what's expected.
-	int length = strlen(szPath);
-	if (!strcmp(szPath, "."))
+	int length = strlen(path);
+	if (!strcmp(path, "."))
 	{
-		strcpy(szPath + length, "\\*");
+		strcpy(path + length, "\\*");
 	}
-	else if (length >= 2 && !strcmp(szPath + length - 2, "\\."))
+	else if (length >= 2 && !strcmp(path + length - 2, "\\."))
 	{
-		strcpy(szPath + length - 1, "*");
+		strcpy(path + length - 1, "*");
 	}
-	else if (!strcmp(szPath, ".."))
+	else if (!strcmp(path, ".."))
 	{
-		strcpy(szPath + length, "\\*");
+		strcpy(path + length, "\\*");
 	}
-	else if (length >= 3 && !strcmp(szPath + length - 3, "\\.."))
+	else if (length >= 3 && !strcmp(path + length - 3, "\\.."))
 	{
-		strcpy(szPath + length - 2, "*");
+		strcpy(path + length - 2, "*");
 	}
 
 	g_filecount = 0;
 	g_rowcount = 0;
 
-	recurse_dir(szPath);
+	recurse_dir(path);
 
 	printf("Files: %d\n", g_filecount);
 	printf("Rows: %d\n", g_rowcount);
@@ -56,7 +56,7 @@ void main(int argc, char *argv[])
 
 //**********************************************************
 
-void recurse_dir(char *szPath)
+void recurse_dir(char *path)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
@@ -64,13 +64,13 @@ void recurse_dir(char *szPath)
 
 	char *p, *p2;
 
-	for (p = szPath + strlen(szPath); p > szPath && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
+	for (p = path + strlen(path); p > path && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
 
-	strcpy(szSubPath, szPath);
-	p2 = szSubPath + (p - szPath);
+	strcpy(szSubPath, path);
+	p2 = szSubPath + (p - path);
 
-	if ((hFind = FindFirstFile(szPath, &Data)) != INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(path, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
@@ -116,17 +116,17 @@ void recurse_dir(char *szPath)
 
 //**********************************************************
 
-void process_file(char *szFileName)
+void process_file(char *filename)
 {
 	g_filecount++;
 
 	FILE *fh;
 
-	fh = fopen(szFileName, "rb");
+	fh = fopen(filename, "rb");
 
 	if (!fh)
 	{
-		printf("Couldn't open file (%s).\n", szFileName);
+		printf("Couldn't open file (%s).\n", filename);
 		return;
 	}
 
@@ -138,7 +138,7 @@ void process_file(char *szFileName)
 	if (!buf)
 	{
 		fclose(fh);
-		printf("Out of memory (%s bytes).\n", size);
+		printf("Out of memory (%ld bytes).\n", size);
 		return;
 	}
 
