@@ -21,16 +21,16 @@ namespace ListProjects
         {
             if (args.Length != 3)
             {
-                Console.WriteLine("Usage: ListProjects <domain> <username> <password>");
+                Console.WriteLine("Usage: ListProjects <hostname> <username> <password>");
                 return;
             }
 
             GitList(args[0], args[1], args[2]);
         }
 
-        public static void GitList(string domain, string username, string password)
+        public static void GitList(string hostname, string username, string password)
         {
-            string sessionurl = "https://" + domain + "/api/v3/session";
+            string sessionurl = "https://" + hostname + "/api/v3/session";
 
             NameValueCollection values = new NameValueCollection();
             values.Add("login", username);
@@ -42,7 +42,7 @@ namespace ListProjects
             bool found;
             do
             {
-                string projectsurl = "https://" + domain + "/api/v3/projects?private_token=" + private_token + "&page=" + page;
+                string projectsurl = "https://" + hostname + "/api/v3/projects?private_token=" + private_token + "&page=" + page;
                 found = false;
                 var results = GetData(projectsurl);
                 foreach (var result in results)
