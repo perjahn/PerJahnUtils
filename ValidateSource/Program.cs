@@ -252,18 +252,18 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             _rowsTotalTrailing = 0;
             _rowsTrailing = 0;
             _charsTrailing = 0;
-            List<string> files = new List<string>();
+            List<string> outfiles = new List<string>();
 
-            string[] files1;
+            string[] infiles;
             try
             {
                 if (pattern == null)
                 {
-                    files1 = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+                    infiles = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
                 }
                 else
                 {
-                    files1 = Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
+                    infiles = Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
                 }
             }
             catch (Exception ex) when (ex is ArgumentException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException)
@@ -272,15 +272,15 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                     ex.Message, ConsoleColor.Red, 0);
                 return null;
             }
-            _filesTotalTrailing = files1.Length;
+            _filesTotalTrailing = infiles.Length;
 
 
-            string[] files2 = files1
+            infiles = infiles
                 .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
                 .ToArray();
             if (pattern == null)
             {
-                files2 = files1
+                infiles = infiles
                     .Where(f => (new string[] { ".cpp", ".cs", ".ps1", ".psm1", ".sql" }).Contains(Path.GetExtension(f)))
                     .Where(f => !(new string[] { ".Designer.cs" }).Any(ff => f.EndsWith(ff)))
                     .Where(f => !(new string[] { "AssemblyInfo.cs" }).Contains(Path.GetFileName(f)))
@@ -292,7 +292,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             {
                 try
                 {
-                    files2 = files2
+                    infiles = infiles
                         .Where(f => !Regex.IsMatch(f, excluderegex, RegexOptions.IgnoreCase))
                         .ToArray();
                 }
@@ -303,7 +303,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            foreach (string filename in files2)
+            foreach (string filename in infiles)
             {
                 string[] rows = File.ReadAllLines(filename);
                 _rowsTotalTrailing += rows.Length;
@@ -319,7 +319,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                             WriteLogLevel("File: '", 2);
                             WriteColor(filename, ConsoleColor.Cyan, 2);
                             WriteLineLogLevel(_loglevel < 3 ? "'" : "':", 2);
-                            files.Add(filename);
+                            outfiles.Add(filename);
                             first = false;
                         }
 
@@ -344,7 +344,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            return files.ToArray();
+            return outfiles.ToArray();
         }
 
         static string[] GetIndentationFiles(string path, string pattern, string[] excluderegexs)
@@ -353,18 +353,18 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
 
             _rowsTotalIndentation = 0;
             _rowsIndentation = 0;
-            List<string> files = new List<string>();
+            List<string> outfiles = new List<string>();
 
-            string[] files1;
+            string[] infiles;
             try
             {
                 if (pattern == null)
                 {
-                    files1 = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+                    infiles = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
                 }
                 else
                 {
-                    files1 = Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
+                    infiles = Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
                 }
             }
             catch (Exception ex) when (ex is ArgumentException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException)
@@ -373,15 +373,15 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                     ex.Message, ConsoleColor.Red, 0);
                 return null;
             }
-            _filesTotalIndentation = files1.Length;
+            _filesTotalIndentation = infiles.Length;
 
 
-            string[] files2 = files1
+            infiles = infiles
                 .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
                 .ToArray();
             if (pattern == null)
             {
-                files2 = files1
+                infiles = infiles
                     .Where(f => (new string[] { ".cpp", ".cs", ".ps1", ".psm1", ".sql" }).Contains(Path.GetExtension(f)))
                     .Where(f => !(new string[] { ".Designer.cs" }).Any(ff => f.EndsWith(ff)))
                     .Where(f => !(new string[] { "AssemblyInfo.cs" }).Contains(Path.GetFileName(f)))
@@ -393,7 +393,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             {
                 try
                 {
-                    files2 = files2
+                    infiles = infiles
                         .Where(f => !Regex.IsMatch(f, excluderegex, RegexOptions.IgnoreCase))
                         .ToArray();
                 }
@@ -404,7 +404,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            foreach (string filename in files2)
+            foreach (string filename in infiles)
             {
                 string[] rows = File.ReadAllLines(filename);
                 _rowsTotalIndentation += rows.Length;
@@ -428,7 +428,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                                 WriteLogLevel("File: '", 2);
                                 WriteColor(filename, ConsoleColor.Cyan, 2);
                                 WriteLineLogLevel(_loglevel < 3 ? "'" : "':", 2);
-                                files.Add(filename);
+                                outfiles.Add(filename);
                                 first = false;
                             }
 
@@ -442,7 +442,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            return files.ToArray();
+            return outfiles.ToArray();
         }
 
         static void FixTrailing(string[] files)
