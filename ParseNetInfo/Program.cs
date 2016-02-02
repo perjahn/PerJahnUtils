@@ -22,9 +22,9 @@ nics:    Output from netsh interface ipv4 show addresses");
                 return 2;
             }
 
-            ParseStates(args[0]);
-            ParseRules(args[1]);
-            ParseNics(args[2]);
+            ParseStates(args[0], args[1]);
+            ParseRules(args[2], args[3]);
+            ParseNics(args[4], args[5]);
 
             return 0;
         }
@@ -37,10 +37,10 @@ nics:    Output from netsh interface ipv4 show addresses");
             public string _public;
         }
 
-        static void ParseStates(string filename)
+        static void ParseStates(string infile, string outfile)
         {
-            Console.WriteLine("-=-=- Parsing states: " + filename + " -=-=-");
-            string[] rows = File.ReadAllLines(filename);
+            Console.WriteLine("-=-=- Parsing nics: " + infile + " -> " + outfile + " -=-=-");
+            string[] rows = File.ReadAllLines(infile);
 
             List<state> states = new List<state>();
 
@@ -73,8 +73,11 @@ nics:    Output from netsh interface ipv4 show addresses");
                 string name = row.Split(' ').First();
                 string value = row.Split(new char[] { ' ' }, 2).Last().Trim();
 
-                //Console.WriteLine("name: '" + name + "'");
-                //Console.WriteLine("value: '" + value + "'");
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("Verbose")))
+                {
+                    Console.WriteLine("name: '" + name + "'");
+                    Console.WriteLine("value: '" + value + "'");
+                }
 
                 if (value == "Profile Settings:")
                 {
@@ -114,7 +117,7 @@ nics:    Output from netsh interface ipv4 show addresses");
                 .Select(s => s._server + '\t' + s._domain + '\t' + s._private + '\t' + s._public)
                 .OrderBy(s => s));
 
-            File.WriteAllLines("states.txt", output);
+            File.WriteAllLines(outfile, output);
         }
 
         public class rule
@@ -134,10 +137,11 @@ nics:    Output from netsh interface ipv4 show addresses");
             public string _action;
         }
 
-        static void ParseRules(string filename)
+        static void ParseRules(string infile, string outfile)
         {
-            Console.WriteLine("-=-=- Parsing rules: " + filename + " -=-=-");
-            string[] rows = File.ReadAllLines(filename);
+            Console.WriteLine("-=-=- Parsing nics: " + infile + " -> " + outfile + " -=-=-");
+
+            string[] rows = File.ReadAllLines(infile);
 
             List<rule> rules = new List<rule>();
 
@@ -165,8 +169,11 @@ nics:    Output from netsh interface ipv4 show addresses");
                 string name = row.Contains(':') ? row.Split(':').First() : string.Empty;
                 string value = row.Contains(':') ? row.Split(new char[] { ':' }, 2).Last().Trim() : row.Trim();
 
-                //Console.WriteLine("name: '" + name + "'");
-                //Console.WriteLine("value: '" + value + "'");
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("Verbose")))
+                {
+                    Console.WriteLine("name: '" + name + "'");
+                    Console.WriteLine("value: '" + value + "'");
+                }
 
                 if (name == "Rule Name")
                 {
@@ -258,7 +265,7 @@ nics:    Output from netsh interface ipv4 show addresses");
                 s._action)
                 .OrderBy(s => s));
 
-            File.WriteAllLines("rules.txt", output);
+            File.WriteAllLines(outfile, output);
 
             return;
         }
@@ -275,10 +282,10 @@ nics:    Output from netsh interface ipv4 show addresses");
             public string _interfacemetric;
         }
 
-        static void ParseNics(string filename)
+        static void ParseNics(string infile, string outfile)
         {
-            Console.WriteLine("-=-=- Parsing nics: " + filename + " -=-=-");
-            string[] rows = File.ReadAllLines(filename);
+            Console.WriteLine("-=-=- Parsing nics: " + infile + " -> " + outfile + " -=-=-");
+            string[] rows = File.ReadAllLines(infile);
 
             List<nic> nics = new List<nic>();
 
@@ -306,8 +313,11 @@ nics:    Output from netsh interface ipv4 show addresses");
                 string name = row.Contains(':') ? row.Split(':').First().TrimStart() : row;
                 string value = row.Contains(':') ? row.Split(new char[] { ':' }, 2).Last().Trim() : string.Empty;
 
-                //Console.WriteLine("name: '" + name + "'");
-                //Console.WriteLine("value: '" + value + "'");
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("Verbose")))
+                {
+                    Console.WriteLine("name: '" + name + "'");
+                    Console.WriteLine("value: '" + value + "'");
+                }
 
                 if (name.StartsWith("Configuration for interface "))
                 {
@@ -375,7 +385,7 @@ nics:    Output from netsh interface ipv4 show addresses");
                 s._subnetprefixes + '\t' + s._defaultgateway + '\t' + s._gatewaymetric + '\t' + s._interfacemetric)
                 .OrderBy(s => s));
 
-            File.WriteAllLines("nics.txt", output);
+            File.WriteAllLines(outfile, output);
 
             return;
         }
