@@ -14,12 +14,14 @@ namespace MergeSolutions
     class Project
     {
         public string name { get; set; }
+        public string guid { get; set; }
         public string fullname { get; set; }
         public List<string> projrows { get; set; }
     }
 
     class Program
     {
+        static bool _globalsection;
         static bool _verbose;
 
         static int Main(string[] args)
@@ -29,10 +31,11 @@ namespace MergeSolutions
             if (parsedArgs.Length < 3)
             {
                 Console.WriteLine(
-@"MergeSolutions 1.0
+@"MergeSolutions 1.1
 
-Usage: MergeSolutions [-v] <outputfile> <inputfile1> <inputfile2> ...
+Usage: MergeSolutions [-g] [-v] <outputfile> <inputfile1> <inputfile2> ...
 
+-g:    Create global section.
 -v:    Verbose logging.
 
 Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
@@ -47,8 +50,10 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
 
         static string[] ParseArgs(string[] args)
         {
+            _globalsection = args.Contains("-g");
             _verbose = args.Contains("-v");
-            return args.Where(a => a != "-v").ToArray();
+
+            return args.Where(a => !(new[] { "-g", "-v" }).Contains(a)).ToArray();
         }
 
         static int MergeSolutions(string outputfile, string[] inputfiles)
@@ -98,23 +103,33 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
             {
                 if (projguids.Any(p => row.StartsWith("Project(\"{" + p + "}\")")))
                 {
-                    Project project = new Project();
-
-                    string name = row.Split('=')[1].Split(',')[0].Trim().Trim('\"');
-                    project.fullname = name;
-
-                    if (name.Contains('(') && name.EndsWith(")"))
+                    if (row.Split(',').Length != 3)
                     {
-                        name = name.Substring(0, name.IndexOf('('));
+                        Console.WriteLine("Malformed solution file, ignoring project: '" + row + "'");
                     }
-                    project.name = name;
+                    else
+                    {
+                        Project project = new Project();
 
-                    List<string> projrows = new List<string>();
-                    project.projrows = projrows;
+                        string name = row.Split('=')[1].Split(',')[0].Trim().Trim('\"');
+                        project.fullname = name;
 
-                    projects.Add(project);
+                        if (name.Contains('(') && name.EndsWith(")"))
+                        {
+                            name = name.Substring(0, name.IndexOf('('));
+                        }
+                        project.name = name;
 
-                    inproject = true;
+                        string guid = row.Split('=')[1].Split(',')[2].Trim().Trim('\"');
+                        project.guid = guid;
+
+                        List<string> projrows = new List<string>();
+                        project.projrows = projrows;
+
+                        projects.Add(project);
+
+                        inproject = true;
+                    }
                 }
                 if (inproject)
                 {
@@ -140,6 +155,11 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
             allprojrows.Add("Microsoft Visual Studio Solution File, Format Version 12.00");
             allprojrows.Add("# Visual Studio 14");
             allprojrows.AddRange(projects.OrderBy(p => p.name).SelectMany(r => r.projrows));
+
+            if (_globalsection)
+            {
+                allprojrows.AddRange(GenerateGlobalSection(projects.Select(p => p.guid).ToArray(), new[] { "Debug", "Release" }));
+            }
 
             Console.WriteLine("Writing file: '" + outputfile + "': " + projects.Count() + " projects, " + allprojrows.Count() + " rows.");
             File.WriteAllLines(outputfile, allprojrows);
@@ -167,6 +187,46 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
             }
 
             return uniqueprojects;
+        }
+
+        static string[] GenerateGlobalSection(string[] projectguids, string[] configs)
+        {
+            List<string> rows = new List<string>();
+
+
+            rows.Add("Global");
+            rows.Add("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
+
+            foreach (string config in configs)
+            {
+                rows.Add("\t\t" + config + "|Any CPU = " + config + "|Any CPU");
+                rows.Add("\t\t" + config + "|x64 = " + config + "|x64");
+                rows.Add("\t\t" + config + "|x86 = " + config + "|x86");
+            }
+
+            rows.Add("\tEndGlobalSection");
+
+
+            rows.Add("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution");
+
+            foreach (string guid in projectguids)
+            {
+                foreach (string config in configs)
+                {
+                    rows.Add("\t\t" + guid + "." + config + "|Any CPU.ActiveCfg = " + config + "|Any CPU");
+                    rows.Add("\t\t" + guid + "." + config + "|Any CPU.Build.0 = " + config + "|Any CPU");
+                    rows.Add("\t\t" + guid + "." + config + "|x64.ActiveCfg = " + config + "|Any CPU");
+                    rows.Add("\t\t" + guid + "." + config + "|x64.Build.0 = " + config + "|Any CPU");
+                    rows.Add("\t\t" + guid + "." + config + "|x86.ActiveCfg = " + config + "|Any CPU");
+                    rows.Add("\t\t" + guid + "." + config + "|x86.Build.0 = " + config + "|Any CPU");
+                }
+            }
+
+            rows.Add("\tEndGlobalSection");
+            rows.Add("EndGlobal");
+
+
+            return rows.ToArray();
         }
     }
 }
