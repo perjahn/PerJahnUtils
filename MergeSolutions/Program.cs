@@ -28,22 +28,25 @@ namespace MergeSolutions
         {
             string[] parsedArgs = ParseArgs(args);
 
+            string[] excludeProjects;
+            parsedArgs = GetExcludeProjects(parsedArgs, out excludeProjects);
+
             if (parsedArgs.Length < 3)
             {
                 Console.WriteLine(
-@"MergeSolutions 1.1
+@"MergeSolutions 1.2
 
-Usage: MergeSolutions [-g] [-v] <outputfile> <inputfile1> <inputfile2> ...
+Usage: MergeSolutions [-g] [-v] <outputfile> <inputfile1> <inputfile2> ... <-excludeproj1> ...
 
 -g:    Create global section.
 -v:    Verbose logging.
 
-Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
+Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
 
                 return 1;
             }
 
-            int result = MergeSolutions(parsedArgs[0], parsedArgs.Skip(1).ToArray());
+            int result = MergeSolutions(parsedArgs[0], parsedArgs.Skip(1).ToArray(), excludeProjects);
 
             return result;
         }
@@ -53,12 +56,28 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
             _globalsection = args.Contains("-g");
             _verbose = args.Contains("-v");
 
-            return args.Where(a => !(new[] { "-g", "-v" }).Contains(a)).ToArray();
+            return args
+                .Where(a => !(new[] { "-g", "-v" }).Contains(a))
+                .ToArray();
         }
 
-        static int MergeSolutions(string outputfile, string[] inputfiles)
+        static string[] GetExcludeProjects(string[] args, out string[] excludeProjects)
+        {
+            excludeProjects = args
+                .Where(a => a.StartsWith("-"))
+                .Select(a => a.Substring(1))
+                .ToArray();
+
+            return args
+                .Where(a => !a.StartsWith("-"))
+                .ToArray();
+        }
+
+        static int MergeSolutions(string outputfile, string[] inputfiles, string[] excludeProjects)
         {
             Console.WriteLine("Merging: '" + string.Join("' + '", inputfiles) + "' -> '" + outputfile + "'");
+
+            Console.WriteLine("Excluding projects: '" + string.Join("', '", excludeProjects) + "'");
 
             bool missingfiles = false;
             foreach (string inputfile in inputfiles)
@@ -143,6 +162,10 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
 
             projects = CompactProjects(projects);
 
+
+            projects = ExcludeProjects(projects, excludeProjects);
+
+
             foreach (Project project in projects.OrderBy(p => p.name))
             {
                 if (_verbose)
@@ -187,6 +210,28 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln sol3.sln");
             }
 
             return uniqueprojects;
+        }
+
+        static List<Project> ExcludeProjects(List<Project> projects, string[] excludeProjects)
+        {
+            List<Project> includeprojects = new List<Project>();
+
+            foreach (Project project in projects)
+            {
+                if (excludeProjects.Contains(project.name))
+                {
+                    if (_verbose)
+                    {
+                        Console.WriteLine("Excluding project: '" + project.fullname + "'");
+                    }
+                }
+                else
+                {
+                    includeprojects.Add(project);
+                }
+            }
+
+            return includeprojects;
         }
 
         static string[] GenerateGlobalSection(string[] projectguids, string[] configs)
