@@ -12,13 +12,15 @@ namespace CheckMissingFiles
 {
     class Project
     {
-        public string _solutionfile { get; set; }
-        public string _projectfilepath { get; set; }
+        //public string _solutionfile { get; set; }
+        public string projectFile { get; set; }
         private List<XElement> _allfiles { get; set; }
-        public int _missingfilesError { get; set; }
-        public int _missingfilesWarning { get; set; }
-        public int _excessfiles { get; set; }
-        public bool _parseError { get; set; }
+
+        public bool parseError { get; set; }
+        public int missingfilesError { get; set; }
+        public int missingfilesWarning { get; set; }
+        public int excessfiles { get; set; }
+
         private string _formatStringError { get; set; }
         private string _formatStringWarning { get; set; }
 
@@ -26,37 +28,32 @@ namespace CheckMissingFiles
             "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "Folder", "Import", "None",
             "ProjectConfiguration", "Reference", "Service", "WCFMetadata", "WCFMetadataStorage", "WebReferences", "WebReferenceUrl" };
 
-        public Project(string solutionfile, string projectfilepath, bool teamcityErrorMessage)
+        public Project(string projectfile, bool teamcityErrorMessage)
         {
-            _solutionfile = solutionfile;
-
+            projectFile = projectfile;
 
             XDocument xdoc;
             XNamespace ns;
 
-            string fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), projectfilepath);
-
-            _projectfilepath = projectfilepath;
-
             try
             {
-                xdoc = XDocument.Load(fullfilename);
+                xdoc = XDocument.Load(projectFile);
             }
             catch (IOException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
             }
             catch (UnauthorizedAccessException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
             }
             catch (ArgumentException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
             }
             catch (System.Xml.XmlException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
             }
 
             ns = xdoc.Root.Name.Namespace;
@@ -74,12 +71,7 @@ namespace CheckMissingFiles
             }
             catch (Exception ex)
             {
-                throw new ApplicationException("Couldn't parse project: '" + fullfilename + "': " + ex.Message);
-            }
-
-            if (_allfiles.Count() == 0)
-            {
-                ConsoleHelper.WriteLine("No files found: '" + fullfilename + "'");
+                throw new ApplicationException("Couldn't parse project: '" + projectFile + "': " + ex.Message);
             }
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
@@ -103,18 +95,23 @@ namespace CheckMissingFiles
 
         public void Check(bool reverseCheck)
         {
-            _parseError = false;
-            _missingfilesError = 0;
-            _missingfilesWarning = 0;
-            _excessfiles = 0;
+            parseError = false;
+            missingfilesError = 0;
+            missingfilesWarning = 0;
+            excessfiles = 0;
+
+            if (_allfiles.Count() == 0)
+            {
+                ConsoleHelper.WriteLine(projectFile + ": No files found in project.");
+            }
 
             if (reverseCheck)
             {
                 // Files should exist in file project file.
 
-                string projectfolder = Path.Combine(Path.GetDirectoryName(_solutionfile), Path.GetDirectoryName(_projectfilepath));
+                string projectfolder = Path.GetDirectoryName(projectFile);
 
-                string fullfilename = Path.Combine(Path.GetDirectoryName(_solutionfile), _projectfilepath);
+                string fullfilename = Path.Combine(projectFile);
 
                 string[] files = Directory.GetFiles(projectfolder, "*", SearchOption.AllDirectories)
                     .Where(f => !string.Equals(f, fullfilename, StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -124,8 +121,7 @@ namespace CheckMissingFiles
                     try
                     {
                         return Path.Combine(
-                            Path.GetDirectoryName(_solutionfile),
-                            Path.GetDirectoryName(_projectfilepath),
+                            Path.GetDirectoryName(projectFile),
                             el.Attribute("Include").Value);
                     }
                     catch (System.ArgumentException)
@@ -140,9 +136,9 @@ namespace CheckMissingFiles
                     {
                         string filenameRelativeFromProject = filename.Substring(projectfolder.Length).TrimStart('\\');
 
-                        string message = string.Format(_formatStringWarning, _projectfilepath, filenameRelativeFromProject);
+                        string message = string.Format(_formatStringWarning, projectFile, filenameRelativeFromProject);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
-                        _excessfiles++;
+                        excessfiles++;
                     }
                 }
             }
@@ -165,25 +161,24 @@ namespace CheckMissingFiles
                     try
                     {
                         fullfilename = Path.Combine(
-                            Path.GetDirectoryName(_solutionfile),
-                            Path.GetDirectoryName(_projectfilepath),
+                            Path.GetDirectoryName(projectFile),
                             include);
                     }
                     catch (System.ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
-                            "Couldn't construct file name: '" + _solutionfile + "' + '" + _projectfilepath + "' + '" + include + "': " + ex.Message,
+                            "Couldn't construct file name: '" + projectFile + "' + '" + include + "': " + ex.Message,
                             ConsoleColor.Red
                             );
-                        _parseError = true;
+                        parseError = true;
                         continue;
                     }
 
                     if (!File.Exists(fullfilename))
                     {
-                        string message = string.Format(_formatStringError, _projectfilepath, include);
+                        string message = string.Format(_formatStringError, projectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Red);
-                        _missingfilesError++;
+                        missingfilesError++;
                     }
                 }
 
@@ -194,24 +189,23 @@ namespace CheckMissingFiles
                     try
                     {
                         fullfilename = Path.Combine(
-                            Path.GetDirectoryName(_solutionfile),
-                            Path.GetDirectoryName(_projectfilepath),
+                            Path.GetDirectoryName(projectFile),
                             include);
                     }
                     catch (System.ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
-                            "Couldn't construct file name: '" + _solutionfile + "' + '" + _projectfilepath + "' + '" + include + "': " + ex.Message,
+                            "Couldn't construct file name: '" + projectFile + "' + '" + include + "': " + ex.Message,
                             ConsoleColor.Red
                             );
-                        _parseError = true;
+                        parseError = true;
                         continue;
                     }
                     if (!File.Exists(fullfilename))
                     {
-                        string message = string.Format(_formatStringWarning, _projectfilepath, include);
+                        string message = string.Format(_formatStringWarning, projectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
-                        _missingfilesWarning++;
+                        missingfilesWarning++;
                     }
                 }
             }

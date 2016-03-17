@@ -7,151 +7,74 @@ namespace CheckMissingFiles
 {
     class Solution
     {
-        private string _solutionfile;
-        private List<Project> _projects;
-        private bool _reverseCheck { get; set; }
+        public string solutionFile { get; set; }
+        public List<string> projectsPaths { get; set; }
 
-        public Solution(string solutionfile, bool teamcityErrorMessage)
+        public Solution(string solutionfile)
         {
-            _solutionfile = solutionfile;
+            solutionFile = solutionfile;
 
             string[] rows;
             try
             {
-                rows = File.ReadAllLines(_solutionfile);
+                rows = File.ReadAllLines(solutionFile);
             }
             catch (IOException ex)
             {
-                throw new ApplicationException("Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load solution: '" + solutionFile + "': " + ex.Message);
             }
             catch (UnauthorizedAccessException ex)
             {
-                throw new ApplicationException("Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load solution: '" + solutionFile + "': " + ex.Message);
             }
             catch (ArgumentException ex)
             {
-                throw new ApplicationException("Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load solution: '" + solutionFile + "': " + ex.Message);
             }
 
-            List<string> projpaths = new List<string>();
+            projectsPaths = new List<string>();
 
             foreach (string row in rows)
             {
-                // cs, vb, cpp
-                string[] projtypeguids = { "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}", "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}", "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}" };
+                // cs, vb, cpp, cds, fs, wix
+                string[] projtypeguids = {
+                    "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}",
+                    "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}",
+                    "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}",
+                    "{20D4826A-C6FA-45DB-90F4-C717570B9F32}",
+                    "{F2A71F9B-5D33-465A-A702-920D77279786}",
+                    "{930C7802-8A8C-48F9-8165-68863BCCD9DD}"
+                };
+                // solution folder, website
+                string[] ignoreguids = {
+                    "{2150E333-8FDC-42A3-9474-1A3956D46DE8}",
+                    "{E24C65DC-7377-472B-9ABA-BC803B73C61A}"
+                };
 
-                foreach (string projtypeguid in projtypeguids)
+                if (row.StartsWith("Project(\""))
                 {
-                    string projtypeline = "Project(\"" + projtypeguid + "\") =";
-
-                    if (row.StartsWith(projtypeline))
+                    if (ignoreguids.Any(g => row.StartsWith("Project(\"" + g + "\") =")))
                     {
-                        string[] values = row.Substring(projtypeline.Length).Split(',');
+                    }
+                    else if (projtypeguids.Any(g => row.StartsWith("Project(\"" + g + "\") =")))
+                    {
+                        string[] values = row.Substring(row.IndexOf('=') + 1).Split(',');
                         if (values.Length != 3)
                         {
+                            ConsoleHelper.WriteLineColor(solutionFile + ": Corrupt solution file: '" + row + "'", ConsoleColor.Yellow);
                             continue;
                         }
 
-                        string package = row.Substring(9, projtypeline.Length - 13);
                         string path = values[1].Trim().Trim('"');
 
-                        projpaths.Add(path);
-                    }
-                }
-            }
-
-
-            bool error = false;
-
-            _projects = new List<Project>();
-
-            foreach (string projpath in projpaths)
-            {
-                Project p;
-                try
-                {
-                    p = new Project(_solutionfile, projpath, teamcityErrorMessage);
-                }
-                catch (ApplicationException ex)
-                {
-                    ConsoleHelper.WriteLineColor(ex.Message, ConsoleColor.Red);
-                    error = true;
-                    continue;
-                }
-
-                _projects.Add(p);
-            }
-
-            if (error)
-            {
-                throw new ApplicationException("Fix errors before continuing!");
-            }
-        }
-
-        public int CheckProjects(bool reverseCheck)
-        {
-            foreach (Project p in _projects.OrderBy(p => p._projectfilepath))
-            {
-                p.Check(reverseCheck);
-            }
-
-            bool parseError = _projects.Any(p => p._parseError);
-
-            int missingfilesError = _projects.Select(p => p._missingfilesError).Sum();
-            int missingfilesWarning = _projects.Select(p => p._missingfilesWarning).Sum();
-            int excessfiles = _projects.Select(p => p._excessfiles).Sum();
-
-            string msg = "Parsed " + _projects.Count + " projects, found ";
-
-            if (reverseCheck)
-            {
-                if (excessfiles == 0)
-                {
-                    ConsoleHelper.WriteLine(msg + "no excess files.");
-                }
-                else
-                {
-                    ConsoleHelper.WriteLine(msg + excessfiles + " files in file system that wasn't included in project files.");
-                }
-            }
-            else
-            {
-                if (missingfilesError == 0)
-                {
-                    if (missingfilesWarning == 0)
-                    {
-                        ConsoleHelper.WriteLine(msg + "no missing files.");
+                        projectsPaths.Add(path);
                     }
                     else
                     {
-                        ConsoleHelper.WriteLine(msg + "no missing files (although " + missingfilesWarning + " missing files with None build action).");
+                        ConsoleHelper.WriteLineColor(solutionFile + ": Ignoring unknown project type: '" + row + "'", ConsoleColor.Yellow);
+                        continue;
                     }
                 }
-                else
-                {
-                    if (missingfilesWarning == 0)
-                    {
-                        ConsoleHelper.WriteLine(msg + missingfilesError + " missing files.");
-                    }
-                    else
-                    {
-                        ConsoleHelper.WriteLine(msg + missingfilesError + " missing files (and " + missingfilesWarning + " missing files with None build action).");
-                    }
-                }
-            }
-
-            if (parseError)
-            {
-                return 2;
-            }
-
-            if (missingfilesError == 0)
-            {
-                return 0;
-            }
-            else
-            {
-                return 3;
             }
         }
     }
