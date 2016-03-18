@@ -28,7 +28,7 @@ namespace CheckMissingFiles
                             solutionFile,
                             ex.Message.Replace("\'", "")) :
                         string.Format(
-                            "Couldn't load solution: '{0}' --> '{0}'",
+                            "Couldn't load solution: '{0}' --> '{1}'",
                             "'" + solutionFile + "'",
                             ex.Message);
 

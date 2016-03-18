@@ -28,7 +28,7 @@ namespace CheckMissingFiles
 
         static int CheckFiles(string[] args)
         {
-            string usage = @"CheckMissingFiles 3.2
+            string usage = @"CheckMissingFiles 3.3
 
 Usage: CheckMissingFiles [-b] [-esolution file 1,solution file 2] [-r] [-t] <solution path/pattern>
 

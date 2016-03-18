@@ -50,7 +50,7 @@ namespace CheckMissingFiles
                             string.Join(", ", solutionfiles),
                             ex.Message.Replace("\'", "")):
                         string.Format(
-                            "Couldn't load project: '{0}' --> '{0}'",
+                            "Couldn't load project: '{0}' --> '{1}'",
                             "'" + string.Join("', '", solutionfiles) + "'",
                             ex.Message);
 
