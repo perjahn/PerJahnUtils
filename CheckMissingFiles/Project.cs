@@ -12,8 +12,8 @@ namespace CheckMissingFiles
 {
     class Project
     {
-        //public string _solutionfile { get; set; }
         public string projectFile { get; set; }
+        public string[] solutionFiles { get; set; }
         private List<XElement> _allfiles { get; set; }
 
         public bool parseError { get; set; }
@@ -28,9 +28,10 @@ namespace CheckMissingFiles
             "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "Folder", "Import", "None",
             "ProjectConfiguration", "Reference", "Service", "WCFMetadata", "WCFMetadataStorage", "WebReferences", "WebReferenceUrl" };
 
-        public Project(string projectfile, bool teamcityErrorMessage)
+        public Project(string projectfile, string[] solutionfiles, bool teamcityErrorMessage)
         {
             projectFile = projectfile;
+            solutionFiles = solutionfiles;
 
             XDocument xdoc;
             XNamespace ns;
@@ -41,19 +42,19 @@ namespace CheckMissingFiles
             }
             catch (IOException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
             }
             catch (UnauthorizedAccessException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
             }
             catch (ArgumentException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
             }
             catch (System.Xml.XmlException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + projectFile + "': " + ex.Message);
+                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
             }
 
             ns = xdoc.Root.Name.Namespace;
@@ -102,19 +103,17 @@ namespace CheckMissingFiles
 
             if (_allfiles.Count() == 0)
             {
-                ConsoleHelper.WriteLine(projectFile + ": No files found in project.");
+                ConsoleHelper.WriteLine("No files found in project: '" + string.Join("', '", solutionFiles) + "': '" + projectFile + "'");
             }
 
             if (reverseCheck)
             {
-                // Files should exist in file project file.
+                // Files should exist in project file.
 
                 string projectfolder = Path.GetDirectoryName(projectFile);
 
-                string fullfilename = Path.Combine(projectFile);
-
                 string[] files = Directory.GetFiles(projectfolder, "*", SearchOption.AllDirectories)
-                    .Where(f => !string.Equals(f, fullfilename, StringComparison.OrdinalIgnoreCase)).ToArray();
+                    .Where(f => !string.Equals(f, projectFile, StringComparison.OrdinalIgnoreCase)).ToArray();
 
                 string[] allfiles = _allfiles.Select(el =>
                 {
@@ -167,7 +166,7 @@ namespace CheckMissingFiles
                     catch (System.ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
-                            "Couldn't construct file name: '" + projectFile + "' + '" + include + "': " + ex.Message,
+                            "Couldn't construct file name: '" + string.Join("', '", solutionFiles) + "': '" + projectFile + "' + '" + include + "': " + ex.Message,
                             ConsoleColor.Red
                             );
                         parseError = true;
@@ -195,7 +194,7 @@ namespace CheckMissingFiles
                     catch (System.ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
-                            "Couldn't construct file name: '" + projectFile + "' + '" + include + "': " + ex.Message,
+                            "Couldn't construct file name: '" + string.Join("', '", solutionFiles) + "': '" + projectFile + "' + '" + include + "': " + ex.Message,
                             ConsoleColor.Red
                             );
                         parseError = true;

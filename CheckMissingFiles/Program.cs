@@ -20,7 +20,7 @@ namespace CheckMissingFiles
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine(Environment.NewLine + "Press any key to continue...");
-                Console.ReadKey(true);
+                Console.ReadKey();
             }
 
             return result;
@@ -28,7 +28,7 @@ namespace CheckMissingFiles
 
         static int CheckFiles(string[] args)
         {
-            string usage = @"CheckMissingFiles 3.0
+            string usage = @"CheckMissingFiles 3.1
 
 Usage: CheckMissingFiles [-b] [-esolution file 1,solution file 2] [-r] [-t] <solution path/pattern>
 
@@ -124,16 +124,8 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
             }
 
 
-            string[] projectPaths = solutions
-                .SelectMany(s => s.projectsPaths.Select(p => CompactPath(Path.Combine(Path.GetDirectoryName(s.solutionFile), p))))
-                .Distinct()
-                .OrderBy(p => p)
-                .ToArray();
-
-            ConsoleHelper.WriteLine("Loading " + projectPaths.Length + " projects...");
-
             bool loadError;
-            List<Project> projects = LoadProjects(projectPaths, teamcityErrorMessage, out loadError);
+            List<Project> projects = LoadProjects(solutions, teamcityErrorMessage, out loadError);
 
             bool check = CheckProjects(projects, reverseCheck);
             if (loadError || !check)
@@ -188,6 +180,52 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
             return solutionFiles;
         }
 
+        private static List<Project> LoadProjects(List<Solution> solutions, bool teamcityErrorMessage, out bool loadError)
+        {
+            var projectsToLoad = solutions
+                .SelectMany(s =>
+                    s.projectsPaths, (s, relpath) =>
+                        new
+                        {
+                            solutionFile = s.solutionFile,
+                            projectPath = CompactPath(Path.Combine(Path.GetDirectoryName(s.solutionFile), relpath))
+                        })
+                .GroupBy(p => p.projectPath, (projectPath, projs) =>
+                    new
+                    {
+                        projectPath = projectPath,
+                        solutionFiles = projs.Select(proj => proj.solutionFile).ToArray()
+                    })
+                .OrderBy(p => p.projectPath)
+                .ToArray();
+
+
+            ConsoleHelper.WriteLine("Loading " + projectsToLoad.Length + " projects...");
+
+            loadError = false;
+
+            List<Project> projects = new List<Project>();
+
+            foreach (var projectToLoad in projectsToLoad)
+            {
+                Project project;
+                try
+                {
+                    project = new Project(projectToLoad.projectPath, projectToLoad.solutionFiles, teamcityErrorMessage);
+                }
+                catch (ApplicationException ex)
+                {
+                    ConsoleHelper.WriteLineColor(ex.Message, ConsoleColor.Red);
+                    loadError = true;
+                    continue;
+                }
+
+                projects.Add(project);
+            }
+
+            return projects;
+        }
+
         public static string CompactPath(string path)
         {
             List<string> folders = path.Split(Path.DirectorySeparatorChar).ToList();
@@ -219,32 +257,6 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
             }
 
             return path2;
-        }
-
-        private static List<Project> LoadProjects(string[] projectPaths, bool teamcityErrorMessage, out bool loadError)
-        {
-            loadError = false;
-
-            List<Project> projects = new List<Project>();
-
-            foreach (string projpath in projectPaths)
-            {
-                Project p;
-                try
-                {
-                    p = new Project(projpath, teamcityErrorMessage);
-                }
-                catch (ApplicationException ex)
-                {
-                    ConsoleHelper.WriteLineColor(ex.Message, ConsoleColor.Red);
-                    loadError = true;
-                    continue;
-                }
-
-                projects.Add(p);
-            }
-
-            return projects;
         }
 
         public static bool CheckProjects(List<Project> projects, bool reverseCheck)
