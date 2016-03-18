@@ -21,8 +21,7 @@ namespace CheckMissingFiles
         public int missingfilesWarning { get; set; }
         public int excessfiles { get; set; }
 
-        private string _formatStringError { get; set; }
-        private string _formatStringWarning { get; set; }
+        private bool _teamcityErrorMessage { get; set; }
 
         private static string[] excludedtags = {
             "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "Folder", "Import", "None",
@@ -33,6 +32,8 @@ namespace CheckMissingFiles
             projectFile = projectfile;
             solutionFiles = solutionfiles;
 
+            _teamcityErrorMessage = teamcityErrorMessage;
+
             XDocument xdoc;
             XNamespace ns;
 
@@ -40,21 +41,20 @@ namespace CheckMissingFiles
             {
                 xdoc = XDocument.Load(projectFile);
             }
-            catch (IOException ex)
+            catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
-                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
-            }
-            catch (System.Xml.XmlException ex)
-            {
-                throw new ApplicationException("Couldn't load project: '" + string.Join("', '", solutionfiles) + "': " + ex.Message);
+                string message =
+                    teamcityErrorMessage ?
+                        string.Format(
+                            "##teamcity[message text='Could not load project: {0} --> {1}' status='ERROR']",
+                            string.Join(", ", solutionfiles),
+                            ex.Message.Replace("\'", "")):
+                        string.Format(
+                            "Couldn't load project: '{0}' --> '{0}'",
+                            "'" + string.Join("', '", solutionfiles) + "'",
+                            ex.Message);
+
+                throw new ApplicationException(message);
             }
 
             ns = xdoc.Root.Name.Namespace;
@@ -77,25 +77,29 @@ namespace CheckMissingFiles
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
             _allfiles
-                    .ForEach(el => el.Attribute("Include").Value = System.Uri.UnescapeDataString(el.Attribute("Include").Value));
+                .ForEach(el => el.Attribute("Include").Value = System.Uri.UnescapeDataString(el.Attribute("Include").Value));
 
-
-            if (teamcityErrorMessage)
-            {
-                _formatStringError = "##teamcity[message text='{0} --> {1}' status='ERROR']";
-                _formatStringWarning = "##teamcity[message text='{0} --> {1}' status='WARNING']";
-            }
-            else
-            {
-                _formatStringError = "'{0}' --> '{1}'";
-                _formatStringWarning = "'{0}' --> '{1}'";
-            }
 
             return;
         }
 
         public void Check(bool reverseCheck)
         {
+            string formatStringError;
+            string formatStringWarning;
+
+            if (_teamcityErrorMessage)
+            {
+                formatStringError = "##teamcity[message text='{0} --> {1}' status='ERROR']";
+                formatStringWarning = "##teamcity[message text='{0} --> {1}' status='WARNING']";
+            }
+            else
+            {
+                formatStringError = "'{0}' --> '{1}'";
+                formatStringWarning = "'{0}' --> '{1}'";
+            }
+
+
             parseError = false;
             missingfilesError = 0;
             missingfilesWarning = 0;
@@ -135,7 +139,7 @@ namespace CheckMissingFiles
                     {
                         string filenameRelativeFromProject = filename.Substring(projectfolder.Length).TrimStart('\\');
 
-                        string message = string.Format(_formatStringWarning, projectFile, filenameRelativeFromProject);
+                        string message = string.Format(formatStringWarning, projectFile, filenameRelativeFromProject);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
                         excessfiles++;
                     }
@@ -175,7 +179,7 @@ namespace CheckMissingFiles
 
                     if (!File.Exists(fullfilename))
                     {
-                        string message = string.Format(_formatStringError, projectFile, include);
+                        string message = string.Format(formatStringError, projectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Red);
                         missingfilesError++;
                     }
@@ -202,7 +206,7 @@ namespace CheckMissingFiles
                     }
                     if (!File.Exists(fullfilename))
                     {
-                        string message = string.Format(_formatStringWarning, projectFile, include);
+                        string message = string.Format(formatStringWarning, projectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
                         missingfilesWarning++;
                     }

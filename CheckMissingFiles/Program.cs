@@ -28,7 +28,7 @@ namespace CheckMissingFiles
 
         static int CheckFiles(string[] args)
         {
-            string usage = @"CheckMissingFiles 3.1
+            string usage = @"CheckMissingFiles 3.2
 
 Usage: CheckMissingFiles [-b] [-esolution file 1,solution file 2] [-r] [-t] <solution path/pattern>
 
@@ -114,7 +114,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
             {
                 try
                 {
-                    solutions.Add(new Solution(solutionFile));
+                    solutions.Add(new Solution(solutionFile, teamcityErrorMessage));
                 }
                 catch (ApplicationException ex)
                 {

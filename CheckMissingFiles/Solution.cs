@@ -10,7 +10,7 @@ namespace CheckMissingFiles
         public string solutionFile { get; set; }
         public List<string> projectsPaths { get; set; }
 
-        public Solution(string solutionfile)
+        public Solution(string solutionfile, bool teamcityErrorMessage)
         {
             solutionFile = solutionfile;
 
@@ -19,17 +19,20 @@ namespace CheckMissingFiles
             {
                 rows = File.ReadAllLines(solutionFile);
             }
-            catch (IOException ex)
+            catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
             {
-                throw new ApplicationException("Couldn't load solution: '" + solutionFile + "': " + ex.Message);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                throw new ApplicationException("Couldn't load solution: '" + solutionFile + "': " + ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                throw new ApplicationException("Couldn't load solution: '" + solutionFile + "': " + ex.Message);
+                string message =
+                    teamcityErrorMessage ?
+                        string.Format(
+                            "##teamcity[message text='Could not load solution: {0} --> {1}' status='ERROR']",
+                            solutionFile,
+                            ex.Message.Replace("\'", "")) :
+                        string.Format(
+                            "Couldn't load solution: '{0}' --> '{0}'",
+                            "'" + solutionFile + "'",
+                            ex.Message);
+
+                throw new ApplicationException(message);
             }
 
             projectsPaths = new List<string>();
