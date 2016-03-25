@@ -48,7 +48,7 @@ Example: VerifyReferences .";
         static bool Validate(List<Project> projects)
         {
             var refs = projects
-                .SelectMany(p =>new { r = p.references },)
+                .SelectMany(p =>new { r = p.references })
                 .ToLookup(p => p.shortinclude)
                 .OrderBy(p => p.Key)
                 .ToList();
