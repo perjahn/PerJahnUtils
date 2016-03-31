@@ -5,14 +5,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatherOutputAssemblies", "G
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x86 = Debug|x86
-		Release|x86 = Release|x86
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Debug|x86.ActiveCfg = Debug|x86
-		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Debug|x86.Build.0 = Debug|x86
-		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Release|x86.ActiveCfg = Release|x86
-		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Release|x86.Build.0 = Release|x86
+		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{265753AB-92E6-4D3E-99DE-76D007206BD2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

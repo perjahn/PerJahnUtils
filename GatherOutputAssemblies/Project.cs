@@ -32,22 +32,7 @@ namespace GatherOutputAssemblies
             {
                 xdoc = XDocument.Load(fullfilename);
             }
-            catch (IOException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (ArgumentException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (System.Xml.XmlException ex)
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
                 return null;
