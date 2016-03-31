@@ -14,11 +14,11 @@ namespace GatherOutputAssemblies
             System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             string usage =
-@"GatherOutputAssemblies 1.5 - Program for gathering compiled output from Visual Studio.
+@"GatherOutputAssemblies 1.6 - Program for gathering compiled output from Visual Studio.
 
 Usage: GatherOutputAssemblies [-a] [-v] [-w] <solutionfile> <buildconfig> <outputfolder> +include1... -exclude1...
 
--a:    Copy all projects. TODO
+-a:    Copy all projects.
 -v:    Verbose logging.
 -w:    Also include Web/Mvc projects. Instead of using this flag, please consider TODO
        to *Publish* Web/Mvc projects, that's the better approach because only VS
@@ -42,11 +42,17 @@ this assumption and usually needs to be excluded.";
 
 
             bool verbose = false;
+            bool gatherall = false;
 
             if (args.Contains("-v"))
             {
                 verbose = true;
                 args = args.Where(a => a != "-v").ToArray();
+            }
+            if (args.Contains("-a"))
+            {
+                gatherall = true;
+                args = args.Where(a => a != "-a").ToArray();
             }
 
 
@@ -96,7 +102,7 @@ this assumption and usually needs to be excluded.";
                 return 1;
             }
 
-            int result = s.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, webmvcguids, verbose);
+            int result = s.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, webmvcguids, verbose, gatherall);
 
             return result;
         }

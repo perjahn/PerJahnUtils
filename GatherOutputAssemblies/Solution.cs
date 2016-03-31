@@ -113,7 +113,8 @@ namespace GatherOutputAssemblies
             return projects;
         }
 
-        public int CopyProjectOutput(List<Project> projects, string buildconfig, string outputpath, List<string> includeProjects, List<string> excludeProjects, string[] webmvcguids, bool verbose)
+        public int CopyProjectOutput(List<Project> projects, string buildconfig, string outputpath, List<string> includeProjects,
+            List<string> excludeProjects, string[] webmvcguids, bool verbose, bool gatherall)
         {
             int result = 0;
 
@@ -129,26 +130,29 @@ namespace GatherOutputAssemblies
                 if (project._ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '" + project._sln_path + "'");
+                    continue;
                 }
-                else
+
+                if ((
+                    gatherall ||
+                    includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path))) ||
+                    !projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path))
+                    )
+                    &&
+                    !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path))
+                )
                 {
-                    if (includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)) ||
-                        !projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
-                        && !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path)))
+                    bool projectresult = project.CopyOutput(
+                        _solutionfile,
+                        buildconfig,
+                        Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)),
+                        verbose);
+                    if (!projectresult)
                     {
-                        bool projectresult = project.CopyOutput(
-                            _solutionfile,
-                            buildconfig,
-                            Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)),
-                            verbose);
-                        if (!projectresult)
-                        {
-                            result = 1;
-                        }
+                        result = 1;
                     }
                 }
             }
-
 
             return result;
         }
