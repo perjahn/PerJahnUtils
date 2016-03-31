@@ -256,24 +256,29 @@ namespace GatherOutputAssemblies
             List<List<OutputPath>> matchresults)
         {
             var paths = possiblepaths
-                .Where(o => MatchCondition(o.Condition, buildconfig, false))
+                .Where(o => MatchCondition(o.Condition, buildconfig, false) && ContainsFiles(solutionfile, o.Path))
                 .GroupBy(o => o.Path)
                 .Select(g => g.First())
                 .ToList();
             matchresults.Add(paths);
 
+            //ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "1: '" + solutionfile + "' '" + buildconfig + "': " + paths.Count() + "\n    >" + string.Join("<\n    >", possiblepaths.Select(p => p.Condition + "|" + p.Path)) + "<\n    .>" + string.Join("<\n    .>", paths.Select(m => m.Path)) + "<");
+
             if (paths.Count() > 1)
             {
+                ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "2: '" + solutionfile + "' '" + buildconfig + "': " + paths.Count() + "\n    >" + string.Join("<\n    >", possiblepaths.Select(p => p.Condition + "|" + p.Path)) + "<\n    .>" + string.Join("<\n    .>", paths.Select(m => m.Path)) + "<");
                 paths = possiblepaths
-                    .Where(o => MatchCondition(o.Condition, buildconfig, true))
+                    .Where(o => MatchCondition(o.Condition, buildconfig, true) && ContainsFiles(solutionfile, o.Path))
                     .GroupBy(o => o.Path)
                     .Select(g => g.First())
                     .ToList();
             }
             matchresults.Add(paths);
 
+            //ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "3: '" + solutionfile + "' '" + buildconfig + "': " + paths.Count() + "\n    >" + string.Join("<\n    >", possiblepaths.Select(p => p.Condition + "|" + p.Path)) + "<\n    .>" + string.Join("<\n    .>", paths.Select(m => m.Path)) + "<");
             if (paths.Count() > 1)
             {
+                //ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "4: '" + solutionfile + "' '" + buildconfig + "': " + paths.Count() + "\n    >" + string.Join("<\n    >", possiblepaths.Select(p => p.Condition + "|" + p.Path)) + "<\n    .>" + string.Join("<\n    .>", paths.Select(m => m.Path)) + "<");
                 paths = possiblepaths
                     .Where(o => ContainsFiles(solutionfile, o.Path))
                     .GroupBy(o => o.Path)
@@ -282,10 +287,15 @@ namespace GatherOutputAssemblies
             }
             matchresults.Add(paths);
 
+            //ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "5: '" + solutionfile + "' '" + buildconfig + "': " + paths.Count() + "\n    >" + string.Join("<\n    >", possiblepaths.Select(p => p.Condition + "|" + p.Path)) + "<\n    .>" + string.Join("<\n    .>", paths.Select(m => m.Path)) + "<");
+
             if (paths.Count() == 1)
             {
+                //ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "6: '" + solutionfile + "' '" + buildconfig + "': " + paths.Count() + "\n    >" + string.Join("<\n    >", possiblepaths.Select(p => p.Condition + "|" + p.Path)) + "<\n    .>" + string.Join("<\n    .>", paths.Select(m => m.Path)) + "<");
+
                 return paths.Single().Path;
             }
+            //ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "7: '" + solutionfile + "' '" + buildconfig + "': " + paths.Count() + "\n    >" + string.Join("<\n    >", possiblepaths.Select(p => p.Condition + "|" + p.Path)) + "<\n    .>" + string.Join("<\n    .>", paths.Select(m => m.Path)) + "<");
 
             return null;
         }

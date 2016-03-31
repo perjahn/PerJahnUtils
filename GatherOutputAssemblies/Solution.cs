@@ -129,7 +129,7 @@ namespace GatherOutputAssemblies
                     !projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path))
                     )
                     &&
-                    !excludeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path))
+                    !excludeProjects.Any(x => IsWildcardMatch(Path.Combine(Path.GetDirectoryName(_solutionfile), project._sln_path), x))
                 )
                 {
                     bool projectresult = project.CopyOutput(
@@ -155,7 +155,7 @@ namespace GatherOutputAssemblies
                 folder = ".";
             }
 
-            return Directory.GetFiles(folder, pattern)
+            return Directory.GetFiles(folder, pattern + Path.GetExtension(file))
                 .Select(f => Path.GetFileName(f))
                 .Contains(Path.GetFileName(file));
         }
