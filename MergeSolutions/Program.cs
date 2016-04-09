@@ -5,20 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-// ToDo 1: Support wildcards.
+// ToDo 1: Automatically exclude conflicting projects (projects with same name, but different guids/paths).
 // ToDo 2: Rewrite paths to projects. All solutions must currently exist in the same folder.
 // But really, the recommended approach is to use the CreateSolution util instead.
 
 namespace MergeSolutions
 {
-    class Project
-    {
-        public string name { get; set; }
-        public string guid { get; set; }
-        public string fullname { get; set; }
-        public List<string> projrows { get; set; }
-    }
-
     class Program
     {
         static bool _globalsection;
@@ -29,16 +21,16 @@ namespace MergeSolutions
             string[] parsedArgs = ParseArgs(args);
 
             string[] excludeProjects;
-            parsedArgs = GetExcludeProjects(parsedArgs, out excludeProjects);
+            parsedArgs = GetSolutions(parsedArgs, out excludeProjects);
 
             if (parsedArgs.Length < 3)
             {
                 Console.WriteLine(
-@"MergeSolutions 1.2
+@"MergeSolutions 1.3
 
 Usage: MergeSolutions [-g] [-v] <outputfile> <inputfile1> <inputfile2> ... <-excludeproj1> ...
 
--g:    Create global section.
+-g:    Add global section.
 -v:    Verbose logging.
 
 Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
@@ -46,7 +38,16 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
                 return 1;
             }
 
-            int result = MergeSolutions(parsedArgs[0], parsedArgs.Skip(1).ToArray(), excludeProjects);
+            int result;
+            try
+            {
+                result = MergeSolutions(parsedArgs[0], parsedArgs.Skip(1).ToArray(), excludeProjects);
+            }
+            catch (ApplicationException ex)
+            {
+                Console.Write(ex.Message);
+                return 1;
+            }
 
             return result;
         }
@@ -61,7 +62,7 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
                 .ToArray();
         }
 
-        static string[] GetExcludeProjects(string[] args, out string[] excludeProjects)
+        static string[] GetSolutions(string[] args, out string[] excludeProjects)
         {
             excludeProjects = args
                 .Where(a => a.StartsWith("-"))
@@ -73,52 +74,51 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
                 .ToArray();
         }
 
-        static int MergeSolutions(string outputfile, string[] inputfiles, string[] excludeProjects)
+        static int MergeSolutions(string outputSolution, string[] solutionPatterns, string[] excludeProjects)
         {
-            Console.WriteLine("Merging: '" + string.Join("' + '", inputfiles) + "' -> '" + outputfile + "'");
+            string[] solutionfiles = GetSolutionFiles(solutionPatterns);
 
-            Console.WriteLine("Excluding projects: '" + string.Join("', '", excludeProjects) + "'");
+            Console.WriteLine("Merging: '" + string.Join("' + '", solutionfiles) + "' -> '" + outputSolution + "'");
 
-            bool missingfiles = false;
-            foreach (string inputfile in inputfiles)
+            if (excludeProjects.Length == 0)
             {
-                if (!File.Exists(inputfile))
+                Console.WriteLine("Excluding no projects.");
+            }
+            else
+            {
+                Console.WriteLine("Excluding projects: '" + string.Join("', '", excludeProjects) + "'");
+            }
+
+
+            Solution[] solutions = solutionfiles
+                .Select(s =>
                 {
-                    if (!missingfiles)
+                    Console.Write("Reading solution file: '" + s + "': ");
+                    string[] filerows = File.ReadAllLines(s);
+                    Console.WriteLine("Got: " + filerows.Length + " rows.");
+
+                    return new Solution()
                     {
-                        Console.WriteLine("Couldn't find inputfiles:");
-                    }
-                    Console.WriteLine("'" + inputfile + "'");
-                    missingfiles = true;
-                }
-            }
-            if (missingfiles)
-            {
-                return 1;
-            }
+                        filename = s,
+                        rows = filerows
+                    };
+                })
+                .ToArray();
 
-
-            List<string> rows = new List<string>();
-            foreach (string inputfile in inputfiles)
-            {
-                Console.Write("Reading file: '" + inputfile + "': ");
-                string[] filerows = File.ReadAllLines(inputfile);
-                Console.WriteLine("Got: " + filerows.Length + " rows.");
-                rows.AddRange(filerows);
-            }
 
             string[] projguids = {
                 "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC",  // c#
                 "E24C65DC-7377-472B-9ABA-BC803B73C61A",  // website
                 "F2A71F9B-5D33-465A-A702-920D77279786",  // f#
-                "F184B08F-C81C-45F6-A57F-5ABD9991F28F"  // vb
+                "F184B08F-C81C-45F6-A57F-5ABD9991F28F",  // vb
+                "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942"   // c++
             };
 
 
             List<Project> projects = new List<Project>();
 
             bool inproject = false;
-            foreach (string row in rows)
+            foreach (string row in solutions.SelectMany(s => s.rows))
             {
                 if (projguids.Any(p => row.StartsWith("Project(\"{" + p + "}\")")))
                 {
@@ -145,6 +145,10 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
                         List<string> projrows = new List<string>();
                         project.projrows = projrows;
 
+                        if (_verbose)
+                        {
+                            Console.WriteLine("Adding project: '" + project.name + "'");
+                        }
                         projects.Add(project);
 
                         inproject = true;
@@ -184,10 +188,80 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
                 allprojrows.AddRange(GenerateGlobalSection(projects.Select(p => p.guid).ToArray(), new[] { "Debug", "Release" }));
             }
 
-            Console.WriteLine("Writing file: '" + outputfile + "': " + projects.Count() + " projects, " + allprojrows.Count() + " rows.");
-            File.WriteAllLines(outputfile, allprojrows);
+            Console.WriteLine("Writing file: '" + outputSolution + "': " + projects.Count() + " projects, " + allprojrows.Count() + " rows.");
+            File.WriteAllLines(outputSolution, allprojrows);
 
             return 0;
+        }
+
+        static string[] GetSolutionFiles(string[] solutionPatterns)
+        {
+            List<string> inputFiles2 = new List<string>();
+
+            List<string> allfiles = new List<string>();
+            List<string> errors = new List<string>();
+
+            foreach (string inputPath in solutionPatterns)
+            {
+                string path, pattern;
+                if (inputPath.Contains(Path.DirectorySeparatorChar))
+                {
+                    path = Path.GetDirectoryName(inputPath);
+                    pattern = Path.GetFileName(inputPath);
+                }
+                else
+                {
+                    path = ".";
+                    pattern = inputPath;
+                }
+
+                string[] files;
+                try
+                {
+                    files = Directory.GetFiles(path, pattern);
+                }
+                catch (IOException ex)
+                {
+                    errors.Add(
+                        "'" + inputPath +
+                        "' -> path: '" + path +
+                        "', pattern: '" + pattern +
+                        "' -> " + ex.Message);
+                    continue;
+                }
+
+                if (files.Length == 0)
+                {
+                    errors.Add(
+                        "'" + inputPath +
+                        "' -> path: '" + path +
+                        "', pattern: '" + pattern +
+                        "' -> No files found.");
+                    continue;
+                }
+
+                foreach (string solutionfile in files)
+                {
+                    allfiles.Add(solutionfile.StartsWith(@".\") ? solutionfile.Substring(2) : solutionfile);
+                }
+            }
+
+            if (errors.Count() > 0)
+            {
+                StringBuilder message = new StringBuilder();
+                message.AppendLine("Couldn't find solution files:");
+                foreach (string error in errors)
+                {
+                    message.AppendLine(error);
+                }
+                throw new ApplicationException(message.ToString());
+            }
+
+
+            return allfiles
+                .Distinct()
+                .OrderBy(s => s)
+                .ToArray();
         }
 
         static List<Project> CompactProjects(List<Project> projects)
