@@ -14,7 +14,7 @@ namespace CleanTCLog
         {
             if (args.Length != 2)
             {
-                Console.WriteLine("Usage: <infile> <outfile>");
+                Console.WriteLine("Usage: CleanTCLog <infile> <outfile>");
                 return;
             }
 
