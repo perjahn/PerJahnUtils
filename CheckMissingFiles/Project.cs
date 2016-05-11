@@ -90,13 +90,13 @@ namespace CheckMissingFiles
 
             if (_teamcityErrorMessage)
             {
-                formatStringError = "##teamcity[message text='{0} --> {1}' status='ERROR']";
-                formatStringWarning = "##teamcity[message text='{0} --> {1}' status='WARNING']";
+                formatStringError = "##teamcity[message text='File not found: {0} --> {1}' status='ERROR']";
+                formatStringWarning = "##teamcity[message text='File not found: {0} --> {1}' status='WARNING']";
             }
             else
             {
-                formatStringError = "'{0}' --> '{1}'";
-                formatStringWarning = "'{0}' --> '{1}'";
+                formatStringError = "'File not found: {0}' --> '{1}'";
+                formatStringWarning = "'File not found: {0}' --> '{1}'";
             }
 
 
