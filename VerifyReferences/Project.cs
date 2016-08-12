@@ -9,39 +9,32 @@ namespace VerifyReferences
 {
     class Project
     {
-        public string filename { get; set; }
+        public string projectFile { get; set; }
         public List<Reference> references { get; set; }
 
-        public Project(string projectpath)
+        public Project(string projectpath, bool teamcityErrorMessage)
         {
-            filename = Path.GetFileName(projectpath);
+            projectFile = projectpath;
 
             XDocument xdoc;
             XNamespace ns;
 
             try
             {
-                xdoc = XDocument.Load(projectpath);
+                xdoc = XDocument.Load(projectFile);
             }
-            catch (IOException ex)
+            catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
-                ConsoleHelper.WriteLineColor("Couldn't load project: '" + projectpath + "': " + ex.Message, ConsoleColor.Red);
-                return;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                ConsoleHelper.WriteLineColor("Couldn't load project: '" + projectpath + "': " + ex.Message, ConsoleColor.Red);
-                return;
-            }
-            catch (ArgumentException ex)
-            {
-                ConsoleHelper.WriteLineColor("Couldn't load project: '" + projectpath + "': " + ex.Message, ConsoleColor.Red);
-                return;
-            }
-            catch (System.Xml.XmlException ex)
-            {
-                ConsoleHelper.WriteLineColor("Couldn't load project: '" + projectpath + "': " + ex.Message, ConsoleColor.Red);
-                return;
+                string message =
+                    teamcityErrorMessage ?
+                        string.Format(
+                            "##teamcity[message text='Could not load project: {0}' status='ERROR']",
+                            ex.Message.Replace("\'", "")) :
+                        string.Format(
+                            "Couldn't load project: '{0}'",
+                            ex.Message);
+
+                throw new ApplicationException(message);
             }
 
             ns = xdoc.Root.Name.Namespace;
