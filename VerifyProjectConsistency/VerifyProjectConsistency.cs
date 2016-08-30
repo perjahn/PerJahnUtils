@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace VerifyConsistency
+namespace VerifyProjectConsistency
 {
     enum Level { Error, Warning };
 
@@ -20,7 +20,7 @@ namespace VerifyConsistency
         public Level Level;
     }
 
-    class VerifyConsistency
+    class VerifyProjectConsistency
     {
         static int Main(string[] args)
         {
@@ -40,9 +40,9 @@ namespace VerifyConsistency
             if (parsedArgs.Length < 0 || parsedArgs.Length > 1)
             {
                 Console.WriteLine(
-@"VerifyConsistency 1.0 - Verifies names and contents of VS project files.
+@"VerifyProjectConsistency 1.0 - Verifies names and contents of VS project files.
 
-Usage: VerifyConsistency [-e] [path] [-exclude folder 1] [-exclude folder 2] ...
+Usage: VerifyProjectConsistency [-e] [path] [-exclude folder 1] [-exclude folder 2] ...
 
 Default path is current directory.
 -e  Show only projects with serious errors.
