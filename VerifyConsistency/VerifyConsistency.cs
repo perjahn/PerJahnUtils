@@ -23,13 +23,21 @@ namespace VerifyConsistency
     {
         static int Main(string[] args)
         {
-            if (args.Length < 0 || args.Length > 1)
+            string[] excludeFolders = args
+                .Where(a => a.StartsWith("-"))
+                .Select(a => a.Substring(1))
+                .ToArray();
+            string[] parsedArgs = args
+                .Where(a => !a.StartsWith("-"))
+                .ToArray();
+
+            if (parsedArgs.Length < 0 || parsedArgs.Length > 1)
             {
-                Console.WriteLine("Usage: VerifyConsistency [path]");
+                Console.WriteLine("Usage: VerifyConsistency [path] [-exclude folders]");
                 return 1;
             }
 
-            string[] files = GetFiles(args.Length == 1 ? args[0] : ".");
+            string[] files = GetFiles(parsedArgs.Length == 1 ? parsedArgs[0] : ".", excludeFolders);
             if (files == null)
             {
                 return 1;
@@ -46,7 +54,7 @@ namespace VerifyConsistency
             return diffs.Length;
         }
 
-        private static string[] GetFiles(string path)
+        private static string[] GetFiles(string path, string[] excludeFolders)
         {
             string[] files;
             try
@@ -58,10 +66,16 @@ namespace VerifyConsistency
                 WriteColor(ex.Message, ConsoleColor.Red);
                 return null;
             }
+            catch (ArgumentException ex)
+            {
+                WriteColor("Path: '" + path + "'. " + ex.Message, ConsoleColor.Red);
+                return null;
+            }
 
             return files
                 .Select(f => f.StartsWith(@"\.") ? f.Substring(2) : f)
-                .Where(f => !f.EndsWith(".vcxproj") && !f.EndsWith(".vcproj") && !f.EndsWith(".proj"))
+                .Where(f => !f.EndsWith(".vcxproj") && !f.EndsWith(".vcproj") && !f.EndsWith(".proj") &&
+                    !(excludeFolders.Any(f.Contains)))
                 .ToArray();
         }
 
