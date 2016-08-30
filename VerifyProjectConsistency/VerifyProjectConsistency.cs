@@ -168,10 +168,19 @@ Return value: Number of errors + warnings, or only
 
         private static void PrintDiffs(diff[] diffs, bool onlyErrors)
         {
+            diff[] diffs2 = diffs
+                .Where(d => !onlyErrors || d.Level == Level.Error)
+                .ToArray();
+
+            if (diffs2.Length == 0)
+            {
+                return;
+            }
+
             string[] lengths = {
-                "{0,-" + diffs.Max(d => d.FolderName.Length) + "} ",
-                "{0,-" + diffs.Max(d => d.ProjectName.Length) + "} ",
-                "{0,-" + diffs.Max(d => d.AssemblyName.Length)+ "} "};
+                "{0,-" + diffs2.Max(d => d.FolderName.Length) + "} ",
+                "{0,-" + diffs2.Max(d => d.ProjectName.Length) + "} ",
+                "{0,-" + diffs2.Max(d => d.AssemblyName.Length)+ "} "};
 
             Console.WriteLine(
                 string.Format(lengths[0], "FolderName") +
