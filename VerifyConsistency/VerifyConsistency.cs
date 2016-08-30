@@ -1,0 +1,183 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+
+namespace VerifyConsistency
+{
+    enum Level { Error, Warning };
+
+    class diff
+    {
+        public string FolderName;
+        public string ProjectName;
+        public string AssemblyName;
+        public string RootNamespace;
+        public Level Level;
+    }
+
+    class VerifyConsistency
+    {
+        static int Main(string[] args)
+        {
+            if (args.Length < 0 || args.Length > 1)
+            {
+                Console.WriteLine("Usage: VerifyConsistency [path]");
+                return 1;
+            }
+
+            string[] files = GetFiles(args.Length == 1 ? args[0] : ".");
+            if (files == null)
+            {
+                return 1;
+            }
+
+            diff[] diffs = GetDiffs(files);
+
+            PrintDiffs(diffs);
+
+            Console.WriteLine("Diff Count: " + diffs.Length + "/" + files.Length +
+                " (" + diffs.Count(d => d.Level == Level.Error) + " errors, " +
+                diffs.Count(d => d.Level == Level.Warning) + " warnings)");
+
+            return diffs.Length;
+        }
+
+        private static string[] GetFiles(string path)
+        {
+            string[] files;
+            try
+            {
+                files = Directory.GetFiles(path, "*.*proj", SearchOption.AllDirectories);
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                WriteColor(ex.Message, ConsoleColor.Red);
+                return null;
+            }
+
+            return files
+                .Select(f => f.StartsWith(@"\.") ? f.Substring(2) : f)
+                .Where(f => !f.EndsWith(".vcxproj") && !f.EndsWith(".vcproj") && !f.EndsWith(".proj"))
+                .ToArray();
+        }
+
+        private static diff[] GetDiffs(string[] files)
+        {
+            List<diff> diffs = new List<diff>();
+
+            foreach (string filename in files)
+            {
+                string FolderName = Path.GetFileName(Path.GetDirectoryName(filename));
+                string ProjectName = Path.GetFileNameWithoutExtension(filename);
+
+                XDocument xdoc = XDocument.Load(filename);
+                string AssemblyName = xdoc
+                    .Descendants(xdoc.Root.Name.Namespace + "AssemblyName")
+                    .FirstOrDefault()?.Value ?? string.Empty;
+                string RootNamespace = xdoc
+                    .Descendants(xdoc.Root.Name.Namespace + "RootNamespace")
+                    .FirstOrDefault()?.Value ?? string.Empty;
+
+                string[] names = new string[] { FolderName, ProjectName, AssemblyName, RootNamespace };
+
+                if (names.Any(n => n.Length > FolderName.Length && !n.EndsWith(FolderName)) ||
+                    names.Any(n => n.Length >= ProjectName.Length && !n.EndsWith(ProjectName)) ||
+                    names.Any(n => n.Length >= AssemblyName.Length && !n.EndsWith(AssemblyName)) ||
+                    names.Any(n => n.Length >= RootNamespace.Length && !n.EndsWith(RootNamespace)))
+                {
+                    diff diff = new diff();
+                    diff.FolderName = FolderName;
+                    diff.ProjectName = ProjectName;
+                    diff.AssemblyName = AssemblyName;
+                    diff.RootNamespace = RootNamespace;
+                    diff.Level = Level.Error;
+                    diffs.Add(diff);
+                }
+                else if (FolderName != ProjectName || FolderName != AssemblyName || FolderName != RootNamespace)
+                {
+                    diff diff = new diff();
+                    diff.FolderName = FolderName;
+                    diff.ProjectName = ProjectName;
+                    diff.AssemblyName = AssemblyName;
+                    diff.RootNamespace = RootNamespace;
+                    diff.Level = Level.Warning;
+                    diffs.Add(diff);
+                }
+            }
+
+            return diffs.ToArray();
+        }
+
+        private static void PrintDiffs(diff[] diffs)
+        {
+            string[] lengths = {
+                "{0,-" + diffs.Max(d => d.FolderName.Length) + "} ",
+                "{0,-" + diffs.Max(d => d.ProjectName.Length) + "} ",
+                "{0,-" + diffs.Max(d => d.AssemblyName.Length)+ "} "};
+
+            Console.WriteLine(
+                string.Format(lengths[0], "FolderName") +
+                string.Format(lengths[1], "ProjectName") +
+                string.Format(lengths[2], "AssemblyName") +
+                "RootNamespace");
+
+
+            WriteCollection(diffs
+                .Where(d => d.Level == Level.Error)
+                .OrderBy(d => d.FolderName)
+                .ThenBy(d => d.ProjectName)
+                .ThenBy(d => d.AssemblyName)
+                .ThenBy(d => d.RootNamespace)
+                .Select(d =>
+                    string.Format(lengths[0], d.FolderName) +
+                    string.Format(lengths[1], d.ProjectName) +
+                    string.Format(lengths[2], d.AssemblyName) + d.RootNamespace),
+                ConsoleColor.Red);
+
+            WriteCollection(diffs
+                .Where(d => d.Level == Level.Warning)
+                .OrderBy(d => d.FolderName)
+                .ThenBy(d => d.ProjectName)
+                .ThenBy(d => d.AssemblyName)
+                .ThenBy(d => d.RootNamespace)
+                .Select(d =>
+                    string.Format(lengths[0], d.FolderName) +
+                    string.Format(lengths[1], d.ProjectName) +
+                    string.Format(lengths[2], d.AssemblyName) + d.RootNamespace),
+            ConsoleColor.Yellow);
+        }
+
+        private static void WriteCollection(IEnumerable<string> collection, ConsoleColor color)
+        {
+            ConsoleColor oldColor = Console.ForegroundColor;
+            try
+            {
+                Console.ForegroundColor = color;
+                Console.WriteLine(string.Join(Environment.NewLine, collection));
+            }
+            finally
+            {
+                Console.ForegroundColor = oldColor;
+            }
+        }
+
+        private static void WriteColor(string message, ConsoleColor color)
+        {
+            ConsoleColor oldColor = Console.ForegroundColor;
+            try
+            {
+                Console.ForegroundColor = color;
+                Console.WriteLine(message);
+            }
+            finally
+            {
+                Console.ForegroundColor = oldColor;
+            }
+        }
+
+    }
+}
