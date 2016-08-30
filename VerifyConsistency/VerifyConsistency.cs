@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace VerifyConsistency
@@ -23,17 +24,32 @@ namespace VerifyConsistency
     {
         static int Main(string[] args)
         {
-            string[] excludeFolders = args
+            bool onlyErrors = args.Contains("-e");
+            string[] parsedArgs = args
+                .Where(a => a != "-e")
+                .ToArray();
+
+            string[] excludeFolders = parsedArgs
                 .Where(a => a.StartsWith("-"))
                 .Select(a => a.Substring(1))
                 .ToArray();
-            string[] parsedArgs = args
+            parsedArgs = parsedArgs
                 .Where(a => !a.StartsWith("-"))
                 .ToArray();
 
             if (parsedArgs.Length < 0 || parsedArgs.Length > 1)
             {
-                Console.WriteLine("Usage: VerifyConsistency [path] [-exclude folders]");
+                Console.WriteLine(
+@"VerifyConsistency 1.0 - Verifies names and contents of VS project files.
+
+Usage: VerifyConsistency [-e] [path] [-exclude folder 1] [-exclude folder 2] ...
+
+Default path is current directory.
+-e  Show only projects with serious errors.
+
+Return value: Number of errors + warnings, or only
+              number of errors if -e is specified.");
+
                 return 1;
             }
 
@@ -44,14 +60,18 @@ namespace VerifyConsistency
             }
 
             diff[] diffs = GetDiffs(files);
+            if (diffs == null)
+            {
+                return 1;
+            }
 
-            PrintDiffs(diffs);
+            PrintDiffs(diffs, onlyErrors);
 
             Console.WriteLine("Diff Count: " + diffs.Length + "/" + files.Length +
                 " (" + diffs.Count(d => d.Level == Level.Error) + " errors, " +
                 diffs.Count(d => d.Level == Level.Warning) + " warnings)");
 
-            return diffs.Length;
+            return onlyErrors ? diffs.Count(d => d.Level == Level.Error) : diffs.Length;
         }
 
         private static string[] GetFiles(string path, string[] excludeFolders)
@@ -73,7 +93,7 @@ namespace VerifyConsistency
             }
 
             return files
-                .Select(f => f.StartsWith(@"\.") ? f.Substring(2) : f)
+                .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
                 .Where(f => !f.EndsWith(".vcxproj") && !f.EndsWith(".vcproj") && !f.EndsWith(".proj") &&
                     !(excludeFolders.Any(f.Contains)))
                 .ToArray();
@@ -88,13 +108,26 @@ namespace VerifyConsistency
                 string FolderName = Path.GetFileName(Path.GetDirectoryName(filename));
                 string ProjectName = Path.GetFileNameWithoutExtension(filename);
 
-                XDocument xdoc = XDocument.Load(filename);
-                string AssemblyName = xdoc
-                    .Descendants(xdoc.Root.Name.Namespace + "AssemblyName")
-                    .FirstOrDefault()?.Value ?? string.Empty;
-                string RootNamespace = xdoc
-                    .Descendants(xdoc.Root.Name.Namespace + "RootNamespace")
-                    .FirstOrDefault()?.Value ?? string.Empty;
+                XDocument xdoc;
+                string AssemblyName, RootNamespace;
+
+                try
+                {
+                    xdoc = XDocument.Load(filename);
+
+                    AssemblyName = xdoc
+                       .Descendants(xdoc.Root.Name.Namespace + "AssemblyName")
+                       .FirstOrDefault()?.Value ?? string.Empty;
+                    RootNamespace = xdoc
+                       .Descendants(xdoc.Root.Name.Namespace + "RootNamespace")
+                       .FirstOrDefault()?.Value ?? string.Empty;
+                }
+                catch (XmlException ex)
+                {
+                    WriteColor("Project file: " + filename + ". " + ex.Message, ConsoleColor.Red);
+                    AssemblyName = string.Empty;
+                    RootNamespace = string.Empty;
+                }
 
                 string[] names = new string[] { FolderName, ProjectName, AssemblyName, RootNamespace };
 
@@ -126,7 +159,7 @@ namespace VerifyConsistency
             return diffs.ToArray();
         }
 
-        private static void PrintDiffs(diff[] diffs)
+        private static void PrintDiffs(diff[] diffs, bool onlyErrors)
         {
             string[] lengths = {
                 "{0,-" + diffs.Max(d => d.FolderName.Length) + "} ",
@@ -152,17 +185,20 @@ namespace VerifyConsistency
                     string.Format(lengths[2], d.AssemblyName) + d.RootNamespace),
                 ConsoleColor.Red);
 
-            WriteCollection(diffs
-                .Where(d => d.Level == Level.Warning)
-                .OrderBy(d => d.FolderName)
-                .ThenBy(d => d.ProjectName)
-                .ThenBy(d => d.AssemblyName)
-                .ThenBy(d => d.RootNamespace)
-                .Select(d =>
-                    string.Format(lengths[0], d.FolderName) +
-                    string.Format(lengths[1], d.ProjectName) +
-                    string.Format(lengths[2], d.AssemblyName) + d.RootNamespace),
-            ConsoleColor.Yellow);
+            if (!onlyErrors)
+            {
+                WriteCollection(diffs
+                    .Where(d => d.Level == Level.Warning)
+                    .OrderBy(d => d.FolderName)
+                    .ThenBy(d => d.ProjectName)
+                    .ThenBy(d => d.AssemblyName)
+                    .ThenBy(d => d.RootNamespace)
+                    .Select(d =>
+                        string.Format(lengths[0], d.FolderName) +
+                        string.Format(lengths[1], d.ProjectName) +
+                        string.Format(lengths[2], d.AssemblyName) + d.RootNamespace),
+                ConsoleColor.Yellow);
+            }
         }
 
         private static void WriteCollection(IEnumerable<string> collection, ConsoleColor color)
