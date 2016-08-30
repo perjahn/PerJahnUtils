@@ -125,8 +125,15 @@ Return value: Number of errors + warnings, or only
                 catch (XmlException ex)
                 {
                     WriteColor("Project file: " + filename + ". " + ex.Message, ConsoleColor.Red);
-                    AssemblyName = string.Empty;
-                    RootNamespace = string.Empty;
+
+                    diff diff = new diff();
+                    diff.FolderName = FolderName;
+                    diff.ProjectName = ProjectName;
+                    diff.AssemblyName = string.Empty;
+                    diff.RootNamespace = string.Empty;
+                    diff.Level = Level.Error;
+                    diffs.Add(diff);
+                    continue;
                 }
 
                 string[] names = new string[] { FolderName, ProjectName, AssemblyName, RootNamespace };
