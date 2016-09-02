@@ -11,7 +11,7 @@ namespace VerifyProjectConsistency
 {
     enum Level { Error, Warning };
 
-    class diff
+    class Diff
     {
         public string FolderName;
         public string ProjectName;
@@ -19,6 +19,13 @@ namespace VerifyProjectConsistency
         public string RootNamespace;
         public Level Level;
     }
+
+    class ExcludeFolder
+    {
+        public string name;
+        public bool used;
+    }
+
 
     class VerifyProjectConsistency
     {
@@ -29,37 +36,44 @@ namespace VerifyProjectConsistency
                 .Where(a => a != "-e")
                 .ToArray();
 
-            string[] excludeFolders = parsedArgs
+            ExcludeFolder[] excludeFolders = parsedArgs
                 .Where(a => a.StartsWith("-"))
-                .Select(a => a.Substring(1))
+                .Select(a => new ExcludeFolder
+                {
+                    name = a.Substring(1),
+                    used = false
+                })
                 .ToArray();
             parsedArgs = parsedArgs
                 .Where(a => !a.StartsWith("-"))
-                .ToArray();
+                    .ToArray();
 
             if (parsedArgs.Length < 0 || parsedArgs.Length > 1)
             {
                 Console.WriteLine(
-@"VerifyProjectConsistency 1.0 - Verifies names and contents of VS project files.
+@"VerifyProjectConsistency 1.1 - Verifies names and contents of VS project files.
 
 Usage: VerifyProjectConsistency [-e] [path] [-exclude folder 1] [-exclude folder 2] ...
 
 Default path is current directory.
 -e  Show only projects with serious errors.
 
-Return value: Number of errors + warnings, or only
-              number of errors if -e is specified.");
+Return value: Number of errors + warnings, or only number of errors if -e is specified.
+
+Will return number of excessive exclude folders, if any excessive exclude
+folder is specified. This is done to make it easier to maintain an optimal
+exclude filter while code in the verified folder change over time.");
 
                 return 1;
             }
 
-            string[] files = GetFiles(parsedArgs.Length == 1 ? parsedArgs[0] : ".", excludeFolders);
+            string[] files = GetFiles(parsedArgs.Length == 1 ? parsedArgs[0] : ".");
             if (files == null)
             {
                 return 1;
             }
 
-            diff[] diffs = GetDiffs(files);
+            Diff[] diffs = GetDiffs(files, excludeFolders);
             if (diffs == null)
             {
                 return 1;
@@ -71,10 +85,18 @@ Return value: Number of errors + warnings, or only
                 " (" + diffs.Count(d => d.Level == Level.Error) + " errors, " +
                 diffs.Count(d => d.Level == Level.Warning) + " warnings)");
 
-            return onlyErrors ? diffs.Count(d => d.Level == Level.Error) : diffs.Length;
+            int diffcount = onlyErrors ? diffs.Count(d => d.Level == Level.Error) : diffs.Length;
+
+            int exsessivecount = GetExcessiveExcludesCount(excludeFolders);
+            if (exsessivecount > 0)
+            {
+                return exsessivecount;
+            }
+
+            return diffcount;
         }
 
-        private static string[] GetFiles(string path, string[] excludeFolders)
+        private static string[] GetFiles(string path)
         {
             string[] files;
             try
@@ -92,16 +114,17 @@ Return value: Number of errors + warnings, or only
                 return null;
             }
 
-            return files
+            files = files
                 .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                .Where(f => !f.EndsWith(".vcxproj") && !f.EndsWith(".vcproj") && !f.EndsWith(".proj") &&
-                    !(excludeFolders.Any(f.Contains)))
+                .Where(f => !f.EndsWith(".vcxproj") && !f.EndsWith(".vcproj") && !f.EndsWith(".proj"))
                 .ToArray();
+
+            return files;
         }
 
-        private static diff[] GetDiffs(string[] files)
+        private static Diff[] GetDiffs(string[] files, ExcludeFolder[] excludeFolders)
         {
-            List<diff> diffs = new List<diff>();
+            List<Diff> diffs = new List<Diff>();
 
             foreach (string filename in files)
             {
@@ -124,15 +147,21 @@ Return value: Number of errors + warnings, or only
                 }
                 catch (XmlException ex)
                 {
+                    if (ShouldExclude(filename, excludeFolders))
+                    {
+                        continue;
+                    }
+
                     WriteColor("Project file: " + filename + ". " + ex.Message, ConsoleColor.Red);
 
-                    diff diff = new diff();
+                    Diff diff = new Diff();
                     diff.FolderName = FolderName;
                     diff.ProjectName = ProjectName;
                     diff.AssemblyName = string.Empty;
                     diff.RootNamespace = string.Empty;
                     diff.Level = Level.Error;
                     diffs.Add(diff);
+
                     continue;
                 }
 
@@ -143,7 +172,12 @@ Return value: Number of errors + warnings, or only
                     names.Any(n => n.Length >= AssemblyName.Length && !n.EndsWith(AssemblyName)) ||
                     names.Any(n => n.Length >= RootNamespace.Length && !n.EndsWith(RootNamespace)))
                 {
-                    diff diff = new diff();
+                    if (ShouldExclude(filename, excludeFolders))
+                    {
+                        continue;
+                    }
+
+                    Diff diff = new Diff();
                     diff.FolderName = FolderName;
                     diff.ProjectName = ProjectName;
                     diff.AssemblyName = AssemblyName;
@@ -153,7 +187,12 @@ Return value: Number of errors + warnings, or only
                 }
                 else if (FolderName != ProjectName || FolderName != AssemblyName || FolderName != RootNamespace)
                 {
-                    diff diff = new diff();
+                    if (ShouldExclude(filename, excludeFolders))
+                    {
+                        continue;
+                    }
+
+                    Diff diff = new Diff();
                     diff.FolderName = FolderName;
                     diff.ProjectName = ProjectName;
                     diff.AssemblyName = AssemblyName;
@@ -166,9 +205,28 @@ Return value: Number of errors + warnings, or only
             return diffs.ToArray();
         }
 
-        private static void PrintDiffs(diff[] diffs, bool onlyErrors)
+        private static bool ShouldExclude(string filename, ExcludeFolder[] excludeFolders)
         {
-            diff[] diffs2 = diffs
+            bool exclude = false;
+            foreach (ExcludeFolder excludeFolder in excludeFolders)
+            {
+                if (filename.Split(Path.DirectorySeparatorChar).Contains(excludeFolder.name))
+                {
+                    excludeFolder.used = true;
+                    exclude = true;
+                }
+            }
+            if (exclude)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void PrintDiffs(Diff[] diffs, bool onlyErrors)
+        {
+            Diff[] diffs2 = diffs
                 .Where(d => !onlyErrors || d.Level == Level.Error)
                 .ToArray();
 
@@ -215,6 +273,28 @@ Return value: Number of errors + warnings, or only
                         string.Format(lengths[2], d.AssemblyName) + d.RootNamespace),
                 ConsoleColor.Yellow);
             }
+        }
+
+        private static int GetExcessiveExcludesCount(ExcludeFolder[] excludeFolders)
+        {
+            int count = excludeFolders.Count(e => !e.used);
+
+            if (count > 0)
+            {
+                Console.WriteLine("Excessive exclude folders specified, please remove all excessive exclude folders from command line:");
+
+                foreach (ExcludeFolder excludeFolder in excludeFolders)
+                {
+                    if (!excludeFolder.used)
+                    {
+                        WriteColor(excludeFolder.name, ConsoleColor.Red);
+                    }
+                }
+
+                return count;
+            }
+
+            return 0;
         }
 
         private static void WriteCollection(IEnumerable<string> collection, ConsoleColor color)
