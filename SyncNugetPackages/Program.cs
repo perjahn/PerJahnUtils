@@ -79,14 +79,6 @@ namespace SyncNugetPackages
 
         static MD5 md5 = MD5.Create();
 
-        static byte[] ComputeHash(string filename)
-        {
-            using (var fs = File.OpenRead(filename))
-            {
-                return md5.ComputeHash(fs);
-            }
-        }
-
         class myfileinfo
         {
             public string filename;
@@ -107,13 +99,15 @@ namespace SyncNugetPackages
             if (parsedArgs.Length != 3)
             {
                 Console.WriteLine(
-@"Usage: SyncNugetPackages <compressed folder> <extracted folder> <servers>
+@"Usage: SyncNugetPackages [-s] [-v] <compressed folder> <extracted folder> <servers>
 
 Program for syncing Nuget folders between build agents. Useful when internet is unreachable.
 
 compressed folder: A custom, local folder where compressed nuget packages are cached.
-extracted folder: A custom, local folder where extracted nuget packages are cached.
-servers: Comma separated list of servers.
+extracted folder:  A custom, local folder where extracted nuget packages are cached.
+servers:           Comma separated list of servers.
+-s:                Simulate, dry run.
+-v:                Verbose logging.
 
 Notice: The Nuget infrastructure is using both a compressed folder and an extracted
         folder (dunno why), this app doesn't extract or compress anything, it only
@@ -132,6 +126,18 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
         static void CopyPackages(string compressedFolder, string extractedFolder, string[] servers, bool simulate, bool verbose)
         {
+            if (!Directory.Exists(compressedFolder))
+            {
+                Log("Compressed folder not found: '" + compressedFolder + "'");
+                return;
+            }
+            if (!Directory.Exists(extractedFolder))
+            {
+                Log("Extracted folder not found: '" + extractedFolder + "'");
+                return;
+            }
+
+
             string[] cachePaths =
             {
                 compressedFolder,
@@ -173,6 +179,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                     copies[server] = 0;
                 }
 
+                long copiedsize = 0;
                 foreach (string server in servers)
                 {
                     string networkPath = @"\\" + server + serverPath;
@@ -180,11 +187,11 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
                     MapDrive(networkPath, localDrive);
 
-                    SyncFolders(cachePath, cachePathOffset, filesCache, localDrive + @"\", server, simulate, verbose, ref copies);
+                    SyncFolders(cachePath, cachePathOffset, filesCache, localDrive + @"\", server, simulate, verbose, ref copies, out copiedsize);
                 }
 
 
-                Log("Copied files:");
+                Log("Copied files (" + copiedsize + " bytes):");
                 Log("  local: " + copies["local"]);
                 foreach (string server in servers)
                 {
@@ -240,8 +247,10 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
         }
 
         static void SyncFolders(string path1, int offset1, List<myfileinfo> files1, string path2,
-            string server, bool simulate, bool verbose, ref Dictionary<string, int> copies)
+            string server, bool simulate, bool verbose, ref Dictionary<string, int> copies, out long copiedsize)
         {
+            copiedsize = 0;
+
             int offset2 = path2.EndsWith(@"\") ? path2.Length : path2.Length + 1;
 
             Log("***** Gathering files from: " + path2 + " *****");
@@ -296,6 +305,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                                 {
                                     File.Copy(file2.info.FullName, file1.info.FullName, true);
                                 }
+                                copiedsize += file2.info.Length;
                             }
                         }
                     }
@@ -320,6 +330,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         {
                             File.Copy(file2.info.FullName, targetfile);
                         }
+                        copiedsize += file2.info.Length;
                         files1.Add(new myfileinfo
                         {
                             filename = targetfile.Substring(offset1),
@@ -359,6 +370,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         {
                             File.Copy(file1.info.FullName, targetfile);
                         }
+                        copiedsize += file1.info.Length;
                         files2.Add(new myfileinfo
                         {
                             filename = targetfile.Substring(offset2),
@@ -373,6 +385,14 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         Log(ex.Message);
                     }
                 }
+            }
+        }
+
+        static byte[] ComputeHash(string filename)
+        {
+            using (var fs = File.OpenRead(filename))
+            {
+                return md5.ComputeHash(fs);
             }
         }
 
