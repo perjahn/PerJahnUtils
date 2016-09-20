@@ -153,15 +153,15 @@ namespace GatherOutputAssemblies
             foreach (var path in _outputpaths)
             {
                 path.Path = path.Path
-                        .Replace("$(SolutionDir)", SolutionDir + Path.DirectorySeparatorChar)
-                        .Replace("$(Configuration)", buildconfig);
+                    .Replace("$(SolutionDir)", SolutionDir + Path.DirectorySeparatorChar)
+                    .Replace("$(Configuration)", buildconfig);
             }
 
             foreach (var path in _outdirs)
             {
                 path.Path = path.Path
-                        .Replace("$(SolutionDir)", SolutionDir + Path.DirectorySeparatorChar)
-                        .Replace("$(Configuration)", buildconfig);
+                    .Replace("$(SolutionDir)", SolutionDir + Path.DirectorySeparatorChar)
+                    .Replace("$(Configuration)", buildconfig);
             }
         }
 

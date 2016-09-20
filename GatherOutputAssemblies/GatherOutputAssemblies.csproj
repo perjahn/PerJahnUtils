@@ -46,8 +46,6 @@
   <ItemGroup>
     <Compile Include="ConsoleHelper.cs" />
     <Compile Include="FileHelper.cs" />
-    <Compile Include="gac.cs" />
-    <Compile Include="GACWrap.cs" />
     <Compile Include="OutputPath.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Project.cs" />
