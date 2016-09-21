@@ -108,6 +108,9 @@ namespace GatherOutputAssemblies
         {
             int result = 0;
 
+            // If a project is excluded, it should not prevent referred project from being included.
+            List<Project> evaluatedProjects = new List<Project>();
+
             foreach (Project project in projects.OrderBy(p => p._sln_path))
             {
                 project.FixVariables(_solutionfile, buildconfig);
@@ -123,15 +126,43 @@ namespace GatherOutputAssemblies
                     continue;
                 }
 
-                if ((
-                    gatherall ||
-                    includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path))) ||
-                    !projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path))
-                    )
-                    &&
-                    !excludeProjects.Any(x => IsWildcardMatch(Path.Combine(Path.GetDirectoryName(_solutionfile), project._sln_path), x))
-                )
+                if (excludeProjects.Any(x => IsWildcardMatch(Path.Combine(Path.GetDirectoryName(_solutionfile), project._sln_path), x)))
                 {
+                    if (verbose)
+                    {
+                        Console.WriteLine("Not copying project (excluding): '" + Path.GetFileNameWithoutExtension(project._sln_path) + "'");
+                    }
+                    continue;
+                }
+
+                evaluatedProjects.Add(project);
+            }
+
+            foreach (Project project in evaluatedProjects.OrderBy(p => p._sln_path))
+            {
+                bool include = includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path));
+                bool referred = evaluatedProjects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)));
+
+                if (gatherall || include || !referred)
+                {
+                    if (verbose)
+                    {
+                        List<string> causes = new List<string>();
+                        if (gatherall)
+                        {
+                            causes.Add("gatherall");
+                        }
+                        if (include)
+                        {
+                            causes.Add("include");
+                        }
+                        if (!referred)
+                        {
+                            causes.Add("!referred");
+                        }
+                        Console.WriteLine("Copying project (" + string.Join(",", causes) + "): '" + Path.GetFileNameWithoutExtension(project._sln_path) + "'");
+                    }
+
                     bool projectresult = project.CopyOutput(
                         _solutionfile,
                         buildconfig,
@@ -140,6 +171,18 @@ namespace GatherOutputAssemblies
                     if (!projectresult)
                     {
                         result = 1;
+                    }
+                }
+                else
+                {
+                    if (verbose)
+                    {
+                        Console.WriteLine("Not copying project '" + Path.GetFileNameWithoutExtension(project._sln_path) + "'. Referred by: '" +
+                            string.Join("', '",
+                                evaluatedProjects
+                                    .Where(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
+                                    .Select(p => Path.GetFileNameWithoutExtension(p._sln_path)))
+                            + "'");
                     }
                 }
             }
