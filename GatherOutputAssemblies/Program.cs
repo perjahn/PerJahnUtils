@@ -14,22 +14,28 @@ namespace GatherOutputAssemblies
             System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             string usage =
-@"GatherOutputAssemblies 1.8 - Program for gathering compiled output from Visual Studio.
+@"GatherOutputAssemblies 1.9 - Program for gathering compiled output from Visual Studio.
 
-Usage: GatherOutputAssemblies [-a] [-v] [-w] <solutionfile> <buildconfig> <outputfolder> +include1... -exclude1...
+Usage: GatherOutputAssemblies [-a] [-v] [-w] <solutionfiles> <buildconfig> <outputfolder> +include1... -exclude1...
+
+solutionfiles:  Comma separated list of solution files.
+buildconfig:    Name of build config to be able to find a distinct output folder of.
+                each project Can be a part of the full name, e.g. Debug or Release.
+outputfolder:   Folder where all project output will be copied to, one folder
+                for each project will be created here.
 
 -a:    Copy all projects.
 -v:    Verbose logging.
--w:    Also include Web/Mvc projects. Instead of using this flag, please consider TODO
+-w:    TODO! Also include Web/Mvc projects. Instead of using this flag, please consider
        to *Publish* Web/Mvc projects, that's the better approach because only VS
        knows how to publish/gather a Web/Mvc project, it's not easy to do this right.
        Of course, some time in the future this program might do exactly that, i.e.
        call VS to perform a publish by the book.
 
 +/-:   Additional projects which should always be included/excluded.
-       Wild cards? Not yet implemented, maybe later (*test* should be useful)
+       Wildcards are supported, -*test* might be useful.
 
-Example: GatherOutputAssemblies mysol.sln ""Release|AnyCPU"" artifacts
+Example: GatherOutputAssemblies mysol.sln ""Release|AnyCPU"" artifacts -*Tests
 
 This program copies files from project output folders. Although not from all projects
 included in the solution, only from the *resulting* subset. It is useful when you have
@@ -38,7 +44,8 @@ paths.
 
 Resulting projects are projects which doesn't have any reference to them, it is
 usually exe and web projects, although test projects usually wreak havoc with
-this assumption and usually needs to be excluded.";
+this assumption and usually needs to be excluded to make projects referenced by
+test projects copied to the output folder.";
 
 
             bool verbose = false;
@@ -56,17 +63,17 @@ this assumption and usually needs to be excluded.";
             }
 
 
-            List<string> includeProjects =
+            string[] includeProjects =
                 args
                 .Where(a => a.StartsWith("+"))
                 .Select(a => a.Substring(1))
-                .ToList();
+                .ToArray();
 
-            List<string> excludeProjects =
+            string[] excludeProjects =
                 args
                 .Where(a => a.StartsWith("-"))
                 .Select(a => a.Substring(1))
-                .ToList();
+                .ToArray();
 
             args =
                 args
@@ -80,12 +87,14 @@ this assumption and usually needs to be excluded.";
                 return 0;
             }
 
-            string solutionfile = args[0];
+            string[] solutionfiles = args[0].Split(',');
             string buildconfig = args[1];
             string outputpath = args[2];
 
 
-            Solution s = new Solution(solutionfile);
+            List<Solution> solutions = solutionfiles
+                .Select(s => new Solution(s))
+                .ToList();
 
             string[] webmvcguids =
             {
@@ -96,13 +105,15 @@ this assumption and usually needs to be excluded.";
                 "{349C5851-65DF-11DA-9384-00065B846F21}"
             };
 
-            List<Project> projects = s.LoadProjects();
+            List<Project> projects = solutions
+                .SelectMany(s => s.LoadProjects())
+                .ToList();
             if (projects == null)
             {
                 return 1;
             }
 
-            int result = s.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, webmvcguids, verbose, gatherall);
+            int result = Solution.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, webmvcguids, verbose, gatherall);
 
             return result;
         }

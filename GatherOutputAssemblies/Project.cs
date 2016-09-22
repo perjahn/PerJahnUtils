@@ -9,6 +9,8 @@ namespace GatherOutputAssemblies
 {
     class Project
     {
+        public string _path { get; set; }
+        public string _solutionfile { get; set; }
         public string _sln_path { get; set; }
 
         public string _proj_guid { get; set; }
@@ -26,7 +28,11 @@ namespace GatherOutputAssemblies
             XDocument xdoc;
             XNamespace ns;
 
+            newproj._solutionfile = solutionfile;
+
             string fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), projectfilepath);
+
+            newproj._path = FileHelper.CompactPath(fullfilename);
 
             try
             {
@@ -117,7 +123,7 @@ namespace GatherOutputAssemblies
             if (_proj_guids.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    "Warning: Corrupt project file: " + _sln_path +
+                    "Warning: Corrupt project file: " + _path +
                     ", multiple guids: '" + _proj_guids.Count +
                     "', compacting HintPath elements.");
             }
@@ -132,7 +138,7 @@ namespace GatherOutputAssemblies
                 if (projref.names.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _sln_path +
+                        "Warning: Corrupt project file: " + _path +
                         ", project reference: '" + projref.include +
                         "', compacting Name elements.");
                 }
@@ -185,25 +191,38 @@ namespace GatherOutputAssemblies
                     path3 = null;
                 }
             }
+            string outpath = path1 ?? path2 ?? path3;
 
-            string path = path1 ?? path2 ?? path3;
 
-
-            if (path == null)
+            if (outpath == null)
             {
                 if (matchresults.All(m => m.Count() == 0))
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "'" + _sln_path + "': Couldn't find any matching OutputPath or OutDir in the project file. " +
-                        "Also keep in mind, the specified buildconfig condition must match a single OutputPath or Outdir which contains actual files!");
+                    if (verbose)
+                    {
+                        ConsoleHelper.ColorWrite(ConsoleColor.Red,
+                            _path + ": Couldn't find any matching OutputPath or OutDir in the project file. " +
+                            "Also keep in mind, the specified buildconfig condition must match a single OutputPath or Outdir which contains actual files!");
+                    }
+                    else
+                    {
+                        ConsoleHelper.ColorWrite(ConsoleColor.Red, "No useful OutputPath or OutDir found: '" + _path + "'");
+                    }
                     return false;
                 }
                 else
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "'" + _sln_path + "': Couldn't find any unambiguous OutputPath or OutDir in the project file. " +
-                        "You might want to specify a more narrow buildconfig condition. " +
-                        "Also keep in mind, the specified buildconfig condition must match a single OutputPath or Outdir which contains actual files!");
+                    if (verbose)
+                    {
+                        ConsoleHelper.ColorWrite(ConsoleColor.Red,
+                             _path + ": Couldn't find any unambiguous OutputPath or OutDir in the project file. " +
+                            "You might want to specify a more narrow buildconfig condition. " +
+                            "Also keep in mind, the specified buildconfig condition must match a single OutputPath or Outdir which contains actual files!");
+                    }
+                    else
+                    {
+                        ConsoleHelper.ColorWrite(ConsoleColor.Red, "No useful OutputPath or OutDir found: '" + _path + "'");
+                    }
                 }
 
                 if (verbose)
@@ -239,13 +258,13 @@ namespace GatherOutputAssemblies
                 return false;
             }
 
-            if (path.Contains("$(Configuration)") && buildconfig.Contains("|"))
+            if (outpath.Contains("$(Configuration)") && buildconfig.Contains("|"))
             {
                 string configuration = buildconfig.Split('|')[0];
-                path = path.Replace("$(Configuration)", configuration);
+                outpath = outpath.Replace("$(Configuration)", configuration);
             }
 
-            string sourcepath = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), path);
+            string sourcepath = Path.Combine(Path.GetDirectoryName(_path), outpath);
 
             ConsoleHelper.ColorWrite(ConsoleColor.Cyan, "Copying folder: '" + sourcepath + "' -> '" + targetpath + "'");
 
@@ -306,7 +325,7 @@ namespace GatherOutputAssemblies
             int index = condition.IndexOf("==");
             if (index == -1)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + _sln_path + "': Malformed PropertyGroup Condition: '" + condition + "'");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + _path + "': Malformed PropertyGroup Condition: '" + condition + "'");
                 return false;
             }
             string c = condition.Substring(index + 2).Trim().Trim('\'');
@@ -324,7 +343,7 @@ namespace GatherOutputAssemblies
 
         private bool ContainsFiles(string solutionfile, string outputpath)
         {
-            string sourcepath = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), outputpath);
+            string sourcepath = Path.Combine(Path.GetDirectoryName(_path), outputpath);
             return Directory.Exists(sourcepath) && Directory.GetFiles(sourcepath, "*", SearchOption.AllDirectories).Length > 0;
         }
 
