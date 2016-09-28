@@ -7,27 +7,25 @@ namespace GatherOutputAssemblies
 {
     class Solution
     {
-        private string _solutionfile;
+        public string _path { get; set; }
+        public string[] projectfiles { get; set; } = { };
 
         public Solution(string solutionfile)
         {
-            _solutionfile = solutionfile;
-        }
+            _path = solutionfile;
 
-        public List<Project> LoadProjects()
-        {
+            List<string> projects = new List<string>();
+
             string[] rows;
             try
             {
-                rows = File.ReadAllLines(_solutionfile);
+                rows = File.ReadAllLines(solutionfile);
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
-                return null;
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Couldn't load solution: '" + solutionfile + "': " + ex.Message);
+                return;
             }
-
-            List<Project> projects = new List<Project>();
 
             foreach (string row in rows)
             {
@@ -57,126 +55,87 @@ namespace GatherOutputAssemblies
                         string path = values[1].Trim().Trim('"');
                         string guid = values[2].Trim().Trim('"');
 
-                        projects.Add(new Project()
-                        {
-                            _sln_path = path
-                        });
+                        projects.Add(FileHelper.CompactPath(Path.Combine(Path.GetDirectoryName(solutionfile), path)));
                     }
                 }
             }
 
-
-            bool error = false;
-
-            foreach (Project p in projects)
-            {
-                Project p2 = Project.LoadProject(_solutionfile, p._sln_path);
-                if (p2 == null)
-                {
-                    error = true;
-                    continue;
-                }
-
-                ConsoleHelper.WriteLine(
-                    "sln_path: '" + p._sln_path + "'.",
-                    true);
-
-                p._proj_guids = p2._proj_guids;
-                p._ProjectTypeGuids = p2._ProjectTypeGuids;
-
-                p._outputpaths = p2._outputpaths;
-                p._outdirs = p2._outdirs;
-                p._projectReferences = p2._projectReferences;
-                p._solutionfile = p2._solutionfile;
-                p._path = p2._path;
-            }
-
-            if (error)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Fix errors before continuing!");
-                return null;
-            }
-
-            foreach (Project project in projects.OrderBy(p => p._sln_path))
-            {
-                project.Compact();
-            }
-
-            return projects;
+            projectfiles = projects.ToArray();
         }
 
-        public static int CopyProjectOutput(List<Project> projects, string buildconfig, string outputpath, string[] includeProjects,
-            string[] excludeProjects, string[] webmvcguids, bool verbose, bool gatherall)
+        public static int CopyProjectOutput(Project[] projects, string buildconfig, string outputpath, string[] includeProjects,
+            string[] excludeProjects, bool deletetargetfolder, bool gatherall, bool simulate, bool verbose)
         {
             int result = 0;
 
+            // If a project is excluded, it should not prevent referred projects from being included.
 
-            List<Project> projects2 = projects.OrderBy(p => p._path).ToList();
+            List<Project> projects2 = projects.ToList();
 
-            foreach (Project project in projects2)
+            projects2 = ExcludeCorruptProjects(projects2, verbose);
+            projects2 = ExcludeExplicitProjects(projects2, excludeProjects, verbose);
+            projects2 = ExcludeReferredProjects(projects2, gatherall, includeProjects, verbose);
+            projects2 = ExcludeWebMvcProjects(projects2, verbose);
+
+
+            Console.WriteLine("Retrieving output folders for " + projects2.Count() + " projects.");
+
+            var operations = projects2
+                .Select(p =>
+                    new
+                    {
+                        sourcepath = p.GetOutputFolder(buildconfig, verbose),
+                        targetpath = Path.Combine(outputpath, FileHelper.GetCleanFolderName(Path.GetFileNameWithoutExtension(p._path)))
+                    })
+                .Where(p => p.sourcepath != null)
+                .ToArray();
+
+
+
+            if (deletetargetfolder && Directory.Exists(outputpath))
             {
-                project.FixVariables(project._solutionfile, buildconfig);
+                Console.WriteLine("Deleting folder: '" + outputpath + "'");
+                Directory.Delete(outputpath, true);
             }
 
 
-            // If a project is excluded, it should not prevent referred projects from being included.
+            Console.WriteLine("Copying " + operations.Length + " projects.");
 
-            projects2 = ExcludeDuplicatedProjects(projects2, verbose);
-            projects2 = ExcludeExplicitProjects(projects2, excludeProjects, verbose);
-            projects2 = ExcludeReferredProjects(projects2, gatherall, includeProjects, verbose);
-            projects2 = ExcludeWebMvcProjects(projects2, webmvcguids, verbose);
+            int copiedFiles = 0;
 
-
-            Console.WriteLine("Copying " + projects2.Count() + " projects.");
-
-            foreach (Project project in projects2.OrderBy(p => p._path))
+            foreach (var operation in operations)
             {
-                /*      
-                if (verbose)
-                {
-                    List<string> causes = new List<string>();
-                    if (include)
-                    {
-                        causes.Add("include");
-                    }
-                    if (!referred)
-                    {
-                        causes.Add("!referred");
-                    }
-                    Console.WriteLine("Copying project (" + string.Join(",", causes) + "): '" + Path.GetFileNameWithoutExtension(project._sln_path) + "'");
-                }
-                */
+                string sourcepath = operation.sourcepath;
+                string targetpath = operation.targetpath;
 
-                bool projectresult = project.CopyOutput(
-                    project._solutionfile,
-                    buildconfig,
-                    Path.Combine(outputpath, Path.GetFileNameWithoutExtension(project._sln_path)),
-                    verbose);
-                if (!projectresult)
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Cyan, "Copying folder: '" + sourcepath + "' -> '" + targetpath + "'");
+
+                if (!FileHelper.CopyFolder(new DirectoryInfo(sourcepath), new DirectoryInfo(targetpath), simulate, verbose, ref copiedFiles))
                 {
                     result = 1;
                 }
             }
 
+            Console.WriteLine("Copied " + copiedFiles + " files.");
+
             return result;
         }
 
-        private static List<Project> ExcludeDuplicatedProjects(List<Project> projects, bool verbose)
+        private static List<Project> ExcludeCorruptProjects(List<Project> projects, bool verbose)
         {
             List<Project> resultingProjects = new List<Project>();
-            foreach (Project project in projects.OrderBy(p => p._path))
+            foreach (Project project in projects)
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
                 }
 
-                if (resultingProjects.Any(e => e._path == project._path))
+                if (project._proj_guid == null || project._ProjectTypeGuids == null)
                 {
-                    if (verbose)
-                    {
-                        Console.WriteLine("Excluding duplicate project: '" + project._solutionfile + "', '" + project._path + "'");
-                    }
+                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding unparsable project: '");
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
                     continue;
                 }
 
@@ -186,21 +145,30 @@ namespace GatherOutputAssemblies
             return resultingProjects;
         }
 
-        private static List<Project> ExcludeWebMvcProjects(List<Project> projects, string[] webmvcguids, bool verbose)
+        private static List<Project> ExcludeWebMvcProjects(List<Project> projects, bool verbose)
         {
+            string[] webmvcguids =
+            {
+                "{603C0E0B-DB56-11DC-BE95-000D561079B0}",
+                "{F85E285D-A4E0-4152-9332-AB1D724D3325}",
+                "{E53F8FEA-EAE0-44A6-8774-FFD645390401}",
+                "{E3E379DF-F4C6-4180-9B81-6769533ABE47}",
+                "{349C5851-65DF-11DA-9384-00065B846F21}"
+            };
+
             List<Project> resultingProjects = new List<Project>();
             foreach (Project project in projects)
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
                 }
 
                 if (project._ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '", false);
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path + "'", false);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '");
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
                     continue;
                 }
 
@@ -212,23 +180,45 @@ namespace GatherOutputAssemblies
 
         private static List<Project> ExcludeExplicitProjects(List<Project> projects, string[] excludeProjects, bool verbose)
         {
+            Dictionary<string, bool> used = new Dictionary<string, bool>();
+            foreach (string project in excludeProjects)
+            {
+                used[project] = false;
+            }
+
             List<Project> resultingProjects = new List<Project>();
             foreach (Project project in projects)
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
                 }
 
-                if (excludeProjects.Any(x => IsWildcardMatch(project._path, x)))
+                string[] matches = excludeProjects.Where(x => IsWildcardMatch(project._path, x)).ToArray();
+
+                if (matches.Length > 0)
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding explicit project: '", false);
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path, false);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding explicit project: '");
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
+
+                    foreach (string excludematch in matches)
+                    {
+                        used[excludematch] = true;
+                    }
+
                     continue;
                 }
 
                 resultingProjects.Add(project);
+            }
+
+            foreach (string project in excludeProjects)
+            {
+                if (!used[project])
+                {
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow, "Excessive exclude filter unused: '" + project + "'");
+                }
             }
 
             return resultingProjects;
@@ -241,11 +231,11 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
                 }
 
-                bool include = includeProjects.Contains(Path.GetFileNameWithoutExtension(project._sln_path));
-                bool referred = projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)));
+                bool include = includeProjects.Contains(Path.GetFileNameWithoutExtension(project._path));
+                bool referred = projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._path)));
 
                 if (gatherall || include || !referred)
                 {
@@ -256,14 +246,14 @@ namespace GatherOutputAssemblies
                     string refs = "'" +
                         string.Join("', '",
                             projects
-                                .Where(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._sln_path)))
-                                .OrderBy(p => Path.GetFileNameWithoutExtension(p._sln_path))
-                                .Select(p => Path.GetFileNameWithoutExtension(p._sln_path)))
+                                .Where(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._path)))
+                                .OrderBy(p => Path.GetFileNameWithoutExtension(p._path))
+                                .Select(p => Path.GetFileNameWithoutExtension(p._path)))
                         + "'";
 
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding referred project '", false);
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path, false);
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "'. Referred by: " + refs);
+                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding referred project '");
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'. Referred by: " + refs);
                 }
             }
 

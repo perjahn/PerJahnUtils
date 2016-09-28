@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -14,17 +15,20 @@ namespace GatherOutputAssemblies
             System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
             string usage =
-@"GatherOutputAssemblies 1.9 - Program for gathering compiled output from Visual Studio.
+@"GatherOutputAssemblies 2.0 - Program for gathering compiled output from Visual Studio.
 
-Usage: GatherOutputAssemblies [-a] [-v] [-w] <solutionfiles> <buildconfig> <outputfolder> +include1... -exclude1...
+Usage: GatherOutputAssemblies [-a] [-d] [-r] [-s] [-v] [-w] <solutionfiles> <buildconfig> <outputfolder> +include1... -exclude1...
 
-solutionfiles:  Comma separated list of solution files.
+solutionfiles:  Comma separated list of solution files. Wildcard patterns allowed.
 buildconfig:    Name of build config to be able to find a distinct output folder of.
                 each project Can be a part of the full name, e.g. Debug or Release.
-outputfolder:   Folder where all project output will be copied to, one folder
+outputfolder:   Folder where all project output will be copied to, one subfolder
                 for each project will be created here.
 
 -a:    Copy all projects.
+-d:    Delete target folder before copying, if it exists.
+-r:    Recurse subfolders when matching solution filenames.
+-s:    Simulate, dry run.
 -v:    Verbose logging.
 -w:    TODO! Also include Web/Mvc projects. Instead of using this flag, please consider
        to *Publish* Web/Mvc projects, that's the better approach because only VS
@@ -48,18 +52,36 @@ this assumption and usually needs to be excluded to make projects referenced by
 test projects copied to the output folder.";
 
 
-            bool verbose = false;
             bool gatherall = false;
+            bool deletetargetfolder = false;
+            bool recurse = false;
+            bool simulate = false;
+            bool verbose = false;
 
-            if (args.Contains("-v"))
-            {
-                verbose = true;
-                args = args.Where(a => a != "-v").ToArray();
-            }
             if (args.Contains("-a"))
             {
                 gatherall = true;
                 args = args.Where(a => a != "-a").ToArray();
+            }
+            if (args.Contains("-d"))
+            {
+                deletetargetfolder = true;
+                args = args.Where(a => a != "-d").ToArray();
+            }
+            if (args.Contains("-r"))
+            {
+                recurse = true;
+                args = args.Where(a => a != "-r").ToArray();
+            }
+            if (args.Contains("-s"))
+            {
+                simulate = true;
+                args = args.Where(a => a != "-s").ToArray();
+            }
+            if (args.Contains("-v"))
+            {
+                verbose = true;
+                args = args.Where(a => a != "-v").ToArray();
             }
 
 
@@ -88,32 +110,69 @@ test projects copied to the output folder.";
             }
 
             string[] solutionfiles = args[0].Split(',');
+            solutionfiles = solutionfiles
+                .SelectMany(f =>
+                {
+                    string dir = Path.GetDirectoryName(f);
+                    string pattern = Path.GetFileName(f);
+                    if (dir == string.Empty)
+                    {
+                        dir = ".";
+                    }
+                    Console.WriteLine("Dir: '" + dir + "', Pattern: '" + pattern + "'");
+                    return Directory.GetFiles(dir, pattern, recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                        .Select(ff => ff.StartsWith(@".\") ? ff.Substring(2) : ff)
+                        .ToArray();
+                })
+                .ToArray();
+
+            Console.WriteLine("Found " + solutionfiles.Length + " solutions.");
+            foreach (string filename in solutionfiles)
+            {
+                Console.WriteLine("'" + filename + "'");
+            }
+
             string buildconfig = args[1];
             string outputpath = args[2];
 
 
-            List<Solution> solutions = solutionfiles
+            return LoadSolutions(solutionfiles, buildconfig, outputpath, includeProjects, excludeProjects, deletetargetfolder, gatherall, simulate, verbose);
+        }
+
+        private static int LoadSolutions(string[] solutionfiles,
+            string buildconfig, string outputpath, string[] includeProjects, string[] excludeProjects,
+            bool deletetargetfolder, bool gatherall, bool simulate, bool verbose)
+        {
+            Console.WriteLine("Loading " + solutionfiles.Length + " solutions...");
+
+            Solution[] solutions = solutionfiles
                 .Select(s => new Solution(s))
-                .ToList();
+                .ToArray();
 
-            string[] webmvcguids =
-            {
-                "{603C0E0B-DB56-11DC-BE95-000D561079B0}",
-                "{F85E285D-A4E0-4152-9332-AB1D724D3325}",
-                "{E53F8FEA-EAE0-44A6-8774-FFD645390401}",
-                "{E3E379DF-F4C6-4180-9B81-6769533ABE47}",
-                "{349C5851-65DF-11DA-9384-00065B846F21}"
-            };
+            string[] projectfiles = solutions
+                .SelectMany(s => s.projectfiles)
+                .Distinct()
+                .OrderBy(f => f)
+                .ToArray();
 
-            List<Project> projects = solutions
-                .SelectMany(s => s.LoadProjects())
-                .ToList();
-            if (projects == null)
+            Console.WriteLine("Loading " + projectfiles.Length + " projects...");
+
+            Project[] projects = projectfiles
+                .Select(f => Project.LoadProject(f))
+                .Where(p => p != null)
+                .ToArray();
+
+            foreach (Project project in projects)
             {
-                return 1;
+                project._solutionfiles = solutions
+                    .Where(s => s.projectfiles.Contains(project._path))
+                    .Select(s => s._path)
+                    .OrderBy(f => f)
+                    .ToArray();
             }
 
-            int result = Solution.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, webmvcguids, verbose, gatherall);
+
+            int result = Solution.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, deletetargetfolder, gatherall, simulate, verbose);
 
             return result;
         }
