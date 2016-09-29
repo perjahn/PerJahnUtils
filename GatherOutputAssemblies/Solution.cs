@@ -134,7 +134,7 @@ namespace GatherOutputAssemblies
                 if (project._proj_guid == null || project._ProjectTypeGuids == null)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding unparsable project: '");
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path + "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
                     continue;
                 }
