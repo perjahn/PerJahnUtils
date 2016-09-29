@@ -5,15 +5,6 @@ $ErrorActionPreference = "Stop"
 
 function Main()
 {
-    if ($env:artifactfolder)
-    {
-        [string] $artifactfolder = $env:artifactfolder
-    }
-    else
-    {
-        [string] $artifactfolder = "_Artifacts"
-    }
-
     if ($env:buildconfig)
     {
         [string] $buildconfig = $env:buildconfig
@@ -23,74 +14,64 @@ function Main()
         [string] $buildconfig = "Release"
     }
 
-    GatherFiles $artifactfolder $buildconfig
+    [string] $artifactfolder = "PerJahnUtils"
+
+    Gather-Artifacts $buildconfig $artifactfolder
+
+    Compress-Artifacts $artifactfolder
 }
 
-function GatherFiles([string] $artifactfolder, [string] $buildconfig)
+function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder)
 {
     Write-Host ("Artifact folder: '" + $artifactfolder + "'")
     Write-Host ("Build config: '" + $buildconfig + "'")
 
-    [string] $toolpath = "GatherOutputAssemblies\bin\Release\GatherOutputAssemblies.exe"
-
-    if (!(Test-Path $toolpath))
-    {
-        Write-Host ("File not found: '" + $toolpath + "'")
-        exit 1
-    }
-
     if (Test-Path $artifactfolder)
     {
-        Write-Host ("Removing artifact folder: '" + $artifactfolder + "'")
+        Write-Host ("Deleting old artifact folder: '" + $artifactfolder + "'")
         rd -Recurse $artifactfolder
     }
 
     Write-Host ("Creating artifact folder: '" + $artifactfolder + "'")
     md $artifactfolder | Out-Null
 
-    dir -r -i *.sln | ? { !($_.Attributes -band [IO.FileAttributes]::Directory) } | % {
-        [string] $solutionfile = $_.FullName
-        &$toolpath $solutionfile $buildconfig $artifactfolder
-    }
-
-    dir $artifactfolder -r -i *.exe -Exclude *.vshost.exe | % {
+    $exefiles = dir -r -i *.exe -Exclude *.vshost.exe | ? { !$_.FullName.Contains("\obj\") }
+    $exefiles | % {
         [string] $source = $_.FullName
-        [string] $target = $artifactfolder
-        Write-Host ("Copying file: '" + $source + "' -> '" + $target + "'")
-        copy $source $target
+        Write-Host ("Copying file: '" + $source + "' -> '" + $artifactfolder + "'")
+        copy $source $artifactfolder
     }
+}
 
-    dir $artifactfolder | ? { $_.Attributes -band [IO.FileAttributes]::Directory } | % {
-        Write-Host ("Deleting folder: '" + $_.FullName + "'")
-        rd -Recurse $_.FullName
-    }
-
-
+function Compress-Artifacts([string] $artifactfolder)
+{
     [string] $zipexe = "C:\Program Files\7-Zip\7z.exe"
+    [string] $outfile = "PerJahnUtils.zip"
 
     if (!(Test-Path $zipexe))
     {
-        Write-Host ("File not found: '" + $zipexe + "'")
+        Write-Host ("7-zip not found: '" + $zipexe + "'") -f Yellow
+        Write-Host ("Leaving tools uncompressed in artifact folder: '" + $artifactfolder + "'") -f Green
         return
     }
 
     Set-Alias zip $zipexe
 
-
-    cd $artifactfolder
-    md PerJahnUtils | Out-Null
-    move *.exe PerJahnUtils
-
-    Write-Host "Zipping PerJahnUtils.zip..."
-    zip a PerJahnUtils.zip PerJahnUtils\*.exe
-    if (!$?)
+    if (Test-Path $outfile)
     {
-        cd ..
-        Write-Host ("Couldn't zip files.")
-        exit 2
+        Write-Host ("Deleting old archive file: '" + $outfile + "'")
+        del $outfile
     }
-    del PerJahnUtils\*.exe
-    cd ..
+
+    Write-Host ("Compressing " + @(dir $artifactfolder).Count + " exe tools to " + $outfile + "...")
+    zip a -mx9 $outfile (Join-Path $artifactfolder *.exe)
+    if (!$? -or !(Test-Path $outfile))
+    {
+        Write-Host ("Couldn't compress artifacts.") -f Red
+        exit 1
+    }
+
+    Write-Host ("Produced artifact: " + $outfile) -f Green
 }
 
 Main

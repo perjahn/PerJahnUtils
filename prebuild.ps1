@@ -12,7 +12,8 @@ function Main()
 
 function Clean()
 {
-    dir -r -i obj,bin | ? { $_.Attributes -band [IO.FileAttributes]::Directory } | % {
+    $files = @(dir -r -i obj,bin,Debug,Release)
+    $files | ? { $_.Attributes -band [IO.FileAttributes]::Directory } | % {
         Write-Host ("Deleting folder: '" + $_.FullName + "'")
         rd -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
     }
