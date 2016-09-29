@@ -7,7 +7,7 @@ function Main()
 {
     Clean
 
-    Create-BuildFile "all.build"
+    Generate-BuildFile "all.build"
 }
 
 function Clean()
@@ -19,7 +19,7 @@ function Clean()
     }
 }
 
-function Create-BuildFile([string] $buildfile)
+function Generate-BuildFile([string] $buildfile)
 {
     $files = @(dir -r -i *.sln | ? { !($_.Attributes -band [IO.FileAttributes]::Directory) })
 
