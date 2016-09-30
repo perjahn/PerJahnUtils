@@ -116,7 +116,7 @@ namespace GatherOutputAssemblies
                 ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow,
                     "Warning: Corrupt project file: " + _path +
                     ", multiple guids: '" + _proj_guids.Count +
-                    "', compacting HintPath elements.");
+                    "', selecting first ProjectGuid element.");
             }
             if (_proj_guids.Count >= 1)
             {
@@ -131,7 +131,7 @@ namespace GatherOutputAssemblies
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow,
                         "Warning: Corrupt project file: " + _path +
                         ", project reference: '" + projref.include +
-                        "', compacting Name elements.");
+                        "', selecting first Name in ProjectReference element.");
                 }
                 if (projref.names.Count >= 1)
                 {

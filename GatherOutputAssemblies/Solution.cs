@@ -128,12 +128,12 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (unusable): '" + project._path + "'");
                 }
 
                 if (project._proj_guid == null || project._ProjectTypeGuids == null)
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding unparsable project: '");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding unusable project: '");
                     ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
                     continue;
@@ -161,7 +161,7 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (web/mvc): '" + project._path + "'");
                 }
 
                 if (project._ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
@@ -191,7 +191,7 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (explicit): '" + project._path + "'");
                 }
 
                 string[] matches = excludeProjects.Where(x => IsWildcardMatch(project._path, x)).ToArray();
@@ -231,7 +231,7 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project: '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (referred): '" + project._path + "'");
                 }
 
                 bool include = includeProjects.Contains(Path.GetFileNameWithoutExtension(project._path));
