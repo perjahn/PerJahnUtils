@@ -167,7 +167,7 @@ namespace GatherOutputAssemblies
                 if (project._ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '");
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path + "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
                     continue;
                 }
