@@ -57,22 +57,7 @@ namespace ProjFix
             {
                 xdoc = XDocument.Load(fullfilename);
             }
-            catch (IOException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (ArgumentException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (System.Xml.XmlException ex)
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
                 return null;
@@ -83,85 +68,104 @@ namespace ProjFix
 
             try
             {
-                newproj._proj_assemblynames = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").Select(a => a.Value).ToList();
+                newproj._proj_assemblynames = xdoc
+                    .Elements(ns + "Project")
+                    .Elements(ns + "PropertyGroup")
+                    .Elements(ns + "AssemblyName")
+                    .Select(a => a.Value)
+                    .ToList();
             }
-            catch (System.NullReferenceException)
+            catch (NullReferenceException)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing AssemblyName.");
                 return null;
             }
+
             try
             {
-                newproj._proj_guids = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").Select(g => g.Value).ToList();
+                newproj._proj_guids = xdoc
+                    .Elements(ns + "Project")
+                    .Elements(ns + "PropertyGroup")
+                    .Elements(ns + "ProjectGuid")
+                    .Select(g => g.Value).ToList();
             }
-            catch (System.NullReferenceException)
+            catch (NullReferenceException)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing ProjectGuid.");
                 return null;
             }
+
             try
             {
-                newproj._proj_outputtypes = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutputType").Select(o => o.Value).ToList();
+                newproj._proj_outputtypes = xdoc
+                    .Elements(ns + "Project")
+                    .Elements(ns + "PropertyGroup")
+                    .Elements(ns + "OutputType")
+                    .Select(o => o.Value).ToList();
             }
-            catch (System.NullReferenceException)
+            catch (NullReferenceException)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing OutputType.");
                 return null;
             }
 
 
-            newproj._outputpaths =
-                (from el in xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutputPath")
-                 select el.Value)
+            newproj._outputpaths = xdoc
+                .Elements(ns + "Project")
+                .Elements(ns + "PropertyGroup")
+                .Elements(ns + "OutputPath")
+                .Select(el => el.Value)
                 .ToList();
 
+            newproj._references = xdoc
+                .Elements(ns + "Project")
+                .Elements(ns + "ItemGroup")
+                .Elements(ns + "Reference")
+                .Where(el => el.Attribute("Include") != null)
+                .OrderBy(el => GetShortRef(el.Attribute("Include").Value))
+                .Select(el => new AssemblyRef
+                {
+                    include = el.Attribute("Include").Value,
+                    shortinclude = GetShortRef(el.Attribute("Include").Value),
+                    names = (from elName in el.Elements(ns + "Name")
+                             orderby elName.Value
+                             select elName.Value).ToList(),
+                    hintpaths = (from elHintPath in el.Elements(ns + "HintPath")
+                                 orderby elHintPath.Value
+                                 select elHintPath.Value).ToList(),
+                    copylocals = (from elName in el.Elements(ns + "Private")
+                                  orderby elName.Value
+                                  select elName.Value).ToList(),
+                    name = null,
+                    hintpath = null,
+                    copylocal = null
+                })
+                .ToList();
 
-            newproj._references =
-                (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
-                 where el.Attribute("Include") != null
-                 orderby GetShortRef(el.Attribute("Include").Value)
-                 select new AssemblyRef
-                 {
-                     include = el.Attribute("Include").Value,
-                     shortinclude = GetShortRef(el.Attribute("Include").Value),
-                     names = (from elName in el.Elements(ns + "Name")
-                              orderby elName.Value
-                              select elName.Value).ToList(),
-                     hintpaths = (from elHintPath in el.Elements(ns + "HintPath")
-                                  orderby elHintPath.Value
-                                  select elHintPath.Value).ToList(),
-                     copylocals = (from elName in el.Elements(ns + "Private")
-                                   orderby elName.Value
-                                   select elName.Value).ToList(),
-                     name = null,
-                     hintpath = null,
-                     copylocal = null
-                 })
-                 .ToList();
-
-
-            newproj._projectReferences =
-                (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "ProjectReference")
-                 where el.Attribute("Include") != null
-                 orderby Path.GetFileNameWithoutExtension(el.Attribute("Include").Value)
-                 select new ProjectRef
-                 {
-                     include = el.Attribute("Include").Value,
-                     shortinclude = Path.GetFileNameWithoutExtension(el.Attribute("Include").Value),
-                     names = (from elName in el.Elements(ns + "Name")
-                              orderby elName.Value
-                              select elName.Value).ToList(),
-                     projects = (from elProject in el.Elements(ns + "Project")
-                                 orderby elProject.Value
-                                 select elProject.Value).ToList(),
-                     packages = (from elPackage in el.Elements(ns + "Package")
-                                 orderby elPackage.Value
-                                 select elPackage.Value).ToList(),
-                     name = null,
-                     project = null,
-                     package = null
-                 })
-                    .ToList();
+            newproj._projectReferences = xdoc
+                .Elements(ns + "Project")
+                .Elements(ns + "ItemGroup")
+                .Elements(ns + "ProjectReference")
+                .Where(el => el.Attribute("Include") != null)
+                .OrderBy(el => Path.GetFileNameWithoutExtension(el.Attribute("Include").Value))
+                .Select(el => new ProjectRef
+                {
+                    include = el.Attribute("Include").Value,
+                    shortinclude = Path.GetFileNameWithoutExtension(el.Attribute("Include").Value),
+                    names = (from elName in el.Elements(ns + "Name")
+                             orderby elName.Value
+                             select elName.Value).ToList(),
+                    projects = (from elProject in el.Elements(ns + "Project")
+                                orderby elProject.Value
+                                select elProject.Value).ToList(),
+                    packages = (from elPackage in el.Elements(ns + "Package")
+                                orderby elPackage.Value
+                                select elPackage.Value).ToList(),
+                    name = null,
+                    project = null,
+                    package = null
+                })
+                .ToList();
 
 
             return newproj;
@@ -448,6 +452,11 @@ namespace ProjFix
 
         private static void CheckName(string solutionfile, string path, string assemblyname)
         {
+            if (assemblyname == null)
+            {
+                return;
+            }
+
             int pos;
             string filename = Path.GetFileNameWithoutExtension(path);
             pos = filename.LastIndexOf('.');
@@ -644,6 +653,9 @@ namespace ProjFix
                     break;
                 case "Exe":
                     ext = ".exe";
+                    break;
+                case "Database":
+                    ext = ".dll";
                     break;
                 default:
                     throw new Exception("Unsupported project type: '" + assemblyname + "' '" + outputtype + "'.");

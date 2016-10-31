@@ -8,17 +8,17 @@ using System.Xml.Linq;
 
 namespace ProjFix
 {
-	class Program
-	{
-		private static string eol = Environment.NewLine;
+    class Program
+    {
+        private static string eol = Environment.NewLine;
 
-		static int Main(string[] args)
-		{
-			// Make all string comparisons (and sort/order) invariant of current culture
-			// Thus, project output files is written in a consistent manner
-			System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        static int Main(string[] args)
+        {
+            // Make all string comparisons (and sort/order) invariant of current culture
+            // Thus, project output files is written in a consistent manner
+            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
-			string usage =  // Todo
+            string usage =  // Todo
 @"Usage: ProjFix [-b] [-c] [-hPaths] [-oPath] [-r] [-s] [-v] <solutionfile>
 
 NOT: -c:   Force copy local true (NOT IMPLEMENTED YET). Why is this useful? GAC dlls should usually not be copied to output folder.
@@ -32,8 +32,8 @@ Example: ProjFix -h..\Dir1,Dir2 -obin mysol.sln
 
 Rootpath will be search recursively for matching .targets files, must be uniquely named.";
 
-			usage =
-@"ProjFix 2.6 - Program for patching Visual Studio project files.
+            usage =
+@"ProjFix 2.7 - Program for patching Visual Studio project files.
 
 Usage: ProjFix [-b] [-hPaths] [-r] [-s] [-v] <solutionfile>
 
@@ -48,116 +48,116 @@ Example: ProjFix -h..\Dir1,Dir2 -obin mysol.sln
 
 Hintpaths are relative from current directory.";
 
-			bool nobackup = false;
-			bool copylocal = false;
-			bool removeversion = false;
-			bool restore = false;
-			bool simulate = false;
-			List<string> hintpaths = null;
-			string outputpath = null;
-			string solutionfile;
+            bool nobackup = false;
+            bool copylocal = false;
+            bool removeversion = false;
+            bool restore = false;
+            bool simulate = false;
+            List<string> hintpaths = null;
+            string outputpath = null;
+            string solutionfile;
 
-			int arg;
+            int arg;
 
-			ConsoleHelper.verboselogging = false;
+            ConsoleHelper.verboselogging = false;
 
-			for (arg = 0; arg < args.Length; arg++)
-			{
-				if (args[arg].StartsWith("-b") && args[arg].Length == 2)
-				{
-					nobackup = true;
-				}
-				else if (args[arg].StartsWith("-c") && args[arg].Length == 2)
-				{
-					copylocal = true;
-				}
-				else if (args[arg].StartsWith("-d") && args[arg].Length == 2)
-				{
-					removeversion = true;
-				}
-				else if (args[arg].StartsWith("-h") && args[arg].Length >= 3)
-				{
-					hintpaths = args[arg].Substring(2).Split(',').ToList();
-				}
-				else if (args[arg].StartsWith("-o") && args[arg].Length >= 3)
-				{
-					outputpath = args[arg].Substring(2);
-				}
-				else if (args[arg].StartsWith("-r") && args[arg].Length == 2)
-				{
-					restore = true;
-				}
-				else if (args[arg].StartsWith("-s") && args[arg].Length == 2)
-				{
-					simulate = true;
-				}
-				else if (args[arg].StartsWith("-v") && args[arg].Length == 2)
-				{
-					ConsoleHelper.verboselogging = true;
-				}
-				else
-				{
-					break;
-				}
-			}
+            for (arg = 0; arg < args.Length; arg++)
+            {
+                if (args[arg].StartsWith("-b") && args[arg].Length == 2)
+                {
+                    nobackup = true;
+                }
+                else if (args[arg].StartsWith("-c") && args[arg].Length == 2)
+                {
+                    copylocal = true;
+                }
+                else if (args[arg].StartsWith("-d") && args[arg].Length == 2)
+                {
+                    removeversion = true;
+                }
+                else if (args[arg].StartsWith("-h") && args[arg].Length >= 3)
+                {
+                    hintpaths = args[arg].Substring(2).Split(',').ToList();
+                }
+                else if (args[arg].StartsWith("-o") && args[arg].Length >= 3)
+                {
+                    outputpath = args[arg].Substring(2);
+                }
+                else if (args[arg].StartsWith("-r") && args[arg].Length == 2)
+                {
+                    restore = true;
+                }
+                else if (args[arg].StartsWith("-s") && args[arg].Length == 2)
+                {
+                    simulate = true;
+                }
+                else if (args[arg].StartsWith("-v") && args[arg].Length == 2)
+                {
+                    ConsoleHelper.verboselogging = true;
+                }
+                else
+                {
+                    break;
+                }
+            }
 
-			if (arg != args.Length - 1)
-			{
-				ConsoleHelper.WriteLine(usage, false);
-				return 1;
-			}
+            if (arg != args.Length - 1)
+            {
+                ConsoleHelper.WriteLine(usage, false);
+                return 1;
+            }
 
-			if (args[0] == "TestCompactPath")
-			{
-				FileHelper.TestCompactPath();
-				return 99;
-			}
+            if (args[0] == "TestCompactPath")
+            {
+                FileHelper.TestCompactPath();
+                return 99;
+            }
 
-			if (args[0] == "TestGetRelativePath")
-			{
-				FileHelper.TestGetRelativePath();
-				return 99;
-			}
+            if (args[0] == "TestGetRelativePath")
+            {
+                FileHelper.TestGetRelativePath();
+                return 99;
+            }
 
-			solutionfile = args[args.Length - 1];
+            solutionfile = args[args.Length - 1];
 
-			ConsoleHelper.WriteLine(
-					"solutionfile:   " + (solutionfile == null ? "<null>" : "'" + solutionfile + "'") + eol +
-					"nobackup:       " + nobackup + eol +
-					"copylocal:      " + copylocal + eol +
-					"hintpaths:      " + (hintpaths == null ? "<null>" : "'" + string.Join(",", hintpaths) + "'") + eol +
-					"outputpath:     " + (outputpath == null ? "<null>" : "'" + outputpath + "'") + eol +
-					"removeversion:  " + removeversion + eol +
-					"restore:        " + restore + eol +
-					"simulate:       " + simulate + eol +
-					"verboselogging: " + ConsoleHelper.verboselogging,
-					true);
+            ConsoleHelper.WriteLine(
+                "solutionfile:   " + (solutionfile == null ? "<null>" : "'" + solutionfile + "'") + eol +
+                "nobackup:       " + nobackup + eol +
+                "copylocal:      " + copylocal + eol +
+                "hintpaths:      " + (hintpaths == null ? "<null>" : "'" + string.Join(",", hintpaths) + "'") + eol +
+                "outputpath:     " + (outputpath == null ? "<null>" : "'" + outputpath + "'") + eol +
+                "removeversion:  " + removeversion + eol +
+                "restore:        " + restore + eol +
+                "simulate:       " + simulate + eol +
+                "verboselogging: " + ConsoleHelper.verboselogging,
+                true);
 
-			if (restore)
-			{
-				Solution s = new Solution(solutionfile);
-				s.RestoreProjects();
-			}
-			else
-			{
-				Solution s = new Solution(solutionfile);
+            if (restore)
+            {
+                Solution s = new Solution(solutionfile);
+                s.RestoreProjects();
+            }
+            else
+            {
+                Solution s = new Solution(solutionfile);
 
-				List<Project> projects = s.LoadProjects();
-				if (projects == null)
-					return 2;
+                List<Project> projects = s.LoadProjects();
+                if (projects == null)
+                    return 2;
 
-				bool success = s.FixProjects(projects, hintpaths, outputpath, copylocal, removeversion);
-				if (success == false)
-					return 3;
+                bool success = s.FixProjects(projects, hintpaths, outputpath, copylocal, removeversion);
+                if (success == false)
+                    return 3;
 
-				s.WriteProjects(projects, hintpaths, outputpath, simulate, nobackup);
-			}
+                s.WriteProjects(projects, hintpaths, outputpath, simulate, nobackup);
+            }
 
-			return 0;
-		}
-	}
+            return 0;
+        }
+    }
 
-	/*
+    /*
 			public static class StringExtensions
 			{
 					public static int LessThan(this string s1, string s2)
