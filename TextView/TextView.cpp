@@ -11,7 +11,7 @@ HINSTANCE instance;
 char *commandline;
 
 INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void ReadFile(char *filename, HWND hDlg);
+void LoadFile(HWND hDlg, char *filename);
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -37,7 +37,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		if (commandline && *commandline)
 		{
-			ReadFile(commandline, hDlg);
+			LoadFile(hDlg, commandline);
 		}
 		return TRUE;
 
@@ -49,7 +49,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		else
 		{
-			ReadFile(filename, hDlg);
+			LoadFile(hDlg, filename);
 		}
 		return TRUE;
 
@@ -66,7 +66,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-void ReadFile(char *filename, HWND hDlg)
+void LoadFile(HWND hDlg, char *filename)
 {
 	char error[2000];
 	FILE *fh;
