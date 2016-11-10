@@ -154,6 +154,9 @@
   <ItemGroup>
     <ResourceCompile Include="TextView.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="TextView.ico" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

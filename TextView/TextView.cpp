@@ -3,6 +3,11 @@
 #include <malloc.h>
 #include "resource.h"
 
+#ifndef GCL_HICON
+#define GCL_HICON (-14)
+#endif
+
+HINSTANCE instance;
 char *commandline;
 
 INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -10,6 +15,8 @@ void ReadFile(char *filename, HWND hDlg);
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	instance = hInstance;
+
 	commandline = lpCmdLine;
 
 	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG), NULL, DialogProc);
@@ -26,6 +33,8 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
+		SetClassLongPtr(hDlg, GCL_HICON, (LONG_PTR)LoadIcon(instance, MAKEINTRESOURCE(IDI_ICON)));
+
 		if (commandline && *commandline)
 		{
 			ReadFile(commandline, hDlg);
