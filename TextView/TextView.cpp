@@ -1,3 +1,5 @@
+//**********************************************************
+
 #include <windows.h>
 #include <stdio.h>
 #include <malloc.h>
@@ -7,42 +9,47 @@
 #define GCL_HICON (-14)
 #endif
 
-HINSTANCE instance;
-char *commandline;
+//**********************************************************
+
+HINSTANCE g_instance;
+char *g_commandline;
 
 INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void LoadFile(HWND hDlg, char *filename);
 
+//**********************************************************
+
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	instance = hInstance;
-
-	commandline = lpCmdLine;
+	g_instance = hInstance;
+	g_commandline = lpCmdLine;
 
 	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG), NULL, DialogProc);
 
 	return 0;
 }
 
+//**********************************************************
+
 INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	RECT rc;
 	unsigned result;
 	char filename[1000];
 
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetClassLongPtr(hDlg, GCL_HICON, (LONG_PTR)LoadIcon(instance, MAKEINTRESOURCE(IDI_ICON)));
+		SetClassLongPtr(hDlg, GCL_HICON, (LONG_PTR)LoadIcon(g_instance, MAKEINTRESOURCE(IDI_ICON)));
 
-		if (commandline && *commandline)
+		if (g_commandline && *g_commandline)
 		{
-			LoadFile(hDlg, commandline);
+			LoadFile(hDlg, g_commandline);
 		}
 		return TRUE;
 
 	case WM_DROPFILES:
 		result = DragQueryFile((HDROP)wParam, 0, filename, 1000);
+		DragFinish((HDROP)wParam);
 		if (!result)
 		{
 			MessageBox(hDlg, "Couldn't retrive filename.", "Error", MB_OK);
@@ -54,17 +61,26 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 
 	case WM_SIZE:
-		GetClientRect(hDlg, &rc);
-		MoveWindow(GetDlgItem(hDlg, IDC_TEXT), 0, 0, rc.right, rc.bottom, TRUE);
+		MoveWindow(GetDlgItem(hDlg, IDC_TEXT), 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
 		return TRUE;
 
-	case WM_CLOSE:
-		EndDialog(hDlg, 0);
-		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			return TRUE;
+
+		case IDCANCEL:
+			// Quit program...
+			EndDialog(hDlg, wParam);  // Close dialogwindow
+			return TRUE;
+		}
 	}
 
 	return FALSE;
 }
+
+//**********************************************************
 
 void LoadFile(HWND hDlg, char *filename)
 {
@@ -111,3 +127,5 @@ void LoadFile(HWND hDlg, char *filename)
 
 	free(buf);
 }
+
+//**********************************************************
