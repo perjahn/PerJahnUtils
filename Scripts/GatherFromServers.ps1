@@ -17,7 +17,8 @@ gatherUsername
 encrypedPassword
 ShortServerPrefixFrom
 ShortServerPrefixTo
-TestConnectivity") -f Red
+TestConnectivity
+DeleteRemoteFiles") -f Red
         exit 1
     }
 
@@ -181,6 +182,44 @@ TestConnectivity") -f Red
         ren $tmpfile (Split-Path -Leaf $localfile)
 
         Log ("Downloaded '" + $remotefile + "'")
+    }
+
+    if ($env:DeleteRemoteFiles)
+    {
+        $files | sort Server,Name | % {
+            [string] $remotefile = $_.FullName
+            [string] $ConnectionUri = $_.ConnectionUri
+
+            Invoke-Command -ConnectionUri $ConnectionUri -cred $cred -args $remotefile {
+                Set-StrictMode -v latest
+                $ErrorActionPreference = "Stop"
+
+                function Log([string] $message, $color)
+                {
+                    [string] $hostname = [System.Net.Dns]::GetHostName()
+                    if ($color)
+                    {
+                        Write-Host ($hostname + ": " + $message) -f $color
+                    }
+                    else
+                    {
+                        Write-Host ($hostname + ": " + $message)
+                    }
+                }
+
+                [string] $remotefile = $args[0]
+
+                if (Test-Path $remotefile)
+                {
+                    Log ("Deleting remote file: '" + $remotefile + "'")
+                    dir $remotefile | del
+                }
+                else
+                {
+                    Log ("Remote file not found: '" + $remotefile + "'")
+                }
+            }
+        }
     }
 }
 
