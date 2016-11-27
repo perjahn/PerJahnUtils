@@ -129,7 +129,7 @@ function DownloadIsoFile([string] $internalurl)
             }
             catch
             {
-                LogMessage ("Couldn't download: '" + $url + "': " + $_.Exception.Message)
+                LogMessage ("Couldn't download: '" + $sourceurl + "': " + $_.Exception.Message)
             }
 
             [DateTime] $t2 = Get-Date
