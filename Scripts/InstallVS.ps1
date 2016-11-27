@@ -133,7 +133,7 @@ function DownloadIsoFile([string] $internalurl)
             }
 
             [DateTime] $t2 = Get-Date
-            LogMessage ("Download time: " + ($t2-$t1) + ", speed: " + (($t2-$t1)/$filesize/1024) + " kb/s.")
+            LogMessage ("Download time: " + ($t2-$t1) + ", speed: " + (($t2-$t1).TotalSeconds/$filesize/1024) + " kb/s.")
         }
         else
         {
