@@ -294,7 +294,7 @@ function GetServers($cred)
     }
     else
     {
-        Log ("Please specify remote servers (set servers=hostname1,hostname2") Red
+        Log ("Please specify remote servers (set servers=hostname1,hostname2)") Red
         exit 1
     }
 
