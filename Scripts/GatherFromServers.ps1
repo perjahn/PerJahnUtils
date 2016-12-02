@@ -7,6 +7,19 @@ $ErrorActionPreference = "Stop"
 
 function Main($mainargs)
 {
+    try
+    {
+        GatherFiles
+    }
+    catch
+    {
+        Log ($_.Exception.ToString())
+        throw
+    }
+}
+
+function GatherFiles()
+{
     if (!$mainargs -or $mainargs.Count -ne 2)
     {
         Log ("Usage: powershell .\GatherFromServers.ps1 <remote path> <local folder>
@@ -330,7 +343,7 @@ function Log([string] $message, $color)
 {
     if ($env:GatherLogfile)
     {
-        $message | Out-File $env:GatherLogfile -Append
+        ("" + (Get-Date) + ": " + $message) | Out-File $env:GatherLogfile -Append
     }
 
     [string] $hostname = [System.Net.Dns]::GetHostName()
@@ -348,7 +361,7 @@ function LogSection([string] $message, [ScriptBlock] $sb)
 {
     if ($env:GatherLogfile)
     {
-        $message | Out-File $env:GatherLogfile -Append
+        ("" + (Get-Date) + ": " + $message) | Out-File $env:GatherLogfile -Append
     }
 
     Write-Host ("##teamcity[blockOpened name='" + [System.Net.Dns]::GetHostName() + ": " + $message + "']") -f Cyan
