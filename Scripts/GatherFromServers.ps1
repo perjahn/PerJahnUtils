@@ -9,26 +9,28 @@ function Main($mainargs)
 {
     if (!$mainargs -or $mainargs.Count -ne 2)
     {
-        Write-Host ("Usage: powershell .\GatherFromServers.ps1 <remote path> <local folder>
+        Log ("Usage: powershell .\GatherFromServers.ps1 <remote path> <local folder>
 
 Optional environment variables used:
-servers
-gatherUsername
-encrypedPassword
-ShortServerPrefixFrom
-ShortServerPrefixTo
-TestConnectivity
-DeleteRemoteFiles") -f Red
+GatherServers
+GatherUsername
+GatherEncrypedPassword
+GatherShortServerPrefixFrom
+GatherShortServerPrefixTo
+GatherTestConnectivity
+GatherDeleteRemoteFiles
+GatherLogfile") Red
         exit 1
     }
 
     [string] $remotepath = $mainargs[0]
     [string] $localfolder = $mainargs[1]
 
+    Log ("Current dir: '" + [IO.Directory]::GetCurrentDirectory() + "'")
+
 
     $cred = GetCred
     Log ("Username: '" + $cred.userName + "'")
-
 
 
     $servers = @(GetServers $cred)
@@ -69,10 +71,10 @@ DeleteRemoteFiles") -f Red
 
     $files | % {
         [string] $filename = $_.Server.ToLower() + "." + $_.Name
-        if ($env:ShortServerPrefixFrom -and $env:ShortServerPrefixTo)
+        if ($env:GatherShortServerPrefixFrom -and $env:GatherShortServerPrefixTo)
         {
-            [string] $from = $env:ShortServerPrefixFrom
-            [string] $to = $env:ShortServerPrefixTo
+            [string] $from = $env:GatherShortServerPrefixFrom
+            [string] $to = $env:GatherShortServerPrefixTo
 
             if ($filename.StartsWith($from))
             {
@@ -184,7 +186,7 @@ DeleteRemoteFiles") -f Red
         Log ("Downloaded '" + $remotefile + "'")
     }
 
-    if ($env:DeleteRemoteFiles)
+    if ($env:GatherDeleteRemoteFiles)
     {
         $files | sort Server,Name | % {
             [string] $remotefile = $_.FullName
@@ -227,15 +229,15 @@ function GetCred()
 {
     [string] $lib = "..\Tools\Launch.dll"
 
-    if ((!$env:gatherUsername -or !$env:encrypedPassword) -and (!(Test-Path $lib)))
+    if ((!$env:GatherUsername -or !$env:GatherEncrypedPassword) -and (!(Test-Path $lib)))
     {
         $cred = Get-Credential
     }
     else
     {
-        if ($env:gatherUsername)
+        if ($env:GatherUsername)
         {
-            [string] $username = $env:gatherUsername
+            [string] $username = $env:GatherUsername
         }
         else
         {
@@ -243,9 +245,9 @@ function GetCred()
             [string] $username = Get-LaunchUsername | select -First 1
         }
 
-        if ($env:encrypedPassword)
+        if ($env:GatherEncrypedPassword)
         {
-            [string] $encrypedPassword = $env:encrypedPassword
+            [string] $encrypedPassword = $env:GatherEncrypedPassword
         }
         else
         {
@@ -264,9 +266,9 @@ function GetServers($cred)
 {
     [string] $lib = "..\Tools\Launch.dll"
 
-    if ($env:servers)
+    if ($env:GatherServers)
     {
-        $servers = $env:servers -split "," | % {
+        $servers = $env:GatherServers -split "," | % {
             [string] $ConnectionUri = $_
             if ($ConnectionUri.Contains(";"))
             {
@@ -303,7 +305,7 @@ function GetServers($cred)
 
 function TestConnectivity([string[]] $servers, $cred)
 {
-    if ($env:TestConnectivity -and $env:TestConnectivity -eq "False")
+    if ($env:GatherTestConnectivity -and $env:GatherTestConnectivity -eq "False")
     {
         return
     }
@@ -326,6 +328,11 @@ function TestConnectivity([string[]] $servers, $cred)
 
 function Log([string] $message, $color)
 {
+    if ($env:GatherLogfile)
+    {
+        $message | Out-File $env:GatherLogfile -Append
+    }
+
     [string] $hostname = [System.Net.Dns]::GetHostName()
     if ($color)
     {
@@ -339,6 +346,11 @@ function Log([string] $message, $color)
 
 function LogSection([string] $message, [ScriptBlock] $sb)
 {
+    if ($env:GatherLogfile)
+    {
+        $message | Out-File $env:GatherLogfile -Append
+    }
+
     Write-Host ("##teamcity[blockOpened name='" + [System.Net.Dns]::GetHostName() + ": " + $message + "']") -f Cyan
     &$sb
     Write-Host ("##teamcity[blockClosed name='" + [System.Net.Dns]::GetHostName() + ": " + $message + "']") -f Cyan
