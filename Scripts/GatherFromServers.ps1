@@ -100,140 +100,156 @@ GatherLogfile") Red
         $f | Add-Member NoteProperty LocalFileName $filename
     }
 
+
     $files | sort Server,Name | % {
-        [string] $remotefile = $_.FullName
-        [string] $localfile = Join-Path $localfolder $_.LocalFileName
-        [string] $tmpfile = $localfile + ".tmp"
         [string] $ConnectionUri = $_.ConnectionUri
         [string] $server = $_.Server
+        [string] $remotefile = $_.FullName
+        [string] $localfile = Join-Path $localfolder $_.LocalFileName
         [long] $size = $_.Length
-        [long] $offset = 0
 
-        if (Test-Path $localfile)
+        try
         {
-            [long] $localsize = (dir $localfile).Length
-            if ($localsize -eq $size)
+            GatherFile $ConnectionUri $server $remotefile $localfile $size
+
+            if ($env:GatherDeleteRemoteFiles)
             {
-                Log ("Local file match in size, ignoring: '" + $ConnectionUri + "', '" + $server + "', '" + $remotefile + "', size: " + $size + " -> '" + $localfile + "'")
-                return
-            }
-            else
-            {
-                Log ("Deleting local file: '" + $localfile + "', local file size: " + $localsize)
-                del $localfile
+                DeleteFile $ConnectionUri $server $remotefile
             }
         }
-
-        if (Test-Path $tmpfile)
+        catch
         {
-            [long] $tmpsize = (dir $tmpfile).Length
-            if ($tmpsize -gt $size)
-            {
-                Log ("Deleting local temp file (because it's bigger than remote file): '" + $tmpfile + "', tmp file size: " + $tmpsize)
-                del $tmpfile
-            }
-            else
-            {
-                [long] $offset = $tmpsize
-                Log ("Resuming partial local file from: " + $offset)
-            }
+            Log ($_.Exception.ToString()) Red
+        }
+    }
+}
+
+function GatherFile([string] $ConnectionUri, [string] $server, [string] $remotefile, [string] $localfile, [long] $size)
+{
+    [string] $tmpfile = $localfile + ".tmp"
+    [long] $offset = 0
+
+    if (Test-Path $localfile)
+    {
+        [long] $localsize = (dir $localfile).Length
+        if ($localsize -eq $size)
+        {
+            Log ("Local file match in size, ignoring: '" + $ConnectionUri + "', '" + $server + "', '" + $remotefile + "', size: " + $size + " -> '" + $localfile + "'")
+            return
+        }
+        else
+        {
+            Log ("Deleting local file: '" + $localfile + "', local file size: " + $localsize)
+            del $localfile
+        }
+    }
+
+    if (Test-Path $tmpfile)
+    {
+        [long] $tmpsize = (dir $tmpfile).Length
+        if ($tmpsize -gt $size)
+        {
+            Log ("Deleting local temp file (because it's bigger than remote file): '" + $tmpfile + "', tmp file size: " + $tmpsize)
+            del $tmpfile
+        }
+        else
+        {
+            [long] $offset = $tmpsize
+            Log ("Resuming partial local file from: " + $offset)
+        }
+    }
+
+
+    Log ("Retrieving '" + $ConnectionUri + "', '" + $server + "', '" + $remotefile + "', size: " + $size + " -> '" + $tmpfile + "'")
+
+    for (; $offset -lt $size; $offset+=$blocksize)
+    {
+        if ($offset + $blocksize -gt $size)
+        {
+            [long] $bufsize = $size - $offset
+        }
+        else
+        {
+            [long] $bufsize = $blocksize
         }
 
+        Log ("Offset: " + $offset + ", bufsize: " + $bufsize)
 
-        Log ("Retrieving '" + $ConnectionUri + "', '" + $server + "', '" + $remotefile + "', size: " + $size + " -> '" + $tmpfile + "'")
+        $encodedContent =
+        Invoke-Command -ConnectionUri $ConnectionUri -cred $cred -args $remotefile,$offset,$bufsize {
+            Set-StrictMode -v latest
+            $ErrorActionPreference = "Stop"
 
-        for (; $offset -lt $size; $offset+=$blocksize)
-        {
-            if ($offset + $blocksize -gt $size)
-            {
-                [long] $bufsize = $size - $offset
-            }
-            else
-            {
-                [long] $bufsize = $blocksize
-            }
+            [string] $remotefile = $args[0]
+            [long] $offset = $args[1]
+            [long] $bufsize = $args[2]
 
-            Log ("Offset: " + $offset + ", bufsize: " + $bufsize)
-
-            $encodedContent =
-            Invoke-Command -ConnectionUri $ConnectionUri -cred $cred -args $remotefile,$offset,$bufsize {
-                Set-StrictMode -v latest
-                $ErrorActionPreference = "Stop"
-
-                [string] $remotefile = $args[0]
-                [long] $offset = $args[1]
-                [long] $bufsize = $args[2]
-
-                [byte[]] $data = New-Object byte[] $bufsize
-                $fs = New-Object IO.FileStream $remotefile, 'Open'
-                try
-                {
-                    $fs.Position = $offset
-                    [long] $readBytes = $fs.Read($data, 0, $bufsize)
-                }
-                finally
-                {
-                    $fs.Close()
-                }
-
-                [string] $encodedContent = [Convert]::ToBase64String($data, 0, $bufsize)
-                return $encodedContent
-            }
-
-            [byte[]] $data = [Convert]::FromBase64String($encodedContent)
-
-            $fs = New-Object IO.FileStream $tmpfile,'Append','Write'
+            [byte[]] $data = New-Object byte[] $bufsize
+            $fs = New-Object IO.FileStream $remotefile, 'Open'
             try
             {
-                $fs.Write($data, 0, $data.Length)
+                $fs.Position = $offset
+                [long] $readBytes = $fs.Read($data, 0, $bufsize)
             }
             finally
             {
                 $fs.Close()
             }
+
+            [string] $encodedContent = [Convert]::ToBase64String($data, 0, $bufsize)
+            return $encodedContent
         }
 
-        Log ("Renaming '" + $tmpfile + "' -> '" + (Split-Path -Leaf $localfile) + "'")
-        ren $tmpfile (Split-Path -Leaf $localfile)
+        [byte[]] $data = [Convert]::FromBase64String($encodedContent)
 
-        Log ("Downloaded '" + $remotefile + "'")
+        $fs = New-Object IO.FileStream $tmpfile,'Append','Write'
+        try
+        {
+            $fs.Write($data, 0, $data.Length)
+        }
+        finally
+        {
+            $fs.Close()
+        }
     }
 
-    if ($env:GatherDeleteRemoteFiles)
-    {
-        $files | sort Server,Name | % {
-            [string] $remotefile = $_.FullName
-            [string] $ConnectionUri = $_.ConnectionUri
+    Log ("Renaming '" + $tmpfile + "' -> '" + (Split-Path -Leaf $localfile) + "'")
+    ren $tmpfile (Split-Path -Leaf $localfile)
 
-            Invoke-Command -ConnectionUri $ConnectionUri -cred $cred -args $remotefile {
-                Set-StrictMode -v latest
-                $ErrorActionPreference = "Stop"
+    Log ("Downloaded '" + $remotefile + "'")
+}
 
-                function Log([string] $message, $color)
-                {
-                    [string] $hostname = [System.Net.Dns]::GetHostName()
-                    if ($color)
-                    {
-                        Write-Host ($hostname + ": " + $message) -f $color
-                    }
-                    else
-                    {
-                        Write-Host ($hostname + ": " + $message)
-                    }
-                }
+function DeleteFile([string] $ConnectionUri, [string] $server, [string] $remotefile)
+{
+    Log ("Trying to delete remote file: '" + $server + "', '" + $remotefile + "'")
 
-                [string] $remotefile = $args[0]
+    Invoke-Command -ConnectionUri $ConnectionUri -cred $cred -args $remotefile {
+        Set-StrictMode -v latest
+        $ErrorActionPreference = "Stop"
 
-                if (Test-Path $remotefile)
-                {
-                    Log ("Deleting remote file: '" + $remotefile + "'")
-                    dir $remotefile | del
-                }
-                else
-                {
-                    Log ("Remote file not found: '" + $remotefile + "'")
-                }
+        function Log([string] $message, $color)
+        {
+            [string] $hostname = [System.Net.Dns]::GetHostName()
+            if ($color)
+            {
+                Write-Host ($hostname + ": " + $message) -f $color
             }
+            else
+            {
+                Write-Host ($hostname + ": " + $message)
+            }
+        }
+
+        [string] $remotefile = $args[0]
+
+        if (Test-Path $remotefile)
+        {
+            Log ("Deleting remote file: '" + $remotefile + "'")
+            dir $remotefile | del
+        }
+        else
+        {
+            Log ("Remote file not found: '" + $remotefile + "'")
         }
     }
 }
