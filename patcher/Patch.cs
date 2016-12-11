@@ -268,15 +268,9 @@ namespace Patcher
 
         private bool CheckIfLocalMachineKeyExists(string regpath)
         {
-            RegistryKey key = Registry.LocalMachine.OpenSubKey(regpath);
-            if (key != null)
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(regpath))
             {
-                key.Close();
-                return true;
-            }
-            else
-            {
-                return false;
+                return key != null;
             }
         }
     }
