@@ -51,9 +51,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy ..\..\syncips.cs ..\..\..\syncips.csx /y
-..\..\..\..\Tools\rep.exe "//return Program.Main" "return Program.Main" ..\..\..\syncips.csx
-..\..\..\..\Tools\rep.exe //#r #r ..\..\..\syncips.csx</PostBuildEvent>
+    <PostBuildEvent></PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
