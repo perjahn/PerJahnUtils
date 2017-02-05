@@ -85,19 +85,19 @@ namespace Patcher
         private void Log(string message)
         {
             File.AppendAllText(Path.Combine(Path.GetTempPath(), "Patcher.log"),
-                DateTime.UtcNow.ToString() + ": " + message + Environment.NewLine);
+                $"{DateTime.UtcNow}: {message}{Environment.NewLine}");
         }
 
         private List<IUpdate5> GetPatches(UpdateSession session)
         {
             UpdateServiceManager manager = new UpdateServiceManager();
 
-            Log("Found " + manager.Services.Count + " update services.");
+            Log($"Found {manager.Services.Count} update services.");
 
             List<IUpdate5> updates = new List<IUpdate5>();
             foreach (IUpdateService2 service in manager.Services)
             {
-                Log("Retrieving patches from: " + service.Name);
+                Log($"Retrieving patches from: {service.Name}");
 
                 try
                 {
@@ -109,7 +109,7 @@ namespace Patcher
 
                     UpdateCollection updatecollection = searchresult.Updates;
 
-                    Log("Found " + updatecollection.Count + " updates.");
+                    Log($"Found {updatecollection.Count} updates.");
 
                     foreach (IUpdate5 update in updatecollection)
                     {
@@ -121,7 +121,7 @@ namespace Patcher
                 }
                 catch (COMException ex)
                 {
-                    Log("Couldn't retrive patches: 0x" + ex.HResult.ToString("X"));
+                    Log($"Couldn't retrive patches: 0x{ex.HResult:X}");
                     Log(ex.ToString());
                 }
             }
@@ -133,26 +133,26 @@ namespace Patcher
         {
             string printsize = GetPrintSize(updates.Sum(u => u.MaxDownloadSize));
 
-            Log("Total unique updates: " + updates.Count + ": " + printsize + " MB.");
+            Log($"Total unique updates: {updates.Count}: {printsize} MB.");
         }
 
         private void ListPatches(List<IUpdate5> updates)
         {
             foreach (IUpdate5 update in updates.OrderBy(u => u.Title))
             {
-                Log(update.Title + ": " + GetPrintSize(update.MaxDownloadSize) + " MB.");
+                Log($"{update.Title}: {GetPrintSize(update.MaxDownloadSize)} MB.");
             }
         }
 
         private void DownloadPatches(UpdateSession session, List<IUpdate5> updates)
         {
-            Log("Downloading " + updates.Count + " patches...");
+            Log($"Downloading {updates.Count} patches...");
 
             foreach (IUpdate5 update in updates.OrderBy(u => u.Title))
             {
                 if (update.IsDownloaded)
                 {
-                    Log("Patch is already downloaded: " + update.Title);
+                    Log($"Patch is already downloaded: {update.Title}");
                     continue;
                 }
 
@@ -169,9 +169,9 @@ namespace Patcher
                 {
                     try
                     {
-                        string printtry = tries > 0 ? " (try " + (tries + 1) + ")" : string.Empty;
+                        string printtry = tries > 0 ? $" (try {(tries + 1)})" : string.Empty;
 
-                        Log("Downloading" + printtry + ": " + update.Title + ": " + GetPrintSize(update.MaxDownloadSize) + " MB.");
+                        Log($"Downloading {printtry}: {update.Title}: {GetPrintSize(update.MaxDownloadSize)} MB.");
 
                         IDownloadResult downloadresult = downloader.Download();
                         if (downloadresult.ResultCode == OperationResultCode.orcSucceeded)
@@ -180,12 +180,12 @@ namespace Patcher
                         }
                         else
                         {
-                            Log("Couldn't download patch: " + downloadresult.ResultCode + ": 0x" + downloadresult.HResult.ToString("X"));
+                            Log($"Couldn't download patch: {downloadresult.ResultCode}: 0x{downloadresult.HResult:X)}");
                         }
                     }
                     catch (COMException ex)
                     {
-                        Log("Couldn't download patch: 0x" + ex.HResult.ToString("X"));
+                        Log($"Couldn't download patch: 0x{ex.HResult:X)}");
                     }
                 }
             }
@@ -193,7 +193,7 @@ namespace Patcher
 
         private void InstallPatches(UpdateSession session, List<IUpdate5> updates)
         {
-            Log("Installing " + updates.Count + " patches...");
+            Log($"Installing {updates.Count} patches...");
 
             bool reboot = false;
 
@@ -201,18 +201,18 @@ namespace Patcher
             {
                 if (update.IsInstalled)
                 {
-                    Log("Patch is already installed: " + update.Title);
+                    Log($"Patch is already installed: {update.Title}");
                     continue;
                 }
                 else if (!update.IsDownloaded)
                 {
-                    Log("Patch isn't downloaded yet: " + update.Title);
+                    Log($"Patch isn't downloaded yet: {update.Title}");
                 }
                 else
                 {
                     try
                     {
-                        Log("Installing: " + update.Title);
+                        Log($"Installing: {update.Title}");
 
                         UpdateCollection updateCollection = new UpdateCollection();
                         updateCollection.Add(update);
@@ -230,12 +230,12 @@ namespace Patcher
                         }
                         else
                         {
-                            Log("Couldn't install patch: " + installresult.ResultCode + ": 0x" + installresult.HResult.ToString("X"));
+                            Log($"Couldn't install patch: {installresult.ResultCode}: 0x{installresult.HResult:X}");
                         }
                     }
                     catch (COMException ex)
                     {
-                        Log("Couldn't download patch: 0x" + ex.HResult.ToString("X"));
+                        Log($"Couldn't download patch: 0x{ex.HResult:X}");
                     }
                 }
             }
