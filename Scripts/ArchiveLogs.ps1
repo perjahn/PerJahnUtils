@@ -31,12 +31,12 @@ function Main()
     }
 
 
-    [Diagnostics.StopWatch] $sw = [Diagnostics.Stopwatch]::StartNew()
+    [Diagnostics.StopWatch] $watch = [Diagnostics.Stopwatch]::StartNew()
 
     ArchvieLogs $logfolder $archivefolder $daysthreashold
 
-    $sw.Stop()
-    Log ("Total time: " + [int]$sw.Elapsed.TotalMinutes + " minutes.") Green
+    $watch.Stop()
+    Log ("Total time: " + [int]$watch.Elapsed.TotalMinutes + " minutes.") Green
 }
 
 function ArchvieLogs([string] $logfolder, [string] $archivefolder, [int] $daysthreashold)
@@ -83,7 +83,7 @@ function ArchvieLogs([string] $logfolder, [string] $archivefolder, [int] $daysth
     # possible in each remote session, i.e. all files are moved in the previous
     # call, and statistics are collected in the next.
     LogSection "Zipping logfiles" {
-        [Diagnostics.StopWatch] $sw = [Diagnostics.Stopwatch]::StartNew()
+        [Diagnostics.StopWatch] $watch = [Diagnostics.Stopwatch]::StartNew()
         try
         {
             CompressServerLogs $servers $cred $date $archivefolder
@@ -92,12 +92,12 @@ function ArchvieLogs([string] $logfolder, [string] $archivefolder, [int] $daysth
         {
             Log ("Something failed: " + $_.Exception.ToString()) Red
         }
-        $sw.Stop()
-        Log ("All done in " + ([int]$sw.Elapsed.TotalSeconds) + " seconds.") Green
+        $watch.Stop()
+        Log ("All done in " + ([int]$watch.Elapsed.TotalSeconds) + " seconds.") Green
 
         $serverobjects | % {
             [string] $server = $_.Name
-            [Diagnostics.StopWatch] $sw = [Diagnostics.Stopwatch]::StartNew()
+            [Diagnostics.StopWatch] $watch = [Diagnostics.Stopwatch]::StartNew()
             for ([int] $tries=0; $tries -lt 3; $tries++)
             {
                 try
@@ -109,8 +109,8 @@ function ArchvieLogs([string] $logfolder, [string] $archivefolder, [int] $daysth
                     Log ("Retry " + ($tries+1) + " failed: " + $_.Exception.ToString()) Red
                 }
             }
-            $sw.Stop()
-            Log ($_.LocalServerName + ": " + [int]$sw.Elapsed.TotalSeconds + " seconds.") Green
+            $watch.Stop()
+            Log ($_.LocalServerName + ": " + [int]$watch.Elapsed.TotalSeconds + " seconds.") Green
         }
     }
 

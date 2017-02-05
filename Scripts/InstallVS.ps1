@@ -26,7 +26,7 @@ function Main()
 
     CheckZip
 
-    [string] $extractfolder = "C:\VS2015"
+    [string] $extractfolder = "D:\VS2015"
 
     PrepareFolder $extractfolder
 
@@ -44,11 +44,11 @@ function IsVSInstalled()
     }
     if ((Get-FileHash $devenvexe -Algorithm MD5).Hash -eq "A0AED97A5C41373C4F77E17305D135A2")
     {
-        LogMessage ("VS2015 update 3 already installed.") Green
+        Log ("VS2015 update 3 already installed.") Green
         return $true
     }
 
-    LogMessage ("Unknown file hash, reinstalling: " + $devenvexe) Green
+    Log ("Unknown file hash, reinstalling: " + $devenvexe) Green
     return $false
 }
 
@@ -64,14 +64,14 @@ function PrepareFolder([string] $extractfolder)
 {
     if (Test-Path $extractfolder)
     {
-        LogMessage ("Deleting folder: '" + $extractfolder + "'")
+        Log ("Deleting folder: '" + $extractfolder + "'")
         rd -Recurse -Force $extractfolder
     }
     if (Test-Path $extractfolder)
     {
         throw ("Couldn't delete folder: '" + $extractfolder + "'")
     }
-    LogMessage ("Creating folder: '" + $extractfolder + "'")
+    Log ("Creating folder: '" + $extractfolder + "'")
     md $extractfolder | Out-Null
 }
 
@@ -90,10 +90,10 @@ function DownloadIsoFile([string] $internalurl)
 
 
     [string] $tempfolder = Join-Path $env:userprofile "Downloads"
-    LogMessage ("Using temp folder: '" + $tempfolder + "'")
+    Log ("Using temp folder: '" + $tempfolder + "'")
     if (!(Test-Path $tempfolder))
     {
-        LogMessage ("Creating folder: '" + $tempfolder + "'")
+        Log ("Creating folder: '" + $tempfolder + "'")
         md $tempfolder | Out-Null
     }
 
@@ -102,7 +102,7 @@ function DownloadIsoFile([string] $internalurl)
 
     $drive = [System.IO.DriveInfo]::GetDrives() | ? { $tempfolder.StartsWith($_.Name) }
 
-    LogMessage ("Disk space free on " + $drive.Name + " " + ("{0:0.00}" -f ($drive.TotalFreeSpace/1gb)) + " gb.")
+    Log ("Disk space free on " + $drive.Name + " " + ("{0:0.00}" -f ($drive.TotalFreeSpace/1gb)) + " gb.")
 
     if ($drive.TotalFreeSpace -lt 40gb)
     {
@@ -118,7 +118,7 @@ function DownloadIsoFile([string] $internalurl)
 
         if (!(Test-Path $isofile) -or (dir $isofile).Length -ne $filesize)
         {
-            LogMessage ("Downloading: '" + $sourceurl + "' -> '" + $isofile + "'")
+            Log ("Downloading: '" + $sourceurl + "' -> '" + $isofile + "'")
             $webclient = New-Object Net.WebClient
 
             [DateTime] $t1 = Get-Date
@@ -129,15 +129,15 @@ function DownloadIsoFile([string] $internalurl)
             }
             catch
             {
-                LogMessage ("Couldn't download: '" + $sourceurl + "': " + $_.Exception.Message)
+                Log ("Couldn't download: '" + $sourceurl + "': " + $_.Exception.Message)
             }
 
             [DateTime] $t2 = Get-Date
-            LogMessage ("Download time: " + ($t2-$t1) + ", speed: " + (($t2-$t1).TotalSeconds/$filesize/1024) + " kb/s.")
+            Log ("Download time: " + ($t2-$t1) + ", speed: " + (($t2-$t1).TotalSeconds/$filesize/1024) + " kb/s.")
         }
         else
         {
-            LogMessage ("Using local iso file: '" + $isofile + "'")
+            Log ("Using local iso file: '" + $isofile + "'")
         }
 
         $index++
@@ -152,7 +152,7 @@ function InstallIsoFile([string] $isofile, [string] $extractfolder, [string] $se
 {
     if (!(Test-Path $isofile))
     {
-        LogMessage ("Couldn't find downloaded file: '" + $isofile + "'") Red
+        Log ("Couldn't find downloaded file: '" + $isofile + "'") Red
         return
     }
 
@@ -161,15 +161,15 @@ function InstallIsoFile([string] $isofile, [string] $extractfolder, [string] $se
     zip x ("-o" + $extractfolder) -y $isofile
     if (!$?)
     {
-        LogMessage ("Couldn't extract: '" + $isofile + "' -> '" + $extractfolder + "'")
+        Log ("Couldn't extract: '" + $isofile + "' -> '" + $extractfolder + "'")
         return
     }
 
 
-    [string] $installexe = "C:\VS2015\vs_enterprise.exe"
+    [string] $installexe = "D:\VS2015\vs_enterprise.exe"
     if (!(Test-Path $installexe))
     {
-        LogMessage ("Couldn't find installation program: '" + $installexe + "'") Red
+        Log ("Couldn't find installation program: '" + $installexe + "'") Red
         return
     }
 
@@ -177,23 +177,23 @@ function InstallIsoFile([string] $isofile, [string] $extractfolder, [string] $se
     pushd
     cd (Split-Path $installexe)
 
-    [DateTime] $t1 = Get-Date
-    LogMessage ("Installing VS with product key...")
+    [Diagnostics.Stopwatch] $watch = [Diagnostics.Stopwatch]::StartNew()
+    Log ("Installing VS with product key...")
     &(".\" + (Split-Path -Leaf $installexe)) "/Full" "/Q" "/ProductKey" $serial
 
     popd
     Wait-Process ([IO.Path]::GetFileNameWithoutExtension($installexe))
-    [DateTime] $t2 = Get-Date
+    $watch.Stop()
 
-    LogMessage ("Installation time: " + ($t2-$t1))
+    Log ("Installation time: " + $watch.Elapsed)
 
-    LogMessage ("Done!") Green
+    Log ("Done!") Green
 
-    LogMessage ("Deleting folder: '" + $extractfolder + "'")
+    Log ("Deleting folder: '" + $extractfolder + "'")
     rd -Recurse -Force $extractfolder
 }
 
-function LogMessage([string] $message, $color)
+function Log([string] $message, $color)
 {
     if ($color)
     {
