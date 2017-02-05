@@ -8,6 +8,10 @@ function Main()
     Clean
 
     Generate-BuildFile "all.build"
+
+    Download-Nuget
+
+    Remove-SpammyBuildFile
 }
 
 function Clean()
@@ -44,6 +48,30 @@ function Generate-BuildFile([string] $buildfile)
 
     Write-Host ("Saving generated build file: '" + $buildfile + "'")
     sc $buildfile $xml
+}
+
+function Download-Nuget()
+{
+    curl -UseBasicParsing https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile nuget.exe
+
+    $packagefiles = @(dir -Recurse packages.config)
+
+    Write-Host ("Found " + $packagefiles.Count + " packages files.")
+
+    $packagefiles | % {
+        [string] $packagefile = $_.FullName
+        Write-Host ("Restoring: '" + $packagefile + "'")
+        .\nuget.exe restore $packagefile -SolutionDirectory (Split-Path $packagefile)
+    }
+}
+
+function Remove-SpammyBuildFile()
+{
+    [string] $spammybuildfile = "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
+    if (Test-Path $spammybuildfile)
+    {
+        del $spammybuildfile -ErrorAction SilentlyContinue
+    }
 }
 
 Main
