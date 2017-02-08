@@ -34,7 +34,7 @@ namespace CleanTCLog
 
                 if (row.Length > 9 && row[0] == '[' && row[9] == ']')
                 {
-                    rows[i] = row.Substring(10);
+                    rows[i] = row = row.Substring(10);
                 }
 
                 // (1s)
