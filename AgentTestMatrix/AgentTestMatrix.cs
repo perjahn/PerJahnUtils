@@ -24,23 +24,25 @@ class AgentTestMatrix
     static int Main(string[] args)
     {
         int result = 0;
-
-        bool excludeMuted = args.Any(a => a == "-excludemuted");
-        string[] argsWithoutFlags = args.Where(a => a != "-excludemuted").ToArray();
-
-        if (argsWithoutFlags.Length != 3 && argsWithoutFlags.Length != 4)
+        if (args.Length != 1)
         {
             Console.WriteLine(
 @"AgentTestMatrix 1.0 - For each build agent, retrieves the latest test result, shows all failing tests in matrix.
 
-Usage: AgentTestMatrix.exe [-excludemuted] <server> <buildconfig> <outfile> [excludagents]
+Usage: AgentTestMatrix.exe <outfile>
 
-Optional environment variables:
+Environment variables:
+TestServer
+TestBuildconfig
 TestUsername
 TestPassword
+TEAMCITY_BUILD_PROPERTIES_FILE (can retrieve the 4 above: Server, Buildconfig, Username, Password)
+
+Optional environment variables:
+TestExcludeMuted
 TestAgentPrefixFrom
 TestAgentPrefixTo
-TEAMCITY_BUILD_PROPERTIES_FILE
+TestExcludeAgents
 TestDebug");
             result = 1;
         }
@@ -48,7 +50,7 @@ TestDebug");
         {
             try
             {
-                GetTests(argsWithoutFlags, excludeMuted);
+                GetTests(args[0]);
             }
             catch (ApplicationException ex)
             {
@@ -71,12 +73,12 @@ TestDebug");
         return result;
     }
 
-    static void GetTests(string[] argsWithoutFlags, bool excludeMuted)
+    static void GetTests(string outfile)
     {
-        string server = argsWithoutFlags[0];
-        string buildconfig = argsWithoutFlags[1];
-        string outfile = argsWithoutFlags[2];
-        string excludeagents = argsWithoutFlags.Length < 4 ? null : argsWithoutFlags[3];
+        string server = GetServer();
+        string buildconfig = GetBuildconfig();
+        bool excludeMuted = GetExcludeMuted();
+        string[] excludeAgents = GetExcludeAgents();
 
         string username, password;
         GetCredentials(out username, out password);
@@ -85,11 +87,12 @@ TestDebug");
         GetAgentPrefixes(out prefixFrom, out prefixTo);
 
 
+
         List<test> tests = GetTests(server, username, password, buildconfig);
 
-        if (excludeagents != null)
+        if (excludeAgents != null)
         {
-            tests = tests.Where(t => !excludeagents.Split(',').Contains(t.agentname)).ToList();
+            tests = tests.Where(t => !excludeAgents.Contains(t.agentname)).ToList();
         }
 
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
@@ -126,6 +129,102 @@ TestDebug");
         WriteHtml(testmatrix, outfile);
     }
 
+    static string GetServer()
+    {
+        string server = Environment.GetEnvironmentVariable("TestServer");
+
+        if (server != null)
+        {
+            Log($"Got server from environment variable: '{server}'");
+        }
+
+        if (server == null)
+        {
+            Dictionary<string, string> tcvariables = GetTeamcityConfigVariables();
+
+            if (server == null && tcvariables.ContainsKey("teamcity.serverUrl"))
+            {
+                server = tcvariables["teamcity.serverUrl"];
+                Log($"Got server from Teamcity: '{server}'");
+            }
+        }
+
+        if (server == null)
+        {
+            throw new ApplicationException("No server specified.");
+        }
+        else
+        {
+            if (!server.StartsWith("http://") && !server.StartsWith("https://"))
+            {
+                server = $"http://{server}";
+            }
+        }
+
+        return server;
+    }
+
+    static string GetBuildconfig()
+    {
+        string buildconfig = Environment.GetEnvironmentVariable("TestBuildconfig");
+
+        if (buildconfig != null)
+        {
+            Log($"Got buildconfig from environment variable: '{buildconfig}'");
+        }
+
+        if (buildconfig == null)
+        {
+            Dictionary<string, string> tcvariables = GetTeamcityBuildVariables();
+
+            if (tcvariables.ContainsKey("teamcity.buildType.id"))
+            {
+                buildconfig = tcvariables["teamcity.buildType.id"];
+                Log($"Got buildconfig from Teamcity: '{buildconfig}'");
+            }
+        }
+
+        if (buildconfig == null)
+        {
+            throw new ApplicationException("No buildconfig specified.");
+        }
+
+        return buildconfig;
+    }
+
+    static bool GetExcludeMuted()
+    {
+        string excludeMuted = Environment.GetEnvironmentVariable("TestExcludeMuted");
+
+        if (excludeMuted != null)
+        {
+            Log($"Got excludemuted from environment variable: '{excludeMuted}'");
+        }
+        else
+        {
+            Log("No excludemuted specified.");
+        }
+
+        return !string.IsNullOrEmpty(excludeMuted);
+    }
+
+    static string[] GetExcludeAgents()
+    {
+        string excludeAgents = Environment.GetEnvironmentVariable("TestExcludeAgents");
+
+        if (excludeAgents != null)
+        {
+            Log($"Got excludeagents from environment variable: '{excludeAgents}'");
+            return excludeAgents.Split(',');
+        }
+        else
+        {
+            Log("No excludeagents specified.");
+        }
+
+        return null;
+    }
+
     static void GetCredentials(out string username, out string password)
     {
         username = Environment.GetEnvironmentVariable("TestUsername");
@@ -142,7 +241,7 @@ TestDebug");
 
         if (username == null || password == null)
         {
-            Dictionary<string, string> tcvariables = GetTeamcityVariables();
+            Dictionary<string, string> tcvariables = GetTeamcityBuildVariables();
 
             if (username == null && tcvariables.ContainsKey("teamcity.auth.userId"))
             {
@@ -191,7 +290,7 @@ TestDebug");
         }
     }
 
-    static Dictionary<string, string> GetTeamcityVariables()
+    static Dictionary<string, string> GetTeamcityBuildVariables()
     {
         string buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
         if (string.IsNullOrEmpty(buildpropfile))
@@ -210,6 +309,38 @@ TestDebug");
 
         var valuesBuild = GetPropValues(rows);
 
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
+        {
+            LogTCSection("Teamcity Properties", valuesBuild.Select(p => $"Build: {p.Key}={p.Value}"));
+        }
+
+        return valuesBuild;
+    }
+
+    static Dictionary<string, string> GetTeamcityConfigVariables()
+    {
+        string buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
+        if (string.IsNullOrEmpty(buildpropfile))
+        {
+            Log("Couldn't find Teamcity build properties file.");
+            return new Dictionary<string, string>();
+        }
+        if (!File.Exists(buildpropfile))
+        {
+            Log($"Couldn't find Teamcity build properties file: '{buildpropfile}'");
+            return new Dictionary<string, string>();
+        }
+
+        Log($"Reading Teamcity build properties file: '{buildpropfile}'");
+        string[] rows = File.ReadAllLines(buildpropfile);
+
+        var valuesBuild = GetPropValues(rows);
+
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
+        {
+            LogTCSection("Teamcity Properties", valuesBuild.Select(p => $"Build: {p.Key}={p.Value}"));
+        }
+
         string configpropfile = valuesBuild["teamcity.configuration.properties.file"];
         if (string.IsNullOrEmpty(configpropfile))
         {
@@ -226,6 +357,11 @@ TestDebug");
         rows = File.ReadAllLines(configpropfile);
 
         var valuesConfig = GetPropValues(rows);
+
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
+        {
+            LogTCSection("Teamcity Properties", valuesConfig.Select(p => $"Config: {p.Key}={p.Value}"));
+        }
 
         return valuesConfig;
     }
@@ -260,7 +396,7 @@ TestDebug");
                 client.Headers[HttpRequestHeader.Authorization] = "Basic " + credentials;
             }
 
-            string address = $"http://{server}/app/rest/builds?locator=buildType:{buildconfig}";
+            string address = $"{server}/app/rest/builds?locator=buildType:{buildconfig}";
             client.Headers["Accept"] = "application/json";
 
             dynamic builds = DownloadJsonContent(client, address, "TestDebug1.txt");
@@ -273,7 +409,7 @@ TestDebug");
                     {
                         string buildhref = build.href;
 
-                        address = $"http://{server}{buildhref}";
+                        address = $"{server}{buildhref}";
                         client.Headers["Accept"] = "application/json";
 
                         dynamic buildresult = DownloadJsonContent(client, address, "TestDebug2.txt");
@@ -284,7 +420,7 @@ TestDebug");
                         {
                             string testhref = buildresult.testOccurrences.href;
 
-                            address = $"http://{server}{testhref},count:10000";
+                            address = $"{server}{testhref},count:10000";
                             client.Headers["Accept"] = "application/json";
 
                             dynamic testresults = DownloadJsonContent(client, address, "TestDebug3.txt");
@@ -454,6 +590,14 @@ td {
         sb.AppendLine("</html>");
 
         File.WriteAllText(filename, sb.ToString());
+    }
+
+    private static void LogTCSection(string message, IEnumerable<string> collection)
+    {
+        Console.WriteLine(
+            $"##teamcity[blockOpened name='{message}']{Environment.NewLine}" +
+            string.Join(string.Empty, collection.Select(t => $"{t}{Environment.NewLine}")) +
+            $"##teamcity[blockClosed name='{message}']");
     }
 
     private static void LogColor(string message, ConsoleColor color)
