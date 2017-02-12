@@ -555,6 +555,12 @@ td {
 	vertical-align: top; 
 	border: solid 1px black;
 	white-space: nowrap;
+}
+.fail {
+	background-color: rgb(255,200,200);
+}
+.pass {
+	background-color: rgb(200,255,200);
 }");
         sb.AppendLine("</style>");
         sb.AppendLine("</head>");
@@ -578,7 +584,18 @@ td {
                 }
                 else
                 {
-                    sb.Append($"<td>{value}</td>");
+                    if (value == "x")
+                    {
+                        sb.Append($"<td class='fail'>{value}</td>");
+                    }
+                    else if (value == ".")
+                    {
+                        sb.Append($"<td class='pass'>{value}</td>");
+                    }
+                    else
+                    {
+                        sb.Append($"<td>{value}</td>");
+                    }
                 }
             }
 
@@ -586,6 +603,9 @@ td {
         }
 
         sb.AppendLine("</table>");
+        sb.AppendLine("<p>x Test failed.</p>");
+        sb.AppendLine("<p>. Test passed.</p>");
+        sb.AppendLine("<p>Tip: There's a tooltip on column headers!</p>");
         sb.AppendLine("</body>");
         sb.AppendLine("</html>");
 
