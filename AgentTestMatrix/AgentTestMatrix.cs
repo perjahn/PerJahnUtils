@@ -50,7 +50,7 @@ TestDebug");
         {
             try
             {
-                GetTests(args[0]);
+                WriteTests(args[0]);
             }
             catch (ApplicationException ex)
             {
@@ -73,7 +73,7 @@ TestDebug");
         return result;
     }
 
-    static void GetTests(string outfile)
+    static void WriteTests(string outfile)
     {
         string server = GetServer();
         string buildconfig = GetBuildconfig();
@@ -97,34 +97,32 @@ TestDebug");
 
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
         {
-            string[] header = { "buildid\tagentname\ttestname\tstatus\tmuted" };
+            string[] header = { "buildid\tagentname\ttestname\tstatus\tmuted\tbuildstart" };
 
-            File.WriteAllLines("TestDebug4.txt", Enumerable.Concat(header, tests.Select(t => $"{t.buildid}\t{t.agentname}\t{t.testname}\t{t.status}\t{t.muted}")));
+            File.WriteAllLines("TestDebug4.txt", Enumerable.Concat(header, tests.Select(t => $"{t.buildid}\t{t.agentname}\t{t.testname}\t{t.status}\t{t.muted}\t{t.buildstart}")));
         }
 
         string[] builds = tests.GroupBy(t => t.buildid).Select(t => t.Key).ToArray();
         string[] agents = tests.GroupBy(t => t.agentname).Select(a => a.Key).ToArray();
 
-        test[] failedTests = tests.Where(t => t.status == "FAILURE" && (!excludeMuted || !t.muted.HasValue || !t.muted.Value)).ToArray();
-        string[] failedBuilds = failedTests.GroupBy(t => t.buildid).Select(a => a.Key).ToArray();
-        string[] failedAgents = failedTests.GroupBy(t => t.agentname).Select(a => a.Key).ToArray();
+        tests = tests.Where(t => !excludeMuted || !t.muted.HasValue || !t.muted.Value).ToList();
 
-        Log($"Found {tests.Count} tests, of which {failedTests.Length} failed, in {builds.Length} builds containing tests, on {agents.Length} build agents.");
+        Log($"Found {tests.Count} tests, of which {tests.Count(t => t.status == "FAILURE")} failed, in {builds.Length} builds containing tests, on {agents.Length} build agents.");
 
 
-        Dictionary<string, List<test>> failedAgentTests = new Dictionary<string, List<test>>();
+        Dictionary<string, List<test>> agentTests = new Dictionary<string, List<test>>();
 
-        foreach (string build in failedBuilds)
+        foreach (string build in builds)
         {
-            string agent = failedTests.Where(t => t.buildid == build).First().agentname;
+            string agent = tests.Where(t => t.buildid == build).First().agentname;
 
-            if (!failedAgentTests.ContainsKey(agent))
+            if (!agentTests.ContainsKey(agent))
             {
-                failedAgentTests[agent] = failedTests.Where(t => t.buildid == build).ToList();
+                agentTests[agent] = tests.Where(t => t.buildid == build).ToList();
             }
         }
 
-        string testmatrix = PrintFailMatrix(failedAgents, failedAgentTests, prefixFrom, prefixTo);
+        string testmatrix = PrintFailMatrix(agents, agentTests, prefixFrom, prefixTo);
 
         WriteHtml(testmatrix, outfile);
     }
@@ -471,9 +469,9 @@ TestDebug");
         }
     }
 
-    static string PrintFailMatrix(string[] failedAgents, Dictionary<string, List<test>> failedAgentTests, string[] prefixFrom, string[] prefixTo)
+    static string PrintFailMatrix(string[] agents, Dictionary<string, List<test>> agentTests, string[] prefixFrom, string[] prefixTo)
     {
-        string[] testnames = failedAgentTests
+        string[] testnames = agentTests
             .SelectMany(a => a.Value)
             .Select(t => t.testname)
             .Distinct()
@@ -483,7 +481,7 @@ TestDebug");
         StringBuilder sb = new StringBuilder();
 
         sb.Append("Test/Agent");
-        foreach (string agentname in failedAgents.OrderBy(a => a))
+        foreach (string agentname in agents.OrderBy(a => a))
         {
             string agentname2 = agentname;
 
@@ -491,10 +489,10 @@ TestDebug");
             {
                 if (agentname2.StartsWith(prefixFrom[i]))
                 {
-                    string datestring = failedAgentTests.Where(t => t.Value.First().agentname == agentname).Select(t => t.Value.First().buildstart).First();
+                    string datestring = agentTests.Where(t => t.Value.First().agentname == agentname).Select(t => t.Value.First().buildstart).First();
                     DateTime datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
 
-                    agentname2 = $"{prefixTo[i]}{agentname2.Substring(prefixFrom[i].Length)} ({agentname2},{datetime})";
+                    agentname2 = $"{prefixTo[i]}{agentname2.Substring(prefixFrom[i].Length)}|{agentname2}|{datetime}|";
                     break;
                 }
             }
@@ -504,26 +502,52 @@ TestDebug");
 
         sb.AppendLine();
 
+        int failcount = 0;
+
+        int totalfailcount = 0;
+        int totalsuccesscount = 0;
+        int totalmissingcount = 0;
+
         foreach (string testname in testnames.OrderBy(t => t))
         {
             sb.Append(testname);
 
-            foreach (string agentname in failedAgents.OrderBy(a => a))
+            bool failed = false;
+
+            foreach (string agentname in agents.OrderBy(a => a))
             {
-                if (failedAgentTests[agentname].Any(t => t.testname == testname))
+                if (agentTests[agentname].Any(t => t.testname == testname))
                 {
-                    sb.Append("\tx");
+                    if (agentTests[agentname].Any(t => t.testname == testname && t.status == "FAILURE"))
+                    {
+                        sb.Append("\tx");
+                        totalfailcount++;
+                        failed = true;
+                    }
+                    else
+                    {
+                        sb.Append("\t.");
+                        totalsuccesscount++;
+                    }
                 }
                 else
                 {
-                    sb.Append("\t.");
+                    sb.Append("\t-");
+                    totalmissingcount++;
                 }
+            }
+
+            if (failed)
+            {
+                failcount++;
             }
 
             sb.AppendLine();
         }
 
-        sb.AppendLine($"{testnames.Length} fails\t{string.Join("\t", failedAgentTests.OrderBy(t => t.Value.First().agentname).Select(t => t.Value.Count))}");
+        string agentSums = string.Join("\t", agentTests.OrderBy(t => t.Value.First().agentname).Select(t => t.Value.Where(tt => tt.status == "FAILURE").Count()));
+
+        sb.AppendLine($"{testnames.Length} tests, {failcount} failed, {testnames.Length - failcount} succeded (Total: {totalfailcount} failed, {totalsuccesscount} succeded, {totalmissingcount} missing)\t{agentSums}");
 
 
         return sb.ToString();
@@ -561,25 +585,53 @@ td {
 }
 .pass {
 	background-color: rgb(200,255,200);
+}
+.missing {
+	background-color: rgb(200,200,200);
 }");
         sb.AppendLine("</style>");
+        sb.AppendLine("<script src='http://code.jquery.com/jquery-latest.min.js'></script>");
+        sb.AppendLine("<script>");
+        sb.AppendLine(
+@"$(document).ready(function(){$('#checkboxID').change(function(){
+	var self = this;
+	$('tr.successes').toggle(self.checked); 
+}).change();});");
+        sb.AppendLine("</script>");
         sb.AppendLine("</head>");
         sb.AppendLine("<body>");
+
+        sb.AppendLine(@"<p><label for='checkboxID'>Show all tests</label><input type='checkbox' id='checkboxID' /></p>");
+        sb.AppendLine("<p>x Test failed.<br/>");
+        sb.AppendLine(". Test passed.<br/>");
+        sb.AppendLine("- Test missing.</p>");
+        sb.AppendLine("<p>Obvious thing you should know: There's a tooltip on column headers!</p>");
+
         sb.AppendLine("<table border=\"1\">");
 
         foreach (string row in rows)
         {
-            sb.Append("<tr>");
-
             string[] values = row.Split('\t');
+            bool allsuccess = values.Skip(1).All(v => v == ".");
+            bool anyfails = values.Skip(1).Any(v => v == "x");
+
+            if (allsuccess)
+            {
+                sb.Append("<tr class='successes' style='display: none;'>");
+            }
+            if (anyfails)
+            {
+                sb.Append("<tr class='fails'>");
+            }
+
             foreach (string value in values)
             {
-                int start = value.IndexOf('(');
-                int end = value.IndexOf(')');
+                int start = value.IndexOf('|');
+                int end = value.LastIndexOf('|');
                 if (start != -1 && end != -1 && start < end)
                 {
-                    string title = value.Substring(start + 1, end - start - 1).Replace(",", "\n");
-                    string cleanvalue = value.Substring(0, start - 1);
+                    string title = value.Substring(start + 1, end - start - 1).Replace("|", "\n");
+                    string cleanvalue = value.Substring(0, start);
                     sb.Append($"<td title='{title}'>{cleanvalue}</td>");
                 }
                 else
@@ -592,6 +644,10 @@ td {
                     {
                         sb.Append($"<td class='pass'>{value}</td>");
                     }
+                    else if (value == "-")
+                    {
+                        sb.Append($"<td class='missing'>{value}</td>");
+                    }
                     else
                     {
                         sb.Append($"<td>{value}</td>");
@@ -603,9 +659,6 @@ td {
         }
 
         sb.AppendLine("</table>");
-        sb.AppendLine("<p>x Test failed.</p>");
-        sb.AppendLine("<p>. Test passed.</p>");
-        sb.AppendLine("<p>Tip: There's a tooltip on column headers!</p>");
         sb.AppendLine("</body>");
         sb.AppendLine("</html>");
 
