@@ -480,6 +480,8 @@ TestDebug");
 
         StringBuilder sb = new StringBuilder();
 
+        DateTime now = DateTime.Now;
+
         sb.Append("Test/Agent");
         foreach (string agentname in agents.OrderBy(a => a))
         {
@@ -498,6 +500,18 @@ TestDebug");
             }
 
             sb.Append($"\t{agentname2}");
+        }
+
+        sb.AppendLine();
+
+        sb.Append("Hours since last run");
+        foreach (string agentname in agents.OrderBy(a => a))
+        {
+            string datestring = agentTests.Where(t => t.Value.First().agentname == agentname).Select(t => t.Value.First().buildstart).First();
+            DateTime datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
+            string hourssince = (now - datetime).TotalHours.ToString("0", CultureInfo.InvariantCulture);
+
+            sb.Append($"\t{hourssince}");
         }
 
         sb.AppendLine();
