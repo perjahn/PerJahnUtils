@@ -121,7 +121,7 @@ function DownloadIsoFile([string] $internalurl)
             Log ("Downloading: '" + $sourceurl + "' -> '" + $isofile + "'")
             $webclient = New-Object Net.WebClient
 
-            [DateTime] $t1 = Get-Date
+            [Diagnostics.Stopwatch] $watch = [Diagnostics.Stopwatch]::StartNew()
 
             try
             {
@@ -132,8 +132,8 @@ function DownloadIsoFile([string] $internalurl)
                 Log ("Couldn't download: '" + $sourceurl + "': " + $_.Exception.Message)
             }
 
-            [DateTime] $t2 = Get-Date
-            Log ("Download time: " + ($t2-$t1) + ", speed: " + (($t2-$t1).TotalSeconds/$filesize/1024) + " kb/s.")
+            $watch.Stop()
+            Log ("Download time: " + $watch.Elapsed + ", speed: " + ($watch.Elapsed.TotalSeconds/$filesize/1024) + " kb/s.")
         }
         else
         {
