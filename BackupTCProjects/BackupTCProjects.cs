@@ -81,7 +81,7 @@ gitemail       - noreply@example.com");
         if (Directory.Exists(targetfolder))
         {
             Log($"Deleting target folder: '{targetfolder}'");
-            Directory.Delete(targetfolder, true);
+            RobustDelete(targetfolder);
         }
 
         Log($"Creating target folder: '{targetfolder}'");
@@ -299,7 +299,7 @@ gitemail       - noreply@example.com");
                 {
                     File.SetAttributes(filename, File.GetAttributes(filename) & ~FileAttributes.ReadOnly);
                 }
-                catch (System.Exception ex) when (ex is UnauthorizedAccessException || ex is IOException)
+                catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException)
                 {
                     // Will be dealt with deleting whole folder.
                 }
@@ -313,7 +313,7 @@ gitemail       - noreply@example.com");
                     Directory.Delete(folder, true);
                     return;
                 }
-                catch (System.Exception ex) when (tries < 10 && (ex is UnauthorizedAccessException || ex is IOException))
+                catch (Exception ex) when (tries < 10 && (ex is UnauthorizedAccessException || ex is IOException))
                 {
                     Thread.Sleep(1000);
                 }
@@ -433,7 +433,7 @@ gitemail       - noreply@example.com");
     static void Log(string message)
     {
         string hostname = Dns.GetHostName();
-        Console.WriteLine($"{hostname}: {message}");
+        Console.WriteLine($"{hostname}: {DateTime.Now}: {message}");
     }
 
     private static T LogTCSection<T>(string message, Func<T> func)
@@ -480,7 +480,7 @@ gitemail       - noreply@example.com");
             Console.ForegroundColor = oldColor;
         }
 
-        Console.WriteLine($"{hostname}: " + string.Join(Environment.NewLine + $"{hostname}: ", collection));
+        Console.WriteLine($"{hostname}: {DateTime.Now}: " + string.Join(Environment.NewLine + $"{hostname}: {DateTime.Now}: ", collection));
 
         try
         {
