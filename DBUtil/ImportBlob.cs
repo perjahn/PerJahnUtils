@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 
 namespace DBUtil
 {
@@ -24,7 +25,7 @@ namespace DBUtil
 
 				if (dt.Rows.Count != 1)
 				{
-					System.Windows.Forms.MessageBox.Show("Error: Found " + dt.Rows.Count + " rows.");
+					MessageBox.Show("Error: Found " + dt.Rows.Count + " rows.");
 					return;
 				}
 

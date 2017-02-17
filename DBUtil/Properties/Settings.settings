@@ -33,5 +33,11 @@ swattachmentchunks</Value>
 .\SQLEXPRESS
 .\SQLSERVER</Value>
     </Setting>
+    <Setting Name="ImportPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ImportTableName" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>
