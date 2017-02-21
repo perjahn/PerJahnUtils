@@ -26,7 +26,7 @@ function Main()
 
     CheckZip
 
-    [string] $extractfolder = "D:\VS2015"
+    [string] $extractfolder = "C:\VS2015"
 
     PrepareFolder $extractfolder
 
@@ -133,7 +133,7 @@ function DownloadIsoFile([string] $internalurl)
             }
 
             $watch.Stop()
-            Log ("Download time: " + $watch.Elapsed + ", speed: " + ($watch.Elapsed.TotalSeconds/$filesize/1024) + " kb/s.")
+            Log ("Download time: " + $watch.Elapsed + ", speed: " + [int]($watch.Elapsed.TotalSeconds/$filesize/1024) + " kb/s.")
         }
         else
         {
@@ -166,7 +166,7 @@ function InstallIsoFile([string] $isofile, [string] $extractfolder, [string] $se
     }
 
 
-    [string] $installexe = "D:\VS2015\vs_enterprise.exe"
+    [string] $installexe = "C:\VS2015\vs_enterprise.exe"
     if (!(Test-Path $installexe))
     {
         Log ("Couldn't find installation program: '" + $installexe + "'") Red

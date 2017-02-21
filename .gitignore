@@ -1,5 +1,6 @@
 *.aps
 *.cache
+*.VC.db
 *.exe
 *.opensdf
 *.pdb
