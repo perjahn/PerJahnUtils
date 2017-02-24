@@ -390,8 +390,8 @@ TestDebug");
         {
             if (username != null && password != null)
             {
-                string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(username + ":" + password));
-                client.Headers[HttpRequestHeader.Authorization] = "Basic " + credentials;
+                string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+                client.Headers[HttpRequestHeader.Authorization] = $"Basic {credentials}";
             }
 
             string address = $"{server}/app/rest/builds?locator=buildType:{buildconfig}";
@@ -465,7 +465,7 @@ TestDebug");
         }
         catch (WebException ex)
         {
-            throw new ApplicationException(ex.Message);
+            throw new ApplicationException(ex.Message, ex);
         }
     }
 
