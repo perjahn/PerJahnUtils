@@ -38,11 +38,16 @@ function Main()
 function IsVSInstalled()
 {
     [string] $devenvexe = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\devenv.exe"
+    [string] $md5hash = "A0AED97A5C41373C4F77E17305D135A2"
+    [long] $filelength = 683824
+
     if (!(Test-Path $devenvexe))
     {
         return $false
     }
-    if ((Get-FileHash $devenvexe -Algorithm MD5).Hash -eq "A0AED97A5C41373C4F77E17305D135A2")
+
+    if (((Get-Command | ? { $_.Name -eq "Get-FileHash" }) -and ((Get-FileHash $devenvexe -Algorithm MD5).Hash -eq $md5hash)) -or
+        ((dir $devenvexe).Length -eq $filelength))
     {
         Log ("VS2015 update 3 already installed.") Green
         return $true
@@ -114,7 +119,7 @@ function DownloadIsoFile([string] $internalurl)
     do
     {
         [string] $sourceurl = $sourceurls[$index]
-        [string] $isofile = Join-Path $tempfolder (Split-Path -Leaf $sourceurl)
+        [string] $isofile = Join-Path $tempfolder "vs2015.3.ent_enu.iso"
 
         if (!(Test-Path $isofile) -or (dir $isofile).Length -ne $filesize)
         {
