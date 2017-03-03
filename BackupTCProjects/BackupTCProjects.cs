@@ -19,7 +19,7 @@ public class Program
             if (args.Length != 2)
             {
                 Console.WriteLine(
-@"BackupTCProjects 1.0
+@"BackupTCProjects 1.1
 
 This is a backup program that retrieves all important configuration files on
 a Teamcity build server. These files can be backuped and later imported on
@@ -33,13 +33,17 @@ Usage: BackupTCProjects <source> <target>
 
 Example: D:\TeamCity\.BuildServer\config\projects _Artifacts\projects
 
+Optional environment variables (default):
+includebuildnumberfiles  - true/(false)
+
 Optional environment variables, used for pushing code (with examples):
-gitserver      - gitserver.organization.com
-gitrepopath    - /organization/tcconfig.git
-gitrepofolder  - tcconfig\projects
-gitusername    - luser
-gitpassword    - abc123
-gitemail       - noreply@example.com");
+gitserver                - gitserver.organization.com
+gitrepopath              - /organization/tcconfig.git
+gitrepofolder            - tcconfig\projects
+gitusername              - luser
+gitpassword              - abc123
+gitemail                 - noreply@example.com
+gitsimulatepush          - true/(false)");
 
                 return 1;
             }
@@ -94,14 +98,16 @@ gitemail       - noreply@example.com");
             shortSourcefolder = sourcefolder.Substring(curdir.Length);
         }
 
+
+        bool includebuildnumberfiles = ParseBooleanEnvironmentVariable("includebuildnumberfiles", false);
+
         string shortTargetfolder = targetfolder;
         if (targetfolder.StartsWith(curdir))
         {
             shortTargetfolder = targetfolder.Substring(curdir.Length);
         }
 
-        CopyFiles(shortSourcefolder, shortTargetfolder);
-
+        CopyFiles(shortSourcefolder, shortTargetfolder, includebuildnumberfiles);
 
         string gitserver = Environment.GetEnvironmentVariable("gitserver");
         string gitrepopath = Environment.GetEnvironmentVariable("gitrepopath");
@@ -109,6 +115,9 @@ gitemail       - noreply@example.com");
         string gitusername = Environment.GetEnvironmentVariable("gitusername");
         string gitpassword = Environment.GetEnvironmentVariable("gitpassword");
         string gitemail = Environment.GetEnvironmentVariable("gitemail");
+        string gitsimulatepushString = Environment.GetEnvironmentVariable("gitsimulatepush");
+
+        bool gitsimulatepush = ParseBooleanEnvironmentVariable(gitsimulatepushString, false);
 
         if (string.IsNullOrEmpty(gitserver) || string.IsNullOrEmpty(gitrepopath) || string.IsNullOrEmpty(gitrepofolder) ||
             string.IsNullOrEmpty(gitusername) || string.IsNullOrEmpty(gitpassword) || string.IsNullOrEmpty(gitemail))
@@ -131,17 +140,35 @@ gitemail       - noreply@example.com");
         }
         else
         {
-            PushToGit(shortTargetfolder, gitserver, gitrepopath, gitrepofolder, gitusername, gitpassword, gitemail);
+            PushToGit(shortTargetfolder, gitserver, gitrepopath, gitrepofolder, gitusername, gitpassword, gitemail, gitsimulatepush);
         }
     }
 
-    static void CopyFiles(string sourcefolder, string targetfolder)
+    static bool ParseBooleanEnvironmentVariable(string variableName, bool defaultValue)
+    {
+        string stringValue = Environment.GetEnvironmentVariable(variableName);
+        if (stringValue == null)
+        {
+            return defaultValue;
+        }
+        else
+        {
+            bool boolValue;
+            if (!bool.TryParse(stringValue, out boolValue))
+            {
+                return defaultValue;
+            }
+            return boolValue;
+        }
+    }
+
+    static void CopyFiles(string sourcefolder, string targetfolder, bool includebuildnumberfiles)
     {
         string[] files = Directory.GetFiles(sourcefolder, "*", SearchOption.AllDirectories)
             .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
             .ToArray();
 
-        Log("Found " + files.Length + " files.");
+        Log($"Found {files.Length} files.");
 
 
         string[] ignorefiles = files
@@ -150,16 +177,23 @@ gitemail       - noreply@example.com");
         files = files
             .Where(f => !ignorefiles.Contains(f))
             .ToArray();
-        LogTCSection("Ignoring " + ignorefiles.Length + " backup files.", ignorefiles);
+        LogTCSection($"Ignoring {ignorefiles.Length} backup files.", ignorefiles);
 
 
         ignorefiles = files
             .Where(f => f.EndsWith(".buildNumbers.properties"))
             .ToArray();
-        files = files
-            .Where(f => !ignorefiles.Contains(f))
-            .ToArray();
-        LogTCSection("Ignoring " + ignorefiles.Length + " build number files.", ignorefiles);
+        if (!includebuildnumberfiles)
+        {
+            Log($"Including {ignorefiles.Length} build number files.");
+        }
+        else
+        {
+            files = files
+                .Where(f => !ignorefiles.Contains(f))
+                .ToArray();
+            LogTCSection($"Ignoring {ignorefiles.Length} build number files.", ignorefiles);
+        }
 
 
         ignorefiles = files
@@ -168,10 +202,10 @@ gitemail       - noreply@example.com");
         files = files
             .Where(f => !ignorefiles.Contains(f))
             .ToArray();
-        LogTCSection("Ignoring " + ignorefiles.Length + " default plugin settings files.", ignorefiles);
+        LogTCSection($"Ignoring {ignorefiles.Length} default plugin settings files.", ignorefiles);
 
 
-        Log("Backuping " + files.Length + $" files to: '{targetfolder}'");
+        Log($"Backuping {files.Length} files to: '{targetfolder}'");
 
         int count = 0;
 
@@ -183,7 +217,7 @@ gitemail       - noreply@example.com");
             count++;
         }
 
-        Log("Copied " + files.Length + " files.");
+        Log($"Copied {files.Length} files.");
     }
 
     static void CopyFile(string sourcefile, string targetfile)
@@ -203,7 +237,7 @@ gitemail       - noreply@example.com");
         File.WriteAllLines(targetfile, rows);
     }
 
-    static void PushToGit(string sourcefolder, string server, string repopath, string repofolder, string username, string password, string email)
+    static void PushToGit(string sourcefolder, string server, string repopath, string repofolder, string username, string password, string email, bool gitsimulatepush)
     {
         string gitexe = @"C:\Program Files\git\bin\git.exe";
         if (!File.Exists(gitexe))
@@ -278,13 +312,13 @@ gitemail       - noreply@example.com");
         RunCommand(gitexe, "config push.default simple");
 
         Log("Pushing...");
-        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("gitsimulatepush")))
+        if (gitsimulatepush)
         {
-            RunCommand(gitexe, "--no-pager push");
+            Log("...not!");
         }
         else
         {
-            Log("...not!");
+            RunCommand(gitexe, "--no-pager push");
         }
     }
 
