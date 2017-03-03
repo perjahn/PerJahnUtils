@@ -58,7 +58,7 @@ namespace DBUtil
 				c_d++;
 			}
 
-			_result = "Databases:" + c_d + " Tables:" + c_t + " Columns:" + c_c;
+			_result = $"Databases:{c_d} Tables:{c_t} Columns:{c_c}";
 
 			return;
 		}
@@ -109,7 +109,7 @@ namespace DBUtil
 			string tablename = db.GetTableName(dbprovider, database, table);
 
 			// Check number of rows
-			string sqlCount = _sql = "select count(*) from " + tablename;
+			string sqlCount = _sql = $"select count(*) from {tablename}";
 
 			int rowcount;
 
@@ -184,7 +184,7 @@ namespace DBUtil
 
 					if (maxrows != -1 && rowcount > maxrows)
 					{
-						sw.WriteLine(rowcount + " rows.");
+						sw.WriteLine($"{rowcount} rows.");
 					}
 					else
 					{
@@ -232,7 +232,7 @@ namespace DBUtil
 									{
 										if (!reader.IsDBNull(i))
 										{
-											string filename_data = Path.Combine(outdir, table + "_" + reader.GetName(i) + "_" + rownum + "." + extension);
+											string filename_data = Path.Combine(outdir, $"{table}_{reader.GetName(i)}_{rownum}.{extension}");
 
 											int length = (int)reader.GetBytes(i, 0, null, 0, 0);
 											byte[] buffer = new byte[length];
@@ -260,24 +260,24 @@ namespace DBUtil
 
 			if (maxrows != -1 && rowcount > maxrows)
 			{
-				_sql = sql = "select * from " + tablename + " where 0=1";
+				_sql = sql = $"select * from {tablename} where 0=1";
 			}
 			else
 			{
 				if (sortRows)
 				{
-					_sql = sql = "select * from " + tablename + " where 0=1";
+					_sql = sql = $"select * from {tablename} where 0=1";
 					DataTable dt = mydb.ExecuteDataTableSQL(sql);
 					string pkcols = string.Join(", ", dt.PrimaryKey.Select(c => db.GetColumnName(dbprovider, c.ColumnName)));
 
 					if (pkcols == string.Empty)
-						_sql = sql = "select * from " + _tablename;
+						_sql = sql = $"select * from {tablename}";
 					else
-						_sql = sql = "select * from " + _tablename + " order by " + pkcols;
+						_sql = sql = $"select * from {tablename} order by " + pkcols;
 				}
 				else
 				{
-					_sql = sql = "select * from " + _tablename;
+					_sql = sql = $"select * from {tablename}";
 				}
 			}
 
@@ -299,7 +299,7 @@ namespace DBUtil
 
 		private string FixBinaryValue(byte[] value)
 		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			StringBuilder sb = new StringBuilder();
 			sb.Append("0x");
 			foreach (byte b in value)
 			{
