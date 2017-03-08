@@ -35,7 +35,7 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder)
     Write-Host ("Creating artifact folder: '" + $artifactfolder + "'")
     md $artifactfolder | Out-Null
 
-    $exefiles = dir -r -i *.exe -Exclude *.vshost.exe | ? { !$_.FullName.Contains("\obj\") }
+    $exefiles = dir -r -i *.exe -Exclude *.vshost.exe,nuget.exe | ? { !$_.FullName.Contains("\obj\") }
     $exefiles | % {
         [string] $source = $_.FullName
         Write-Host ("Copying file: '" + $source + "' -> '" + $artifactfolder + "'")
