@@ -96,7 +96,7 @@ Optional flags:
 
         static bool CheckArg(string arg)
         {
-            if (arg != "-DontSortAttributes" && arg != "-DontSortElements" && arg != "-DontWinDiff" && arg != "-DontDiffIfEqual")
+            if (arg != "-DontSortChildren" && arg != "-DontWinDiff" && arg != "-DontDiffIfEqual")
             {
                 Console.WriteLine("Unrecognized argument: '" + arg + "'");
                 return false;
@@ -198,14 +198,14 @@ Optional flags:
 
         static JToken GetSortedObject(JToken jtoken)
         {
-            if (jtoken is JObject)
+            if (jtoken.Type == JTokenType.Object)
             {
                 Console.WriteLine($"Adding object: >>{jtoken.Path}<<");
 
                 JObject old = jtoken as JObject;
                 JObject jobject = new JObject();
 
-                foreach (JToken child in old.Children().OrderBy(c => c.Path))
+                foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
                 {
                     Console.WriteLine($"Adding object child: >>{child.Path}<<");
                     jobject.AddFirst(GetSortedObject(child));
@@ -213,28 +213,25 @@ Optional flags:
 
                 return jobject;
             }
-            else if (jtoken is JProperty)
+            else if (jtoken.Type == JTokenType.Property)
             {
                 Console.WriteLine($"Adding property: >>{jtoken.Path}<<");
 
                 JProperty old = jtoken as JProperty;
                 JProperty jproperty = new JProperty(old.Name, old.Value);
 
-                foreach (JToken child in old.Children().OrderBy(c => c.Path))
+                foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
                 {
                     Console.WriteLine($"Adding property child: >>{child.Path}<<");
-                    //jproperty.AddFirst(GetSortedObject(child));
+                    JToken newchild = GetSortedObject(child);
+                    jproperty.Value = newchild;
                 }
 
                 return jproperty;
             }
-            else if (jtoken.Type is JTokenType.String)
-            {
-                return jtoken;
-            }
             else
             {
-                throw new Exception($"Unknown type: '{jtoken.Type}'");
+                return jtoken;
             }
         }
     }

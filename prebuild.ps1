@@ -56,7 +56,7 @@ function Download-Nuget()
 
     $packagefiles = @(dir -Recurse packages.config)
 
-    Write-Host ("Found " + $packagefiles.Count + " packages files.")
+    Write-Host ("Found " + $packagefiles.Count + " package files.")
 
     $packagefiles | % {
         [string] $packagefile = $_.FullName
