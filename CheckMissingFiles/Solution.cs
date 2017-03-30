@@ -39,7 +39,7 @@ namespace CheckMissingFiles
 
             foreach (string row in rows)
             {
-                // cs, vb, cpp, cds, fs, wix, cs core
+                // cs, vb, cpp, cds, fs, wix, old cs core (xproj), new cs core (csproj)
                 string[] projtypeguids = {
                     "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}",
                     "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}",
@@ -47,6 +47,7 @@ namespace CheckMissingFiles
                     "{20D4826A-C6FA-45DB-90F4-C717570B9F32}",
                     "{F2A71F9B-5D33-465A-A702-920D77279786}",
                     "{930C7802-8A8C-48F9-8165-68863BCCD9DD}",
+                    "{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}",
                     "{9A19103F-16F7-4668-BE54-9A1E7A4F7556}"
                 };
                 // solution folder, website

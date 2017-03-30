@@ -24,8 +24,9 @@ namespace CheckMissingFiles
         private bool _teamcityErrorMessage { get; set; }
 
         private static string[] excludedelements = {
-            "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "Folder", "Import", "None", "PackageReference",
-            "ProjectConfiguration", "Reference", "Service", "WCFMetadata", "WCFMetadataStorage", "WebReferences", "WebReferenceUrl" };
+            "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "DnxInvisibleContent",
+            "DotNetCliToolReference", "Folder", "Import", "None", "PackageReference", "ProjectConfiguration", "Reference",
+            "Service", "WCFMetadata", "WCFMetadataStorage", "WebReferences", "WebReferenceUrl" };
 
         public Project(string projectfile, string[] solutionfiles, bool teamcityErrorMessage)
         {
