@@ -19,7 +19,7 @@ namespace CheckMissingFiles
             {
                 rows = File.ReadAllLines(solutionFile);
             }
-            catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
             {
                 string message =
                     teamcityErrorMessage ?
@@ -29,7 +29,7 @@ namespace CheckMissingFiles
                             ex.Message.Replace("\'", "")) :
                         string.Format(
                             "Couldn't load solution: '{0}' --> '{1}'",
-                            "'" + solutionFile + "'",
+                            $"'{solutionFile}'",
                             ex.Message);
 
                 throw new ApplicationException(message);
@@ -39,14 +39,15 @@ namespace CheckMissingFiles
 
             foreach (string row in rows)
             {
-                // cs, vb, cpp, cds, fs, wix
+                // cs, vb, cpp, cds, fs, wix, cs core
                 string[] projtypeguids = {
                     "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}",
                     "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}",
                     "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}",
                     "{20D4826A-C6FA-45DB-90F4-C717570B9F32}",
                     "{F2A71F9B-5D33-465A-A702-920D77279786}",
-                    "{930C7802-8A8C-48F9-8165-68863BCCD9DD}"
+                    "{930C7802-8A8C-48F9-8165-68863BCCD9DD}",
+                    "{9A19103F-16F7-4668-BE54-9A1E7A4F7556}"
                 };
                 // solution folder, website
                 string[] ignoreguids = {
@@ -56,15 +57,15 @@ namespace CheckMissingFiles
 
                 if (row.StartsWith("Project(\""))
                 {
-                    if (ignoreguids.Any(g => row.StartsWith("Project(\"" + g + "\") =")))
+                    if (ignoreguids.Any(g => row.StartsWith($"Project(\"{g}\") =")))
                     {
                     }
-                    else if (projtypeguids.Any(g => row.StartsWith("Project(\"" + g + "\") =")))
+                    else if (projtypeguids.Any(g => row.StartsWith($"Project(\"{g}\") =")))
                     {
                         string[] values = row.Substring(row.IndexOf('=') + 1).Split(',');
                         if (values.Length != 3)
                         {
-                            ConsoleHelper.WriteLineColor(solutionFile + ": Corrupt solution file: '" + row + "'", ConsoleColor.Yellow);
+                            ConsoleHelper.WriteLineColor($"{solutionFile}: Corrupt solution file: '{row}'", ConsoleColor.Yellow);
                             continue;
                         }
 
@@ -74,7 +75,7 @@ namespace CheckMissingFiles
                     }
                     else
                     {
-                        ConsoleHelper.WriteLineColor(solutionFile + ": Ignoring unknown project type: '" + row + "'", ConsoleColor.Yellow);
+                        ConsoleHelper.WriteLineColor($"{solutionFile}: Ignoring unknown project type: '{row}'", ConsoleColor.Yellow);
                         continue;
                     }
                 }

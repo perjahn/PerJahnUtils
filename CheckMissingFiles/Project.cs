@@ -23,8 +23,8 @@ namespace CheckMissingFiles
 
         private bool _teamcityErrorMessage { get; set; }
 
-        private static string[] excludedtags = {
-            "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "Folder", "Import", "None",
+        private static string[] excludedelements = {
+            "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "Folder", "Import", "None", "PackageReference",
             "ProjectConfiguration", "Reference", "Service", "WCFMetadata", "WCFMetadataStorage", "WebReferences", "WebReferenceUrl" };
 
         public Project(string projectfile, string[] solutionfiles, bool teamcityErrorMessage)
@@ -41,14 +41,14 @@ namespace CheckMissingFiles
             {
                 xdoc = XDocument.Load(projectFile);
             }
-            catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
                 string message =
                     teamcityErrorMessage ?
                         string.Format(
                             "##teamcity[message text='Could not load project: {0} --> {1}' status='ERROR']",
                             string.Join(", ", solutionfiles),
-                            ex.Message.Replace("\'", "")):
+                            ex.Message.Replace("\'", "")) :
                         string.Format(
                             "Couldn't load project: '{0}' --> '{1}'",
                             "'" + string.Join("', '", solutionfiles) + "'",
@@ -72,12 +72,12 @@ namespace CheckMissingFiles
             }
             catch (Exception ex)
             {
-                throw new ApplicationException("Couldn't parse project: '" + projectFile + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't parse project: '{projectFile}': {ex.Message}");
             }
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
             _allfiles
-                .ForEach(el => el.Attribute("Include").Value = System.Uri.UnescapeDataString(el.Attribute("Include").Value));
+                .ForEach(el => el.Attribute("Include").Value = Uri.UnescapeDataString(el.Attribute("Include").Value));
 
 
             return;
@@ -107,7 +107,7 @@ namespace CheckMissingFiles
 
             if (_allfiles.Count() == 0)
             {
-                ConsoleHelper.WriteLine("No files found in project: '" + string.Join("', '", solutionFiles) + "': '" + projectFile + "'");
+                ConsoleHelper.WriteLine("No files found in project: '" + string.Join("', '", solutionFiles) + $"': '{projectFile}'");
             }
 
             if (reverseCheck)
@@ -127,7 +127,7 @@ namespace CheckMissingFiles
                             Path.GetDirectoryName(projectFile),
                             el.Attribute("Include").Value);
                     }
-                    catch (System.ArgumentException)
+                    catch (ArgumentException)
                     {
                         return null;
                     }
@@ -148,7 +148,7 @@ namespace CheckMissingFiles
             else
             {
                 List<string> _allfilesError = _allfiles
-                    .Where(el => !excludedtags.Contains(el.Name.LocalName))
+                    .Where(el => !excludedelements.Contains(el.Name.LocalName))
                     .Select(el => el.Attribute("Include").Value)
                     .ToList();
                 List<string> _allfilesWarning = _allfiles
@@ -167,10 +167,10 @@ namespace CheckMissingFiles
                             Path.GetDirectoryName(projectFile),
                             include);
                     }
-                    catch (System.ArgumentException ex)
+                    catch (ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
-                            "Couldn't construct file name: '" + string.Join("', '", solutionFiles) + "': '" + projectFile + "' + '" + include + "': " + ex.Message,
+                            "Couldn't construct file name: '" + string.Join("', '", solutionFiles) + $"': '{projectFile}' + '{include}': {ex.Message}",
                             ConsoleColor.Red
                             );
                         parseError = true;
@@ -195,7 +195,7 @@ namespace CheckMissingFiles
                             Path.GetDirectoryName(projectFile),
                             include);
                     }
-                    catch (System.ArgumentException ex)
+                    catch (ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
                             "Couldn't construct file name: '" + string.Join("', '", solutionFiles) + "': '" + projectFile + "' + '" + include + "': " + ex.Message,

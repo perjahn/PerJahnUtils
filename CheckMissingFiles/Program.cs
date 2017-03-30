@@ -19,7 +19,7 @@ namespace CheckMissingFiles
                 Environment.UserInteractive &&
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
-                Console.WriteLine(Environment.NewLine + "Press any key to continue...");
+                Console.WriteLine($"{Environment.NewLine}Press any key to continue...");
                 Console.ReadKey();
             }
 
@@ -28,7 +28,7 @@ namespace CheckMissingFiles
 
         static int CheckFiles(string[] args)
         {
-            string usage = @"CheckMissingFiles 3.3
+            string usage = @"CheckMissingFiles 3.4
 
 Usage: CheckMissingFiles [-b] [-esolution file 1,solution file 2] [-r] [-t] <solution path/pattern>
 
@@ -78,7 +78,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 return 1;
             }
 
-            ConsoleHelper.WriteLine("Found " + solutionFiles.Count() + " solutions.");
+            ConsoleHelper.WriteLine($"Found {solutionFiles.Count()} solutions.");
 
             List<string> excessiveExcludes = new List<string>();
             foreach (string excludeFile in excludeSolutions)
@@ -87,7 +87,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
 
                 if (removeFiles.Count() >= 1)
                 {
-                    ConsoleHelper.WriteLine("Excluding " + removeFiles.Count() + " solutions: '" + excludeFile + "'");
+                    ConsoleHelper.WriteLine($"Excluding {removeFiles.Count()} solutions: '{excludeFile}'");
                     solutionFiles.RemoveAll(f => Path.GetFileName(f) == excludeFile);
                 }
                 else
@@ -102,12 +102,12 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                     "Missing files cannot be excluded. Please keep the exclude filter tidy by removing the missing files from the exclude filter. ASAP.",
                     ConsoleColor.Red);
                 ConsoleHelper.WriteLineColor(
-                    "The following " + excessiveExcludes.Count() + " files couldn't be excluded: '" + string.Join("', '", excessiveExcludes) + "'",
+                    $"The following {excessiveExcludes.Count()} files couldn't be excluded: '" + string.Join("', '", excessiveExcludes) + "'",
                     ConsoleColor.Red);
                 result = 1;
             }
 
-            ConsoleHelper.WriteLine("Loading " + solutionFiles.Count() + " solutions...");
+            ConsoleHelper.WriteLine($"Loading {solutionFiles.Count()} solutions...");
 
             List<Solution> solutions = new List<Solution>();
             foreach (string solutionFile in solutionFiles)
@@ -160,7 +160,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
             }
             SearchOption searchOption = parseSubdirs ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
-            ConsoleHelper.WriteLine("Searching: '" + searchPath + "' for '" + searchPattern + "'...");
+            ConsoleHelper.WriteLine($"Searching: '{searchPath}' for '{searchPattern}'...");
 
             string[] files;
             try
@@ -200,7 +200,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 .ToArray();
 
 
-            ConsoleHelper.WriteLine("Loading " + projectsToLoad.Length + " projects...");
+            ConsoleHelper.WriteLine($"Loading {projectsToLoad.Length} projects...");
 
             loadError = false;
 
@@ -272,17 +272,17 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
             int missingfilesWarning = projects.Select(p => p.missingfilesWarning).Sum();
             int excessfiles = projects.Select(p => p.excessfiles).Sum();
 
-            string msg = "Parsed " + projects.Count + " projects, found ";
+            string msg = $"Parsed {projects.Count} projects, found";
 
             if (reverseCheck)
             {
                 if (excessfiles == 0)
                 {
-                    ConsoleHelper.WriteLine(msg + "no excess files.");
+                    ConsoleHelper.WriteLine($"{msg} no excess files.");
                 }
                 else
                 {
-                    ConsoleHelper.WriteLine(msg + excessfiles + " files in file system that wasn't included in project files.");
+                    ConsoleHelper.WriteLine($"{msg} {excessfiles} files in file system that wasn't included in project files.");
                 }
             }
             else
@@ -291,22 +291,22 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 {
                     if (missingfilesWarning == 0)
                     {
-                        ConsoleHelper.WriteLine(msg + "no missing files.");
+                        ConsoleHelper.WriteLine($"{msg} no missing files.");
                     }
                     else
                     {
-                        ConsoleHelper.WriteLine(msg + "no missing files (although " + missingfilesWarning + " missing files with None build action).");
+                        ConsoleHelper.WriteLine($"{msg} no missing files (although {missingfilesWarning} missing files with None build action).");
                     }
                 }
                 else
                 {
                     if (missingfilesWarning == 0)
                     {
-                        ConsoleHelper.WriteLine(msg + missingfilesError + " missing files.");
+                        ConsoleHelper.WriteLine($"{msg} {missingfilesError} missing files.");
                     }
                     else
                     {
-                        ConsoleHelper.WriteLine(msg + missingfilesError + " missing files (and " + missingfilesWarning + " missing files with None build action).");
+                        ConsoleHelper.WriteLine($"{msg} {missingfilesError} missing files (and {missingfilesWarning} missing files with None build action).");
                     }
                 }
             }
