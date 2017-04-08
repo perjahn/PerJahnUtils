@@ -56,9 +56,9 @@ namespace CreatePublish
             {
                 string relpath = FileHelper.GetRelativePath(paths[i], paths[i + 1]);
                 if (relpath == paths[i + 2])
-                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + relpath + "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Green, $"'{paths[i]}' -> '{paths[i + 1]}' = '{relpath}'");
                 else
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + relpath + "' (" + paths[i + 2] + ")");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{paths[i]}' -> '{paths[i + 1]}' = '{relpath}' ({paths[i + 2]})");
             }
 
 
@@ -67,14 +67,14 @@ namespace CreatePublish
             try
             {
                 string relpath = FileHelper.GetRelativePath(path1, path2);
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + path1 + "' -> '" + path2 + "' = 'ArgumentException' (" + relpath + ")");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{path1}' -> '{path2}' = 'ArgumentException' ({relpath})");
             }
             catch (System.Exception ex)
             {
                 if (ex.GetType() == typeof(ArgumentException))
-                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + path1 + "' -> '" + path2 + "' = '" + ex.Message + "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Green, $"'{path1}' -> '{path2}' = '{ex.Message}'");
                 else
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + path1 + "' -> '" + path2 + "' = 'ArgumentException' (" + ex.ToString() + ")");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{path1}' -> '{path2}' = 'ArgumentException' ({ex.ToString()})");
             }
         }
 
@@ -180,9 +180,9 @@ namespace CreatePublish
             {
                 string s = FileHelper.CompactPath(paths[i]);
                 if (s == paths[i + 1])
-                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + paths[i] + "' -> '" + s + "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Green, $"'{paths[i]}' -> '{s}'");
                 else
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + paths[i] + "' -> '" + s + "' (" + paths[i + 1] + ")");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{paths[i]}' -> '{s}' ({paths[i + 1]})");
             }
         }
 

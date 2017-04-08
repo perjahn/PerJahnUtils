@@ -21,19 +21,9 @@ namespace CreatePublish
             {
                 rows = File.ReadAllLines(_solutionfile);
             }
-            catch (IOException ex)
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
-                return null;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
-                return null;
-            }
-            catch (ArgumentException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
                 return null;
             }
 
@@ -48,7 +38,7 @@ namespace CreatePublish
 
                 foreach (string projtypeguid in projtypeguids)
                 {
-                    string projtypeline = "Project(\"" + projtypeguid + "\") =";
+                    string projtypeline = $"Project(\"{projtypeguid}\") =";
 
                     if (row.StartsWith(projtypeline))
                     {
@@ -82,7 +72,7 @@ namespace CreatePublish
                     continue;
                 }
 
-                ConsoleHelper.WriteLine("sln_shortfilename: '" + p._sln_shortfilename + "', sln_path: '" + p._sln_path + "'.", true);
+                ConsoleHelper.WriteLine($"sln_shortfilename: '{p._sln_shortfilename}', sln_path: '{p._sln_path}'.", true);
 
                 p._ProjectTypeGuids = p2._ProjectTypeGuids;
             }

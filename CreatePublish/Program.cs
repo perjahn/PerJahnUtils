@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Mail;
 using System.Text;
 using System.Xml.Linq;
 
@@ -13,7 +12,7 @@ namespace CreatePublish
         static void Main(string[] args)
         {
             string usage =
-@"CreatePublish 1.7 - Program for creating msbuild publishing script of Web/MVC projects.
+@"CreatePublish 1.8 - Program for creating msbuild publishing script of Web/MVC projects.
 
 Usage: CreatePublish [-e] <solutionfile> <msbuildfile> <publishfolder>
 
@@ -42,16 +41,19 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             if (args[0] == "test" && args[1] == "test" && args[2] == "test")
             {
                 Test.Test1();
+                Console.ReadKey();
                 return;
             }
             else if (args[0] == "test" && args[1] == "test" && args[2] == "test2")
             {
                 Test.Test2();
+                Console.ReadKey();
                 return;
             }
             else if (args[0] == "test" && args[1] == "test" && args[2] == "test3")
             {
                 FileHelper.TestGetRelativePath();
+                Console.ReadKey();
                 return;
             }
 
@@ -117,9 +119,9 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 
             if (Environment.GetEnvironmentVariable("VerbosePublish") == "true")
             {
-                Console.WriteLine("solutionfile:  '" + solutionfile + "'");
-                Console.WriteLine("buildfile:     '" + buildfile + "'");
-                Console.WriteLine("publishfolder: '" + publishfolder + "'");
+                Console.WriteLine($"solutionfile:  '{solutionfile}'");
+                Console.WriteLine($"buildfile:     '{buildfile}'");
+                Console.WriteLine($"publishfolder: '{publishfolder}'");
             }
 
             foreach (Project project in webmvcprojects.OrderBy(p => Path.GetFileNameWithoutExtension(p._sln_path)))
@@ -140,9 +142,9 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
                 // publishfolder = (curdir -> ) project -> publishfolder
                 string publishfolder3 = FileHelper.GetRelativePath(Path.GetDirectoryName(Path.Combine(Path.GetDirectoryName(solutionfile), slnpath)), Path.Combine(publishfolder, publishfolder2));
 
-                Console.WriteLine("'" + solutionname + "' + '" + projectname + "' -> '" + publishfolder3 + "' (" + projfilename + ")");
+                Console.WriteLine($"'{solutionname}' + '{projectname}' -> '{publishfolder3}' ({projfilename})");
 
-                sb.AppendLine("    <MSBuild Projects=\"" + projfilename + "\" Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir=" + publishfolder3 + "\" />");
+                sb.AppendLine($"    <MSBuild Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir={publishfolder3}\" Projects=\"{projfilename}\" />");
             }
 
             sb.AppendLine("  </Target>");

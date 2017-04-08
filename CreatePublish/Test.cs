@@ -29,7 +29,7 @@ namespace CreatePublish
                 char[] keep = testvalue.Item3;
 
                 string result = string.Join(string.Empty, projectname.ToCharArray().Where(c => !char.IsWhiteSpace(c)));
-                Console.WriteLine("'" + projectname + "' '" + sol + "' '" + string.Join("", keep) + "' -> '" + result + "'");
+                Console.WriteLine($"'{projectname}' '{sol}' '{string.Join("", keep)}' -> '{result}'");
             }
         }
 
@@ -87,27 +87,27 @@ namespace CreatePublish
 
         private static void Setup(string solutionfile, string projectfile, string buildfile, string publishfolder)
         {
-            Console.WriteLine("solutionfile: '" + solutionfile + "'");
-            Console.WriteLine("projectfile: '" + projectfile + "'");
-            Console.WriteLine("buildfile: '" + buildfile + "'");
-            Console.WriteLine("publishfolder: '" + publishfolder + "'");
+            Console.WriteLine($"solutionfile: '{solutionfile}'");
+            Console.WriteLine($"projectfile: '{projectfile}'");
+            Console.WriteLine($"buildfile: '{buildfile}'");
+            Console.WriteLine($"publishfolder: '{publishfolder}'");
             string slnpath = FileHelper.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(solutionfile)), Path.GetFullPath(projectfile));
 
-            Console.WriteLine("slnpath: '" + slnpath + "'");
+            Console.WriteLine($"slnpath: '{slnpath}'");
 
 
             string solutioncontent = "Project(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\") = \"" + Path.GetFileNameWithoutExtension(slnpath) +
                 "\", \"" + slnpath + "\", \"{12121212-1212-1212-1212-121212121212}\"";
 
             string folder = Path.GetDirectoryName(solutionfile);
-            Console.WriteLine("Creating directory: '" + folder + "'");
+            Console.WriteLine($"Creating directory: '{folder}'");
             Directory.CreateDirectory(folder);
             File.WriteAllText(solutionfile, solutioncontent);
 
             string projectcontent = @"<Project><PropertyGroup><ProjectTypeGuids>{E3E379DF-F4C6-4180-9B81-6769533ABE47}</ProjectTypeGuids></PropertyGroup></Project>";
 
             folder = Path.GetDirectoryName(projectfile);
-            Console.WriteLine("Creating directory: '" + folder + "'");
+            Console.WriteLine($"Creating directory: '{folder}'");
             Directory.CreateDirectory(folder);
             File.WriteAllText(projectfile, projectcontent);
         }
@@ -124,20 +124,20 @@ namespace CreatePublish
 
             if (pathtoproject == buildtoproject)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Green, "Valid: Should be: '" + buildtoproject + "', was: '" + pathtoproject + "'");
+                ConsoleHelper.ColorWrite(ConsoleColor.Green, $"Valid: Should be: '{buildtoproject}', was: '{pathtoproject}'");
             }
             else
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Error: Should be: '" + buildtoproject + "', was: '" + pathtoproject + "'");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Error: Should be: '{buildtoproject}', was: '{pathtoproject}'");
             }
 
             if (pathtopublish == buildtopublish)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Green, "Valid: Should be: '" + buildtopublish + "', was: '" + pathtopublish + "'");
+                ConsoleHelper.ColorWrite(ConsoleColor.Green, $"Valid: Should be: '{buildtopublish}', was: '{pathtopublish}'");
             }
             else
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Error: Should be: '" + buildtopublish + "', was: '" + pathtopublish + "'");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Error: Should be: '{buildtopublish}', was: '{pathtopublish}'");
             }
 
             return;
@@ -150,18 +150,18 @@ namespace CreatePublish
                 return;
             }
 
-            Console.WriteLine("Deleting: '" + solutionfile + "'");
+            Console.WriteLine($"Deleting: '{solutionfile}'");
             File.Delete(solutionfile);
-            Console.WriteLine("Deleting: '" + projectfile + "'");
+            Console.WriteLine($"Deleting: '{projectfile}'");
             File.Delete(projectfile);
-            Console.WriteLine("Deleting: '" + buildfile + "'");
+            Console.WriteLine($"Deleting: '{buildfile}'");
             File.Delete(buildfile);
 
-            Console.WriteLine("Deleting folders: '" + Path.GetDirectoryName(solutionfile) + "' ...");
+            Console.WriteLine($"Deleting folders: '{Path.GetDirectoryName(solutionfile)}' ...");
             DeleteFoldersIfEmpty(Path.GetDirectoryName(solutionfile));
-            Console.WriteLine("Deleting folders: '" + Path.GetDirectoryName(projectfile) + "' ...");
+            Console.WriteLine($"Deleting folders: '{Path.GetDirectoryName(projectfile)}' ...");
             DeleteFoldersIfEmpty(Path.GetDirectoryName(projectfile));
-            Console.WriteLine("Deleting folders: '" + Path.GetDirectoryName(buildfile) + "' ...");
+            Console.WriteLine($"Deleting folders: '{Path.GetDirectoryName(buildfile)}' ...");
             DeleteFoldersIfEmpty(Path.GetDirectoryName(buildfile));
         }
 
@@ -178,7 +178,7 @@ namespace CreatePublish
                     {
                         return;
                     }
-                    Console.WriteLine("Deleting directory: '" + folder + "'");
+                    Console.WriteLine($"Deleting directory: '{folder}'");
                     try
                     {
                         Directory.Delete(folder);

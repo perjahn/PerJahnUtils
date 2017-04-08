@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 using System.IO;
+using System.Xml;
 
 namespace CreatePublish
 {
@@ -27,24 +28,9 @@ namespace CreatePublish
             {
                 xdoc = XDocument.Load(fullfilename);
             }
-            catch (IOException ex)
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is XmlException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (ArgumentException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
-                return null;
-            }
-            catch (System.Xml.XmlException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': {ex.Message}");
                 return null;
             }
 
