@@ -115,9 +115,8 @@ gitsimulatepush          - true/(false)");
         string gitusername = Environment.GetEnvironmentVariable("gitusername");
         string gitpassword = Environment.GetEnvironmentVariable("gitpassword");
         string gitemail = Environment.GetEnvironmentVariable("gitemail");
-        string gitsimulatepushString = Environment.GetEnvironmentVariable("gitsimulatepush");
 
-        bool gitsimulatepush = ParseBooleanEnvironmentVariable(gitsimulatepushString, false);
+        bool gitsimulatepush = ParseBooleanEnvironmentVariable("gitsimulatepush", false);
 
         if (string.IsNullOrEmpty(gitserver) || string.IsNullOrEmpty(gitrepopath) || string.IsNullOrEmpty(gitrepofolder) ||
             string.IsNullOrEmpty(gitusername) || string.IsNullOrEmpty(gitpassword) || string.IsNullOrEmpty(gitemail))
@@ -183,7 +182,7 @@ gitsimulatepush          - true/(false)");
         ignorefiles = files
             .Where(f => f.EndsWith(".buildNumbers.properties"))
             .ToArray();
-        if (!includebuildnumberfiles)
+        if (includebuildnumberfiles)
         {
             Log($"Including {ignorefiles.Length} build number files.");
         }
@@ -194,7 +193,6 @@ gitsimulatepush          - true/(false)");
                 .ToArray();
             LogTCSection($"Ignoring {ignorefiles.Length} build number files.", ignorefiles);
         }
-
 
         ignorefiles = files
             .Where(f => Path.GetFileName(f) == "plugin-settings.xml" && new FileInfo(f).Length == 56)
