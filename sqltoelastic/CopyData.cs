@@ -46,11 +46,13 @@ namespace sqltoelastic
             string[] toupperfields = ConfigurationManager.AppSettings["toupperfields"].Split(',');
             string[] tolowerfields = ConfigurationManager.AppSettings["tolowerfields"].Split(',');
 
+            string addconstantfield = ConfigurationManager.AppSettings["addconstantfield"];
+
             JObject[] jsonrows;
             try
             {
                 SqlServer sqlserver = new SqlServer();
-                jsonrows = sqlserver.DumpTable(dbprovider, connstr, sql, toupperfields, tolowerfields);
+                jsonrows = sqlserver.DumpTable(dbprovider, connstr, sql, toupperfields, tolowerfields, addconstantfield);
             }
             catch (Exception ex)
             {

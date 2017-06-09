@@ -10,8 +10,16 @@ namespace sqltoelastic
 {
     class SqlServer
     {
-        public JObject[] DumpTable(string dbprovider, string connstr, string sql, string[] toupperfields, string[] tolowerfields)
+        public JObject[] DumpTable(string dbprovider, string connstr, string sql, string[] toupperfields, string[] tolowerfields, string addconstantfield)
         {
+            string addfieldname = null;
+            string addfieldvalue = null;
+            if (!string.IsNullOrEmpty(addconstantfield) && addconstantfield.Contains('='))
+            {
+                addfieldname = addconstantfield.Split('=')[0];
+                addfieldvalue = addconstantfield.Split('=')[1];
+            }
+
             List<JObject> jsonrows = new List<JObject>();
 
             using (db mydb = new db(dbprovider, connstr))
@@ -34,6 +42,7 @@ namespace sqltoelastic
                         for (int i = 0; i < reader.FieldCount; i++)
                         {
                             string colname = columns[i];
+                            bool lastcol = i == reader.FieldCount - 1 && string.IsNullOrEmpty(addconstantfield);
 
                             if (reader.IsDBNull(i))
                             {
@@ -101,7 +110,12 @@ namespace sqltoelastic
                                 }
                             }
 
-                            rowdata.AppendLine(i < reader.FieldCount - 1 ? "," : string.Empty);
+                            rowdata.AppendLine(lastcol ? string.Empty : ",");
+                        }
+
+                        if (addfieldname != null && addfieldvalue != null)
+                        {
+                            rowdata.AppendLine($"  \"{addfieldname}\": \"{addfieldvalue}\"");
                         }
 
                         rowdata.AppendLine("}");
