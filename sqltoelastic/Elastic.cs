@@ -9,7 +9,7 @@ namespace sqltoelastic
 {
     class Elastic
     {
-        public static string _logfile;
+        public static StreamWriter _logfile;
 
         public void PutIntoIndex(string serverurl, string username, string password, string indexname,
             string typename, string timestampfield, string idprefix, string idfield, JObject[] jsonrows)
@@ -21,6 +21,8 @@ namespace sqltoelastic
                     string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
                     client.Headers[HttpRequestHeader.Authorization] = $"Basic {credentials}";
                 }
+
+                int rownum = 0;
 
                 foreach (JObject jsonrow in jsonrows)
                 {
@@ -51,6 +53,14 @@ namespace sqltoelastic
                         Log($"Result: >>>{result}<<<");
                         Log($"Exception: >>>{ex.ToString()}<<<");
                     }
+
+
+
+                    if (rownum % 100 == 0)
+                    {
+                        Console.WriteLine(rownum);
+                    }
+                    rownum++;
                 }
 
                 Log("Done!");
@@ -60,7 +70,7 @@ namespace sqltoelastic
         private void Log(string message)
         {
             string date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-            File.AppendAllText(_logfile, $"{date}: {message}{Environment.NewLine}");
+            _logfile.WriteLine($"{date}: {message}");
         }
     }
 }

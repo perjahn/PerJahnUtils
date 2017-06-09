@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{17A4A894-63A5-4344-ABF9-DA5543A9A02A}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>sqltoelastic</RootNamespace>
     <AssemblyName>sqltoelastic</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>

@@ -4,14 +4,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ServiceProcess;
 using System.Text;
+using System.IO;
+using System.Configuration;
 
 namespace sqltoelastic
 {
     static class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            ServiceBase.Run(new CopyData());
+            if (args.Length > 0)
+            {
+                string filename = ConfigurationManager.AppSettings["logfile"];
+                using (StreamWriter logfile = new StreamWriter(filename, true))
+                {
+                    CopyData._logfile = logfile;
+                    SqlServer._logfile = logfile;
+                    Elastic._logfile = logfile;
+
+                    CopyData.DoStuff();
+                }
+            }
+            else
+            {
+                ServiceBase.Run(new CopyData());
+            }
         }
     }
 

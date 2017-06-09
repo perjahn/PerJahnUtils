@@ -10,7 +10,9 @@ namespace sqltoelastic
 {
     class SqlServer
     {
-        public JObject[] DumpTable(string dbprovider, string connstr, string sql, string[] toupperfields, string[] tolowerfields, string addconstantfield)
+        public static StreamWriter _logfile;
+
+        public JObject[] DumpTable(string dbprovider, string connstr, string sql, string[] toupperfields, string[] tolowerfields, string addconstantfield, string[] escapefields)
         {
             string addfieldname = null;
             string addfieldvalue = null;
@@ -54,6 +56,11 @@ namespace sqltoelastic
                                 DateTimeOffset? data = reader.GetValue(i) as DateTimeOffset?;
                                 rowdata.Append($"  \"{colname}\": \"{(data == null ? "null" : data.Value.ToString("s"))}\"");
                             }
+                            else if (reader.GetFieldType(i) == typeof(DateTime))
+                            {
+                                DateTime? data = reader.GetValue(i) as DateTime?;
+                                rowdata.Append($"  \"{colname}\": \"{(data == null ? "null" : data.Value.ToString("s"))}\"");
+                            }
                             else if (reader.GetFieldType(i) == typeof(short))
                             {
                                 short? data = reader.GetValue(i) as short?;
@@ -85,6 +92,10 @@ namespace sqltoelastic
                                     if (tolowerfields.Contains(colname))
                                     {
                                         data = data.ToLower();
+                                    }
+                                    if (escapefields.Contains(colname))
+                                    {
+                                        data = data.Replace(@"\", @"\\");
                                     }
 
                                     bool parsablejson;
@@ -129,6 +140,12 @@ namespace sqltoelastic
             }
 
             return jsonrows.ToArray();
+        }
+
+        private void Log(string message)
+        {
+            string date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+            _logfile.WriteLine($"{date}: {message}");
         }
     }
 }

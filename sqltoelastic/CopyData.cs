@@ -14,7 +14,7 @@ namespace sqltoelastic
     public partial class CopyData : ServiceBase
     {
         private Timer _timer = new Timer(750);
-        private static string _logfile;
+        public static StreamWriter _logfile;
 
         public CopyData()
         {
@@ -23,7 +23,7 @@ namespace sqltoelastic
 
         protected override void OnStart(string[] args)
         {
-            _timer.Elapsed += new ElapsedEventHandler(DoStuff);
+            _timer.Elapsed += new ElapsedEventHandler(OnTimer);
             _timer.Enabled = true;
 
             System.Threading.Thread.Sleep(1000);
@@ -35,10 +35,21 @@ namespace sqltoelastic
             _timer.Enabled = false;
         }
 
-        public static void DoStuff(object source, ElapsedEventArgs e)
+        private static void OnTimer(object source, ElapsedEventArgs e)
         {
-            _logfile = ConfigurationManager.AppSettings["logfile"];
+            string filename = ConfigurationManager.AppSettings["logfile"];
+            using (StreamWriter logfile = new StreamWriter(filename, true))
+            {
+                _logfile = logfile;
+                SqlServer._logfile = logfile;
+                Elastic._logfile = logfile;
 
+                DoStuff();
+            }
+        }
+
+        public static void DoStuff()
+        {
             string dbprovider = ConfigurationManager.AppSettings["dbprovider"];
             string connstr = ConfigurationManager.AppSettings["connstr"];
             string sql = ConfigurationManager.AppSettings["sql"];
@@ -47,12 +58,13 @@ namespace sqltoelastic
             string[] tolowerfields = ConfigurationManager.AppSettings["tolowerfields"].Split(',');
 
             string addconstantfield = ConfigurationManager.AppSettings["addconstantfield"];
+            string[] escapefields = ConfigurationManager.AppSettings["escapefields"].Split(',');
 
             JObject[] jsonrows;
             try
             {
                 SqlServer sqlserver = new SqlServer();
-                jsonrows = sqlserver.DumpTable(dbprovider, connstr, sql, toupperfields, tolowerfields, addconstantfield);
+                jsonrows = sqlserver.DumpTable(dbprovider, connstr, sql, toupperfields, tolowerfields, addconstantfield, escapefields);
             }
             catch (Exception ex)
             {
@@ -61,6 +73,8 @@ namespace sqltoelastic
             }
 
             Log($"Got {jsonrows.Length} rows.");
+
+            //File.WriteAllLines(@"C:\data.txt", jsonrows.Select(r => r.ToString()));
 
             string serverurl = ConfigurationManager.AppSettings["serverurl"];
             string username = ConfigurationManager.AppSettings["username"];
@@ -73,7 +87,6 @@ namespace sqltoelastic
 
             try
             {
-                Elastic._logfile = _logfile;
                 Elastic elastic = new Elastic();
                 elastic.PutIntoIndex(serverurl, username, password, indexname, typename, timestampfield, idprefix, idfield, jsonrows);
             }
@@ -86,7 +99,7 @@ namespace sqltoelastic
         private static void Log(string message)
         {
             string date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-            File.AppendAllText(_logfile, $"{date}: {message}{Environment.NewLine}");
+            _logfile.WriteLine($"{date}: {message}");
         }
     }
 }
