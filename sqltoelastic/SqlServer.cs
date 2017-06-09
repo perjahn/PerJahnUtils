@@ -10,7 +10,7 @@ namespace sqltoelastic
 {
     class SqlServer
     {
-        public JObject[] DumpTable(string dbprovider, string connstr, string sql)
+        public JObject[] DumpTable(string dbprovider, string connstr, string sql, string[] toupperfields, string[] tolowerfields)
         {
             List<JObject> jsonrows = new List<JObject>();
 
@@ -43,14 +43,22 @@ namespace sqltoelastic
                             if (reader.GetFieldType(i) == typeof(DateTimeOffset))
                             {
                                 DateTimeOffset? data = reader.GetValue(i) as DateTimeOffset?;
-                                if (data == null)
-                                {
-                                    rowdata.Append($"  \"{colname}\": null");
-                                }
-                                else
-                                {
-                                    rowdata.Append($"  \"{colname}\": \"{data.Value.ToString("s")}\"");
-                                }
+                                rowdata.Append($"  \"{colname}\": \"{(data == null ? "null" : data.Value.ToString("s"))}\"");
+                            }
+                            else if (reader.GetFieldType(i) == typeof(short))
+                            {
+                                short? data = reader.GetValue(i) as short?;
+                                rowdata.Append($"  \"{colname}\": {(data == null ? "\"null\"" : data.Value.ToString())}");
+                            }
+                            else if (reader.GetFieldType(i) == typeof(int))
+                            {
+                                int? data = reader.GetValue(i) as int?;
+                                rowdata.Append($"  \"{colname}\": {(data == null ? "\"null\"" : data.Value.ToString())}");
+                            }
+                            else if (reader.GetFieldType(i) == typeof(long))
+                            {
+                                long? data = reader.GetValue(i) as long?;
+                                rowdata.Append($"  \"{colname}\": {(data == null ? "\"null\"" : data.Value.ToString())}");
                             }
                             else
                             {
@@ -61,6 +69,15 @@ namespace sqltoelastic
                                 }
                                 else
                                 {
+                                    if (toupperfields.Contains(colname))
+                                    {
+                                        data = data.ToUpper();
+                                    }
+                                    if (tolowerfields.Contains(colname))
+                                    {
+                                        data = data.ToLower();
+                                    }
+
                                     bool parsablejson;
                                     try
                                     {

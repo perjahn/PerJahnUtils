@@ -43,8 +43,20 @@ namespace sqltoelastic
             string connstr = ConfigurationManager.AppSettings["connstr"];
             string sql = ConfigurationManager.AppSettings["sql"];
 
-            SqlServer sqlserver = new SqlServer();
-            JObject[] jsonrows = sqlserver.DumpTable(dbprovider, connstr, sql);
+            string[] toupperfields = ConfigurationManager.AppSettings["toupperfields"].Split(',');
+            string[] tolowerfields = ConfigurationManager.AppSettings["tolowerfields"].Split(',');
+
+            JObject[] jsonrows;
+            try
+            {
+                SqlServer sqlserver = new SqlServer();
+                jsonrows = sqlserver.DumpTable(dbprovider, connstr, sql, toupperfields, tolowerfields);
+            }
+            catch (Exception ex)
+            {
+                Log($"Exception: >>>{ex.ToString()}<<<");
+                return;
+            }
 
             Log($"Got {jsonrows.Length} rows.");
 
