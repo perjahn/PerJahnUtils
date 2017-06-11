@@ -146,6 +146,7 @@ namespace sqltoelastic
         {
             string date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
             _logfile.WriteLine($"{date}: {message}");
+            _logfile.Flush();
         }
     }
 }

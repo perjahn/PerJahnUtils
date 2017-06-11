@@ -54,11 +54,9 @@ namespace sqltoelastic
                         Log($"Exception: >>>{ex.ToString()}<<<");
                     }
 
-
-
-                    if (rownum % 100 == 0)
+                    if (rownum % 1000 == 0)
                     {
-                        Console.WriteLine(rownum);
+                        Log($"Importing rows: {rownum}");
                     }
                     rownum++;
                 }
@@ -71,6 +69,7 @@ namespace sqltoelastic
         {
             string date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
             _logfile.WriteLine($"{date}: {message}");
+            _logfile.Flush();
         }
     }
 }

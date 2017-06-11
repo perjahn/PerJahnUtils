@@ -50,6 +50,8 @@ namespace sqltoelastic
 
         public static void DoStuff()
         {
+            Log("Starting...");
+
             string dbprovider = ConfigurationManager.AppSettings["dbprovider"];
             string connstr = ConfigurationManager.AppSettings["connstr"];
             string sql = ConfigurationManager.AppSettings["sql"];
@@ -100,6 +102,7 @@ namespace sqltoelastic
         {
             string date = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
             _logfile.WriteLine($"{date}: {message}");
+            _logfile.Flush();
         }
     }
 }

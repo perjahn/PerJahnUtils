@@ -13,7 +13,7 @@ namespace sqltoelastic
     {
         static void Main(string[] args)
         {
-            if (args.Length > 0)
+            if (args.Length == 1 && args[0] == "run")
             {
                 string filename = ConfigurationManager.AppSettings["logfile"];
                 using (StreamWriter logfile = new StreamWriter(filename, true))
