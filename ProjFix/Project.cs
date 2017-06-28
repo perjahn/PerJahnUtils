@@ -32,10 +32,10 @@ namespace ProjFix
         public void Restore(string solutionfile)
         {
             string fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), _sln_path);
-            string bakfile = fullfilename + ".bak.xml";
+            string bakfile = $"{fullfilename}.bak.xml";
             if (File.Exists(bakfile))
             {
-                ConsoleHelper.WriteLine("'" + bakfile + "' -> '" + fullfilename + "'", false);
+                ConsoleHelper.WriteLine($"'{bakfile}' -> '{fullfilename}'", false);
                 if (File.Exists(fullfilename))
                 {
                     FileHelper.RemoveRO(fullfilename);
@@ -59,7 +59,7 @@ namespace ProjFix
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': {ex.Message}");
                 return null;
             }
 
@@ -77,7 +77,7 @@ namespace ProjFix
             }
             catch (NullReferenceException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing AssemblyName.");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': Missing AssemblyName.");
                 return null;
             }
 
@@ -91,7 +91,7 @@ namespace ProjFix
             }
             catch (NullReferenceException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing ProjectGuid.");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': Missing ProjectGuid.");
                 return null;
             }
 
@@ -105,7 +105,7 @@ namespace ProjFix
             }
             catch (NullReferenceException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing OutputType.");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename} ': Missing OutputType.");
                 return null;
             }
 
@@ -188,9 +188,7 @@ namespace ProjFix
             if (_proj_assemblynames.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    "Warning: Corrupt project file: " + _sln_path +
-                    ", multiple assembly names: '" + _proj_assemblynames.Count +
-                    "', compacting Name elements.");
+                    $"Warning: Corrupt project file: {_sln_path}, multiple assembly names: '{_proj_assemblynames.Count}', compacting Name elements.");
                 _modified = true;
             }
             if (_proj_assemblynames.Count >= 1)
@@ -202,9 +200,7 @@ namespace ProjFix
             if (_proj_guids.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    "Warning: Corrupt project file: " + _sln_path +
-                    ", multiple guids: '" + _proj_guids.Count +
-                    "', compacting ProjectGuid elements.");
+                    $"Warning: Corrupt project file: {_sln_path}, multiple guids: '{_proj_guids.Count}', compacting ProjectGuid elements.");
                 _modified = true;
             }
             if (_proj_guids.Count >= 1)
@@ -216,9 +212,7 @@ namespace ProjFix
             if (_proj_outputtypes.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    "Warning: Corrupt project file: " + _sln_path +
-                    ", multiple output types: '" + _proj_outputtypes.Count +
-                    "', compacting Private elements.");
+                    $"Warning: Corrupt project file: {_sln_path}, multiple output types: '{_proj_outputtypes.Count}', compacting Private elements.");
                 _modified = true;
             }
             if (_proj_outputtypes.Count >= 1)
@@ -237,9 +231,7 @@ namespace ProjFix
                 if (assref.names.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _sln_path +
-                        ", reference: '" + assref.include +
-                        "', compacting Name elements.");
+                        $"Warning: Corrupt project file: {_sln_path}, reference: '{assref.include}', compacting Name elements.");
                     _modified = true;
                 }
                 if (assref.names.Count >= 1)
@@ -251,9 +243,7 @@ namespace ProjFix
                 if (assref.hintpaths.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _sln_path +
-                        ", reference: '" + assref.include +
-                        "', compacting HintPath elements.");
+                        $"Warning: Corrupt project file: {_sln_path}, reference: '{assref.include}', compacting HintPath elements.");
                     _modified = true;
                 }
                 if (assref.hintpaths.Count >= 1)
@@ -265,9 +255,7 @@ namespace ProjFix
                 if (assref.copylocals.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _sln_path +
-                        ", reference: '" + assref.include +
-                        "', compacting Private elements.");
+                        $"Warning: Corrupt project file: {_sln_path}, reference: '{assref.include}', compacting Private elements.");
                     _modified = true;
                 }
                 if (assref.copylocals.Count >= 1)
@@ -286,9 +274,7 @@ namespace ProjFix
                 if (projref.names.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _sln_path +
-                        ", project reference: '" + projref.include +
-                        "', compacting Name elements.");
+                        $"Warning: Corrupt project file: {_sln_path}, project reference: '{projref.include}', compacting Name elements.");
                     _modified = true;
                 }
                 if (projref.names.Count >= 1)
@@ -300,9 +286,7 @@ namespace ProjFix
                 if (projref.projects.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _sln_path +
-                        ", project reference: '" + projref.include +
-                        "', compacting Project elements.");
+                        $"Warning: Corrupt project file: {_sln_path}, project reference: '{projref.include}', compacting Project elements.");
                     _modified = true;
                 }
                 if (projref.projects.Count >= 1)
@@ -314,9 +298,7 @@ namespace ProjFix
                 if (projref.packages.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _sln_path +
-                        ", project reference: '" + projref.include +
-                        "', compacting Package elements.");
+                        $"Warning: Corrupt project file: {_sln_path}, project reference: '{projref.include}', compacting Package elements.");
                     _modified = true;
                 }
                 if (projref.packages.Count >= 1)
@@ -336,17 +318,13 @@ namespace ProjFix
             if (string.Compare(_sln_guid, _proj_guid, true) != 0)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                    "Mismatched guid for project '" + _sln_path +
-                    "': Guid in solution: '" + _sln_guid +
-                    "'. Guid in project: '" + _proj_guid + "'.");
+                    $"Mismatched guid for project '{_sln_path}': Guid in solution: '{_sln_guid}'. Guid in project: '{_proj_guid}'.");
                 valid = false;
             }
             if (string.Compare(_sln_shortfilename, Path.GetFileNameWithoutExtension(_sln_path), true) != 0)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                    "Mismatched name for project '" + _sln_path +
-                    "': Project name in solution: '" + _sln_shortfilename +
-                    "'. File name: '" + Path.GetFileNameWithoutExtension(_sln_path) + "'.");
+                    $"Mismatched name for project '{_sln_path}': Project name in solution: '{_sln_shortfilename}'. File name: '{Path.GetFileNameWithoutExtension(_sln_path)}'.");
                 valid = false;
             }
 
@@ -369,8 +347,7 @@ namespace ProjFix
                 if (_proj_assemblyname == proj._proj_assemblyname)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "Error: Projects have identical assembly names: '" + _proj_assemblyname + "': '" +
-                        _sln_path + "' and '" + proj._sln_path + "'.");
+                        $"Error: Projects have identical assembly names: '{_proj_assemblyname}': '{_sln_path}' and '{proj._sln_path}'.");
                     valid = false;
                 }
             }
@@ -382,8 +359,7 @@ namespace ProjFix
                     string.Compare(assref.shortinclude, _sln_shortfilename, true) == 0)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "Error: Project have reference to itself: '" + _sln_path +
-                        "'. Reference: '" + assref.shortinclude + "'.");
+                        $"Error: Project have reference to itself: '{_sln_path}'. Reference: '{assref.shortinclude}'.");
                     valid = false;
                 }
 
@@ -398,9 +374,7 @@ namespace ProjFix
                     if (!exts.Any(e => path.EndsWith(e, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                            "Error: Invalid reference type: '" + _sln_path +
-                            "'. Ext: '" + Path.GetExtension(path) +
-                            "'. Path: '" + path + "'.");
+                            $"Error: Invalid reference type: '{_sln_path}'. Ext: '{Path.GetExtension(path)}'. Path: '{path}'.");
                         valid = false;
                     }
                 }
@@ -412,8 +386,7 @@ namespace ProjFix
                     string.Compare(projref.shortinclude, _sln_shortfilename, true) == 0)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "Error: Project have reference to itself: '" + _sln_path +
-                        "'. Project reference: '" + projref.shortinclude + "'.");
+                        $"Error: Project have reference to itself: '{_sln_path}'. Project reference: '{projref.shortinclude}'.");
                     valid = false;
                 }
 
@@ -425,9 +398,7 @@ namespace ProjFix
                     !projects.Any(p => string.Compare(p._sln_shortfilename, shortinclude, false) == 0))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "Error: Reference has mismatched casing: Project: '" + _sln_path +
-                        "'. Project reference: '" + shortinclude +
-                        "'. Target project: '" + projects.First(p => string.Compare(p._sln_shortfilename, shortinclude, true) == 0)._sln_shortfilename + "'.");
+                        $"Error: Reference has mismatched casing: Project: '{_sln_path} '. Project reference: '{shortinclude}'. Target project: '{projects.First(p => string.Compare(p._sln_shortfilename, shortinclude, true) == 0)._sln_shortfilename}'.");
                     valid = false;
                 }
 
@@ -440,8 +411,7 @@ namespace ProjFix
                 if (!projects.Any(p => p._sln_shortfilename == projref.shortinclude) && !File.Exists(fullfilename))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "Error: Project reference does not exist: Project: '" + _sln_path +
-                        "'. Project reference path: '" + fullfilename + "'.");
+                        $"Error: Project reference does not exist: Project: '{_sln_path}'. Project reference path: '{fullfilename}'.");
                     valid = false;
                 }
             }
@@ -478,9 +448,7 @@ namespace ProjFix
                 !assemblyname.Replace(".", "").EndsWith(filename))
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    "Warning: Mismatched name for project '" + path +
-                    "': Assembly name: '" + assemblyname +
-                    "'. File name: '" + Path.GetFileNameWithoutExtension(path) + "'.");
+                    $"Warning: Mismatched name for project '{path}': Assembly name: '{assemblyname}'. File name: '{Path.GetFileNameWithoutExtension(path)}'.");
                 wrotemessage = true;
             }
 
@@ -496,16 +464,13 @@ namespace ProjFix
                 if (filename != assemblyname)
                 {
                     ConsoleHelper.WriteLine(
-                        "  Warning: Mismatched name for project '" + path +
-                        "': Assembly name: '" + assemblyname +
-                        "'. File name: '" + filename + "'.",
+                        $"  Warning: Mismatched name for project '{path}': Assembly name: '{assemblyname}'. File name: '{filename}'.",
                         true);
                 }
                 else
                 {
                     ConsoleHelper.WriteLine(
-                        "  Very good: Name for project '" + path +
-                        "': Assembly name==File name: '" + assemblyname + "'.",
+                        $"  Very good: Name for project '{path}': Assembly name==File name: '{assemblyname}'.",
                         true);
                 }
             }
@@ -513,7 +478,7 @@ namespace ProjFix
 
         public bool Fix(string solutionfile, List<Project> projects, List<string> hintpaths, string outputpath, bool copylocal, bool removeversion)
         {
-            ConsoleHelper.WriteLineDeferred("-=-=- Fixing project: '" + _sln_path + "' -=-=-");
+            ConsoleHelper.WriteLineDeferred($"-=-=- Fixing project: '{_sln_path}' -=-=-");
 
             // ass -> proj
             foreach (AssemblyRef assref in _references.OrderBy(r => r.shortinclude))
@@ -523,9 +488,9 @@ namespace ProjFix
                 {
                     ProjectRef projref = CreateProjectReferenceFromReference(solutionfile, projects, assref);
                     if (assref.shortinclude == projref.shortinclude)
-                        ConsoleHelper.WriteLine("  ref -> projref: '" + assref.shortinclude + "'.", true);
+                        ConsoleHelper.WriteLine($"  ref -> projref: '{assref.shortinclude}'.", true);
                     else
-                        ConsoleHelper.WriteLine("  ref -> projref: '" + assref.shortinclude + "' -> '" + projref.shortinclude + "'.", true);
+                        ConsoleHelper.WriteLine($"  ref -> projref: '{assref.shortinclude}' -> '{projref.shortinclude}'.", true);
 
                     _projectReferences.Add(projref);
                     _references.Remove(assref);
@@ -542,9 +507,9 @@ namespace ProjFix
                 {
                     AssemblyRef assref = CreateReferenceFromProjectReference(solutionfile, projects, hintpaths, projref);
                     if (projref.shortinclude == assref.shortinclude)
-                        ConsoleHelper.WriteLine("  projref -> ref: '" + projref.shortinclude + "'.", true);
+                        ConsoleHelper.WriteLine($"  projref -> ref: '{projref.shortinclude}'.", true);
                     else
-                        ConsoleHelper.WriteLine("  projref -> ref: '" + projref.shortinclude + "' -> '" + assref.shortinclude + "'.", true);
+                        ConsoleHelper.WriteLine($"  projref -> ref: '{projref.shortinclude}' -> '{assref.shortinclude}'.", true);
 
                     _references.Add(assref);
                     _projectReferences.Remove(projref);
@@ -579,7 +544,7 @@ namespace ProjFix
                     string shortref = GetShortRef(assref.include);
                     if (shortref != assref.include)
                     {
-                        ConsoleHelper.WriteLine("  ref: removing version: '" + assref.include + "' -> '" + shortref + "'.", true);
+                        ConsoleHelper.WriteLine($"  ref: removing version: '{assref.include}' -> '{shortref}'.", true);
                         assref.include = shortref;
                         assref.shortinclude = shortref;
 
@@ -632,7 +597,7 @@ namespace ProjFix
 
             //if (projref.shortinclude != assemblyname)
             {
-                //ConsoleHelper.ColorWrite(ConsoleColor.Yellow, "Warning: '" + projref.shortinclude + "' -> '" + assemblyname + "'.");
+                //ConsoleHelper.ColorWrite(ConsoleColor.Yellow, $"Warning: '{projref.shortinclude}' -> '{assemblyname}'.");
             }
 
             if (assemblyname == null)
@@ -658,7 +623,7 @@ namespace ProjFix
                     ext = ".dll";
                     break;
                 default:
-                    throw new Exception("Unsupported project type: '" + assemblyname + "' '" + outputtype + "'.");
+                    throw new Exception($"Unsupported project type: '{assemblyname}' '{outputtype}'.");
             }
 
             // Locate assembly
@@ -717,16 +682,14 @@ namespace ProjFix
                     {
                         // Error - no existing hint path, and no file found in any specified hint path.
                         ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                            "Warning: Couldn't find assembly: '" + assref.shortinclude + ext + "'.");
+                            $"Warning: Couldn't find assembly: '{assref.shortinclude}{ext}'.");
                     }
                 }
                 else
                 {
                     // Ok - replacing null with new hint path
                     ConsoleHelper.WriteLine(
-                        "  Found assembly in hintpath: '" + assref.shortinclude +
-                        "': -> '" + asspath_new +
-                        "'. Ext: '" + ext + "'.", true);
+                        $"  Found assembly in hintpath: '{assref.shortinclude}': -> '{asspath_new}'. Ext: '{ext}'.", true);
                     assref.hintpath = asspath_new;
                     _modified = true;
                 }
@@ -742,8 +705,7 @@ namespace ProjFix
                         // the specified command args hintpaths are the only allowed.
 
                         ConsoleHelper.WriteLine(
-                            "  Didn't find gac assembly in any specified hintpath: '" + assref.shortinclude +
-                            "'. Removing hintpath: '" + assref.hintpath + "'.", true);
+                            $"  Didn't find gac assembly in any specified hintpath: '{assref.shortinclude}'. Removing hintpath: '{assref.hintpath}'.", true);
                         assref.hintpath = null;
                         _modified = true;
                     }
@@ -766,8 +728,7 @@ namespace ProjFix
                         {
                             // Error - no file in existing hint path, and no file found in any specified hint path.
                             ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                                "Warning: Couldn't find assembly: '" + assref.shortinclude +
-                                "': File not found: '" + asspath + "'.");
+                                $"Warning: Couldn't find assembly: '{assref.shortinclude}': File not found: '{asspath}'.");
                         }
                     }
                 }
@@ -777,9 +738,7 @@ namespace ProjFix
                     if (string.Compare(asspath_new, assref.hintpath, true) != 0)
                     {
                         ConsoleHelper.WriteLine(
-                            "  Found assembly in specified hintpath: '" + assref.shortinclude +
-                            "': '" + assref.hintpath +
-                            "' -> '" + asspath_new + "'.", true);
+                            $"  Found assembly in specified hintpath: '{assref.shortinclude}': '{assref.hintpath}' -> '{asspath_new}'.", true);
                         assref.hintpath = asspath_new;
                         _modified = true;
                     }
@@ -835,7 +794,7 @@ namespace ProjFix
                 Path.GetDirectoryName(_sln_path),
                 projref.include);
 
-            ConsoleHelper.WriteLine("  Loading external project: '" + fullfilename + "'.", true);
+            ConsoleHelper.WriteLine($"  Loading external project: '{fullfilename}'.", true);
 
             try
             {
@@ -844,13 +803,13 @@ namespace ProjFix
             }
             catch (IOException ex)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': {ex.Message}");
                 assemblyname = outputtype = null;
                 return false;
             }
             catch (System.Xml.XmlException ex)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': {ex.Message}");
                 assemblyname = outputtype = null;
                 return false;
             }
@@ -862,9 +821,9 @@ namespace ProjFix
             {
                 assemblyname = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").Single().Value;
             }
-            catch (System.NullReferenceException)
+            catch (NullReferenceException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing AssemblyName.");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': Missing AssemblyName.");
                 assemblyname = outputtype = null;
                 return false;
             }
@@ -872,9 +831,9 @@ namespace ProjFix
             {
                 outputtype = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutputType").Single().Value;
             }
-            catch (System.NullReferenceException)
+            catch (NullReferenceException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load project: '" + fullfilename + "': Missing OutputType.");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': Missing OutputType.");
                 assemblyname = outputtype = null;
                 return false;
             }
@@ -897,8 +856,7 @@ namespace ProjFix
                 if (assemblyname == proj._proj_assemblyname)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        "Error: Projects have identical assembly names: '" + assemblyname + "': '" +
-                        fullfilename + "' and '" + proj._sln_path + "'.");
+                        $"Error: Projects have identical assembly names: '{assemblyname}': '{fullfilename}' and '{proj._sln_path}'.");
                     throw new Exception("Error");
                 }
             }
@@ -917,17 +875,17 @@ namespace ProjFix
             }
             catch (IOException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                Console.WriteLine($"Couldn't load project: '{fullfilename}': {ex.Message}");
                 return;
             }
             catch (System.Xml.XmlException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                Console.WriteLine($"Couldn't load project: '{fullfilename}': {ex.Message}");
                 return;
             }
 
 
-            ConsoleHelper.WriteLineDeferred("-=-=- Saving project: '" + _sln_path + "' -=-=-");
+            ConsoleHelper.WriteLineDeferred($"-=-=- Saving project: '{_sln_path}' -=-=-");
 
             UpdateReferences(xdoc);
             UpdateProjectReferences(xdoc, solutionfile);
@@ -938,8 +896,8 @@ namespace ProjFix
 			}*/
 
 
-            string bakfile = fullfilename + ".bak.xml";
-            ConsoleHelper.WriteLine("  Writing file: '" + fullfilename + "'.", true);
+            string bakfile = $"{fullfilename}.bak.xml";
+            ConsoleHelper.WriteLine($"  Writing file: '{fullfilename}'.", true);
             if (!simulate)
             {
                 if (!nobackup)
@@ -983,7 +941,7 @@ namespace ProjFix
                                select el;
                     foreach (XElement el in refs)
                     {
-                        ConsoleHelper.WriteLine("  Removing assembly ref: '" + reference + "'", true);
+                        ConsoleHelper.WriteLine($"  Removing assembly ref: '{reference}'", true);
                         el.Remove();
                     }
                 }
@@ -1027,7 +985,7 @@ namespace ProjFix
                                select el;
                     foreach (XElement el in refs)
                     {
-                        ConsoleHelper.WriteLine("  Removing proj ref: '" + reference + "'", true);
+                        ConsoleHelper.WriteLine($"  Removing proj ref: '{reference}'", true);
                         el.Remove();
                     }
                 }
@@ -1062,7 +1020,7 @@ namespace ProjFix
             {
                 if (el.Value != outputpath)
                 {
-                    Console.WriteLine("XXX: '" + el.Value + "' -> '" + outputpath + "'");
+                    Console.WriteLine($"XXX: '{el.Value}' -> '{outputpath}'");
                     el.Value = outputpath;
                 }
             }
@@ -1075,7 +1033,7 @@ namespace ProjFix
             if (s == null)
                 return "<null>";
                 else
-            return "'" + s + "'";
+            return $"'{s}'";
         }*/
     }
 }
