@@ -315,7 +315,7 @@ namespace ProjFix
         {
             bool valid = true;
 
-            if (string.Compare(_sln_guid, _proj_guid, true) != 0)
+            if (_sln_guid != null && _proj_guid != null && string.Compare(_sln_guid, _proj_guid, true) != 0)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red,
                     $"Mismatched guid for project '{_sln_path}': Guid in solution: '{_sln_guid}'. Guid in project: '{_proj_guid}'.");
@@ -606,6 +606,12 @@ namespace ProjFix
                 assemblyname = projref.shortinclude;
             }
 
+            if (outputtype == null)
+            {
+                // Guess output type = Library
+                outputtype = "Library";
+            }
+
 
             string ext;
             switch (outputtype)
@@ -817,47 +823,50 @@ namespace ProjFix
             ns = xdoc.Root.Name.Namespace;
 
 
-            try
+            XElement[] assemblynames = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").ToArray();
+            if (assemblynames.Length == 0)
             {
-                assemblyname = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").Single().Value;
+                ConsoleHelper.ColorWrite(ConsoleColor.Yellow, $"Couldn't load project: '{fullfilename}': Missing AssemblyName.");
+                assemblyname = null;
             }
-            catch (NullReferenceException)
+            else
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': Missing AssemblyName.");
-                assemblyname = outputtype = null;
-                return false;
-            }
-            try
-            {
-                outputtype = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutputType").Single().Value;
-            }
-            catch (NullReferenceException)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load project: '{fullfilename}': Missing OutputType.");
-                assemblyname = outputtype = null;
-                return false;
+                assemblyname = assemblynames.Single().Value;
             }
 
-
-            // Caution: External project (it's assembly name) may conflict with a loaded project name
-            bool afterthis = false;
-            foreach (Project proj in projects.OrderBy(p => p._sln_path))
+            XElement[] outputtypes = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "OutputType").ToArray();
+            if (outputtypes.Length == 0)
             {
-                if (proj == this)
-                {
-                    afterthis = true;
-                    continue;
-                }
-                if (!afterthis)
-                {
-                    continue;
-                }
+                ConsoleHelper.ColorWrite(ConsoleColor.Yellow, $"Couldn't load project: '{fullfilename}': Missing OutputType.");
+                outputtype = null;
+            }
+            else
+            {
+                outputtype = outputtypes.Single().Value;
+            }
 
-                if (assemblyname == proj._proj_assemblyname)
+            if (assemblyname != null)
+            {
+                // Caution: External project (its assembly name) may conflict with a loaded project name
+                bool afterthis = false;
+                foreach (Project proj in projects.OrderBy(p => p._sln_path))
                 {
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        $"Error: Projects have identical assembly names: '{assemblyname}': '{fullfilename}' and '{proj._sln_path}'.");
-                    throw new Exception("Error");
+                    if (proj == this)
+                    {
+                        afterthis = true;
+                        continue;
+                    }
+                    if (!afterthis)
+                    {
+                        continue;
+                    }
+
+                    if (assemblyname == proj._proj_assemblyname)
+                    {
+                        ConsoleHelper.ColorWrite(ConsoleColor.Red,
+                            $"Error: Projects have identical assembly names: '{assemblyname}': '{fullfilename}' and '{proj._sln_path}'.");
+                        throw new Exception("Error");
+                    }
                 }
             }
 

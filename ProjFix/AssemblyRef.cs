@@ -46,7 +46,8 @@ namespace ProjFix
                          select el;
             if (groups.Count() == 0)
             {
-                throw new NotImplementedException("Cannot insert reference!");
+                ConsoleHelper.ColorWrite(ConsoleColor.Yellow, $"NotImplementedException: Cannot insert reference!");
+                return;
             }
 
             var refs = from el in groups.ElementAt(0).Elements(ns + "Reference")
