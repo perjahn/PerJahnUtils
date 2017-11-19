@@ -11,20 +11,31 @@ namespace Base64Decode
     {
         static int Main(string[] args)
         {
-            if (args.Length != 1)
+            if (args.Length != 1 && args.Length != 2)
             {
-                Console.WriteLine("Usage: Base64Decode <string>");
+                Console.WriteLine("Usage: Base64Decode <string> [outfile]");
                 return 1;
             }
 
             //string text = File.ReadAllText(args[0]);
             byte[] bytes = Convert.FromBase64String(args[0]);
-            foreach (byte b in bytes)
+            if (args.Length == 2)
             {
-                char c = (char)b;
-                Console.Write(c);
+                string filename = args[1];
+                using (FileStream fs = new FileStream(filename, FileMode.Create))
+                {
+                    fs.Write(bytes, 0, bytes.Length);
+                }
             }
-            Console.WriteLine();
+            else
+            {
+                foreach (byte b in bytes)
+                {
+                    char c = (char)b;
+                    Console.Write(c);
+                }
+                Console.WriteLine();
+            }
 
             return 0;
         }
