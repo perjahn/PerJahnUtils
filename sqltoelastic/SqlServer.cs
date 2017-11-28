@@ -95,7 +95,7 @@ namespace sqltoelastic
                                     }
                                     if (escapefields.Contains(colname))
                                     {
-                                        data = data.Replace(@"\", @"\\");
+                                        data = data.Replace(@"\", @"\\").Replace("\"", "\\\"");
                                     }
 
                                     bool parsablejson;
