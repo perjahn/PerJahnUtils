@@ -1,14 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if _WIN32
-#include <windows.h>
+#ifdef WIN32
+#define filemoderead "rb"
+#define filemodewrite "wb"
 #else
-#include <unistd.h>
+#define filemoderead "r"
+#define filemodewrite "w"
 #endif
 
 int replacefile(char *filename, char *find, char *replace);
-int replacebuf(char *buf, char *find, char *replace, int insize, int findsize, int replacesize);
+bool replacebuf(char *buf, char *find, char *replace, int insize, int findsize, int replacesize, int *outsize);
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +28,7 @@ int main(int argc, char *argv[])
 int replacefile(char *filename, char *find, char *replace)
 {
 	FILE *fh;
-	if (!(fh = fopen(filename, "r")))
+	if (!(fh = fopen(filename, filemoderead)))
 	{
 		printf("Couldn't open file for reading: '%s'\n", filename);
 		return 1;
@@ -34,8 +36,8 @@ int replacefile(char *filename, char *find, char *replace)
 
 	fseek(fh, 0, SEEK_END);
 	int insize = ftell(fh);
-	int findsize = strlen(find);
-	int replacesize = strlen(replace);
+	int findsize = (int)strlen(find);
+	int replacesize = (int)strlen(replace);
 	int bufsize = (int)((long)insize*(long)replacesize / findsize);
 
 	printf("bufsize: %d\n", bufsize);
@@ -52,58 +54,51 @@ int replacefile(char *filename, char *find, char *replace)
 	fread(buf, insize, 1, fh);
 	fclose(fh);
 
-	int outsize = replacebuf(buf, find, replace, insize, findsize, replacesize);
+	int outsize;
+	bool modified = replacebuf(buf, find, replace, insize, findsize, replacesize, &outsize);
 
-	if (!(fh = fopen(filename, "w")))
+	if (modified)
 	{
-		free(buf);
-		printf("Couldn't open file for writing: '%s'\n", filename);
-		return 1;
+		if (!(fh = fopen(filename, filemodewrite)))
+		{
+			free(buf);
+			printf("Couldn't open file for writing: '%s'\n", filename);
+			return 1;
+		}
+
+		fwrite(buf, outsize, 1, fh);
+		fclose(fh);
 	}
 
-	fwrite(buf, outsize, 1, fh);
-
 	free(buf);
-
-	fclose(fh);
-
-#if _WIN32
-	HANDLE handle = CreateFile(filename, GENERIC_WRITE, 0, NULL, 0, 0, NULL);
-	LARGE_INTEGER outsizeLarge;
-	outsizeLarge.QuadPart = outsize;
-	SetFilePointerEx(handle, outsizeLarge, NULL, FILE_BEGIN);
-	SetEndOfFile(handle);
-	printf("%d\n", outsizeLarge);
-	CloseHandle(handle);
-#else
-	truncate(filename, outsize);
-#endif
 
 	return 0;
 }
 
-int replacebuf(char *buf, char *find, char *replace, int insize, int findsize, int replacesize)
+bool replacebuf(char *buf, char *find, char *replace, int insize, int findsize, int replacesize, int *outsize)
 {
 	printf("insize: %d, findsize: %d, replacesize: %d\n", insize, findsize, replacesize);
 
+	bool modified = false;
 	char *p;
-	int outsize = insize;
-	for (p = buf; p < buf + outsize - findsize; p++)
+	*outsize = insize;
+	for (p = buf; p < buf + *outsize - findsize; p++)
 	{
 		if (!memcmp(p, find, findsize))
 		{
+			modified = true;
 			printf("Replacing at %d\n", (int)(p - buf));
 			if (findsize != replacesize)
 			{
 				memmove(p + replacesize, p + findsize, replacesize);
-				outsize = outsize + replacesize - findsize;
+				*outsize = *outsize + replacesize - findsize;
 			}
 			memcpy(p, replace, replacesize);
 			p += replacesize;
 		}
 	}
 
-	printf("outsize: %d\n", outsize);
+	printf("outsize: %d\n", *outsize);
 
-	return outsize;
+	return modified;
 }
