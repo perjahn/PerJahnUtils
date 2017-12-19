@@ -27,7 +27,15 @@ namespace sqltoelastic
                 foreach (JObject jsonrow in jsonrows)
                 {
                     jsonrow["@timestamp"] = jsonrow[timestampfield];
-                    DateTime created = jsonrow[timestampfield].Value<DateTime>();
+                    DateTime created;
+                    if (jsonrow[timestampfield] != null)
+                    {
+                        created = jsonrow[timestampfield].Value<DateTime>();
+                    }
+                    else
+                    {
+                        throw new Exception($"Couldn't find id field: '{timestampfield}'");
+                    }
 
                     string datestring = created.ToString("yyyy.MM");
                     string dateindexname = $"{indexname}-{datestring}";
