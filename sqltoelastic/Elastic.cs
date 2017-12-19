@@ -49,7 +49,7 @@ namespace sqltoelastic
 
                     rownum++;
 
-                    if (rownum % 1000 == 0)
+                    if (rownum % 10000 == 0)
                     {
                         Log($"Importing rows: {rownum}");
 
