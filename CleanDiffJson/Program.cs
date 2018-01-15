@@ -13,6 +13,7 @@ namespace CleanDiffJson
     class Program
     {
         static bool _SortChildren, _WinDiff, _DontDiffIfEqual;
+        static bool _logging = false;
 
         static List<string> _searchPaths = new List<string>();
 
@@ -200,14 +201,14 @@ Optional flags:
         {
             if (jtoken.Type == JTokenType.Object)
             {
-                Console.WriteLine($"Adding object: >>{jtoken.Path}<<");
+                Log($"Adding object: >>{jtoken.Path}<<");
 
                 JObject old = jtoken as JObject;
                 JObject jobject = new JObject();
 
                 foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
                 {
-                    Console.WriteLine($"Adding object child: >>{child.Path}<<");
+                    Log($"Adding object child: >>{child.Path}<<");
                     jobject.AddFirst(GetSortedObject(child));
                 }
 
@@ -215,23 +216,47 @@ Optional flags:
             }
             else if (jtoken.Type == JTokenType.Property)
             {
-                Console.WriteLine($"Adding property: >>{jtoken.Path}<<");
+                Log($"Adding property: >>{jtoken.Path}<<");
 
                 JProperty old = jtoken as JProperty;
                 JProperty jproperty = new JProperty(old.Name, old.Value);
 
                 foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
                 {
-                    Console.WriteLine($"Adding property child: >>{child.Path}<<");
+                    Log($"Adding property child: >>{child.Path}<<");
                     JToken newchild = GetSortedObject(child);
                     jproperty.Value = newchild;
                 }
 
                 return jproperty;
             }
+            else if (jtoken.Type == JTokenType.Array)
+            {
+                Log($"Adding array: >>{jtoken.Path}<<");
+
+                JArray old = jtoken as JArray;
+                JArray jarray = new JArray();
+
+                foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
+                {
+                    Log($"Adding array child: >>{child.Path}<<");
+                    JToken newchild = GetSortedObject(child);
+                    jarray.Add(newchild);
+                }
+
+                return jarray;
+            }
             else
             {
                 return jtoken;
+            }
+        }
+
+        static void Log(string message)
+        {
+            if (_logging)
+            {
+                Console.WriteLine(message);
             }
         }
     }
