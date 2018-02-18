@@ -13,13 +13,17 @@ public class Program
 {
     public static int Main(string[] args)
     {
+        string[] parsedArgs = args;
+        bool noninteractive = parsedArgs.Contains("--noninteractive") ? true : false;
+        parsedArgs = args.Where(a => a != "--noninteractive").ToArray();
+
         int result = 0;
         try
         {
-            if (args.Length != 2)
+            if (parsedArgs.Length != 2)
             {
                 Console.WriteLine(
-@"BackupTCProjects 1.1
+@"BackupTCProjects 1.2
 
 This is a backup program that retrieves all important configuration files on
 a Teamcity build server. These files can be backuped and later imported on
@@ -29,7 +33,7 @@ Reason for not using Teamcity's own backup feature is that it will make too
 many commits, one for each change. This tool can instead be scheduled once
 a day.
 
-Usage: BackupTCProjects <source> <target>
+Usage: BackupTCProjects [--noninteractive] <source> <target>
 
 Example: D:\TeamCity\.BuildServer\config\projects _Artifacts\projects
 
@@ -48,7 +52,7 @@ gitsimulatepush          - true/(false)");
                 return 1;
             }
 
-            BackupTCProjects(args[0], args[1]);
+            BackupTCProjects(parsedArgs[0], parsedArgs[1]);
         }
         catch (ApplicationException ex)
         {
@@ -61,7 +65,7 @@ gitsimulatepush          - true/(false)");
             result = 1;
         }
 
-        if (Environment.UserInteractive)
+        if (!noninteractive)
         {
             Log("Press any key to continue...");
             Console.ReadKey();
@@ -107,7 +111,7 @@ gitsimulatepush          - true/(false)");
             shortTargetfolder = targetfolder.Substring(curdir.Length);
         }
 
-        CopyFiles(shortSourcefolder, shortTargetfolder, includebuildnumberfiles);
+        CopyConfigFiles(shortSourcefolder, shortTargetfolder, includebuildnumberfiles);
 
         string gitserver = Environment.GetEnvironmentVariable("gitserver");
         string gitrepopath = Environment.GetEnvironmentVariable("gitrepopath");
@@ -161,7 +165,38 @@ gitsimulatepush          - true/(false)");
         }
     }
 
-    static void CopyFiles(string sourcefolder, string targetfolder, bool includebuildnumberfiles)
+    static void CopyFolder(string sourcefolder, string targetfolder)
+    {
+        string[] files = Directory.GetFiles(sourcefolder, "*", SearchOption.AllDirectories)
+            .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
+            .ToArray();
+
+        Log($"Copying {files.Length} files to: '{targetfolder}'");
+
+        int count = 0;
+
+        foreach (string sourcefile in files)
+        {
+            string targetfile = Path.Combine(targetfolder, sourcefile.Substring(sourcefolder.Length + 1));
+
+            string folder = Path.GetDirectoryName(targetfile);
+
+            if (!Directory.Exists(folder))
+            {
+                Log($"Creating target folder: '{folder}'");
+                Directory.CreateDirectory(folder);
+            }
+
+            Log($"Copying: '{sourcefile}' -> '{targetfile}'");
+
+            File.Copy(sourcefile, targetfile, true);
+            count++;
+        }
+
+        Log($"Copied {files.Length} files.");
+    }
+
+    static void CopyConfigFiles(string sourcefolder, string targetfolder, bool includebuildnumberfiles)
     {
         string[] files = Directory.GetFiles(sourcefolder, "*", SearchOption.AllDirectories)
             .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
@@ -259,7 +294,7 @@ gitsimulatepush          - true/(false)");
         RobustDelete(rootfolder);
 
 
-        string url = $"http://{username}:{password}@{server}{repopath}";
+        string url = $"https://{username}:{password}@{server}{repopath}";
 
         Log($"Using git url: '{url}'");
 
@@ -288,7 +323,7 @@ gitsimulatepush          - true/(false)");
         }
 
         Log($"Copying files into git folder: '{relativesourcefolder}' -> '{targetfolder}'");
-        Microsoft.VisualBasic.FileIO.FileSystem.CopyDirectory(relativesourcefolder, targetfolder, true);
+        CopyFolder(relativesourcefolder, targetfolder);
 
 
         //string gitchanges = RunCommand(gitexe, "status --porcelain", true);
@@ -301,7 +336,8 @@ gitsimulatepush          - true/(false)");
         RunCommand(gitexe, $"config user.email {email}");
         RunCommand(gitexe, $"config user.name {username}");
 
-        string commitmessage = "Automatic gathering of Teamcity config files: " + DateTime.Now.ToString("yyyyMMdd HHmm");
+        string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+        string commitmessage = "Automatic gathering of Teamcity config files: " + now;
 
         Log("Committing...");
         RunCommand(gitexe, $"--no-pager commit -m \"{commitmessage}\"");
@@ -320,7 +356,7 @@ gitsimulatepush          - true/(false)");
         }
     }
 
-    private static void RobustDelete(string folder)
+    static void RobustDelete(string folder)
     {
         if (Directory.Exists(folder))
         {
@@ -465,10 +501,11 @@ gitsimulatepush          - true/(false)");
     static void Log(string message)
     {
         string hostname = Dns.GetHostName();
-        Console.WriteLine($"{hostname}: {DateTime.Now}: {message}");
+        string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+        Console.WriteLine($"{hostname}: {now}: {message}");
     }
 
-    private static T LogTCSection<T>(string message, Func<T> func)
+    static T LogTCSection<T>(string message, Func<T> func)
     {
         ConsoleColor oldColor = Console.ForegroundColor;
         try
@@ -500,6 +537,7 @@ gitsimulatepush          - true/(false)");
     static void LogTCSection(string message, IEnumerable<string> collection)
     {
         string hostname = Dns.GetHostName();
+        string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
         ConsoleColor oldColor = Console.ForegroundColor;
         try
@@ -512,7 +550,7 @@ gitsimulatepush          - true/(false)");
             Console.ForegroundColor = oldColor;
         }
 
-        Console.WriteLine($"{hostname}: {DateTime.Now}: " + string.Join(Environment.NewLine + $"{hostname}: {DateTime.Now}: ", collection));
+        Console.WriteLine($"{hostname}: {now}: " + string.Join(Environment.NewLine + $"{hostname}: {now}: ", collection));
 
         try
         {
