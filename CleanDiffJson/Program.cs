@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,21 +13,22 @@ namespace CleanDiffJson
     class Program
     {
         static bool _SortChildren, _WinDiff, _DontDiffIfEqual;
-        static bool _logging = false;
+        static bool _VerboseLogging;
 
         static List<string> _searchPaths = new List<string>();
 
         static int Main(string[] args)
         {
             string usage =
-                @"CleanDiffJson 0.1 - Compare normalized json files
+                @"CleanDiffJson 0.2 - Compare normalized json files
 
 Usage: CleanDiffJson [flags] <filename1> <filename2>
 
 Optional flags:
--DontSortChildren  - Don't sort children
--DontWinDiff       - Don't start WinDiff
--DontDiffIfEqual   - Only start WinDiff if different.";
+-DontSortChildren  - Don't sort children.
+-DontWinDiff       - Don't start WinDiff.
+-DontDiffIfEqual   - Only start WinDiff if different.
+-Log               - Verbose logging.";
 
 
             if (args.Length < 2)
@@ -97,7 +98,7 @@ Optional flags:
 
         static bool CheckArg(string arg)
         {
-            if (arg != "-DontSortChildren" && arg != "-DontWinDiff" && arg != "-DontDiffIfEqual")
+            if (arg != "-DontSortChildren" && arg != "-DontWinDiff" && arg != "-DontDiffIfEqual" && arg != "-Log")
             {
                 Console.WriteLine("Unrecognized argument: '" + arg + "'");
                 return false;
@@ -109,6 +110,7 @@ Optional flags:
         static void SetFlags(string[] args, int flags)
         {
             _SortChildren = _WinDiff = _DontDiffIfEqual = true;
+            _VerboseLogging = false;
 
             for (int i = 0; i < flags; i++)
             {
@@ -118,6 +120,8 @@ Optional flags:
                     _WinDiff = false;
                 if (args[i] == "-DontDiffIfEqual")
                     _DontDiffIfEqual = false;
+                if (args[i] == "-Log")
+                    _VerboseLogging = true;
             }
         }
 
@@ -237,24 +241,26 @@ Optional flags:
                 JArray old = jtoken as JArray;
                 JArray jarray = new JArray();
 
-                foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
+                var sortedChildren = old.Select(c => GetSortedObject(c)).OrderBy(c => c.ToString());
+
+                foreach (JToken child in sortedChildren)
                 {
                     Log($"Adding array child: >>{child.Path}<<");
-                    JToken newchild = GetSortedObject(child);
-                    jarray.Add(newchild);
+                    jarray.Add(child);
                 }
 
                 return jarray;
             }
             else
             {
+                Log($"Generic type: '{jtoken.Type}'");
                 return jtoken;
             }
         }
 
         static void Log(string message)
         {
-            if (_logging)
+            if (_VerboseLogging)
             {
                 Console.WriteLine(message);
             }
