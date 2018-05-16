@@ -100,7 +100,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                     "Missing files cannot be excluded. Please keep the exclude filter tidy by removing the missing files from the exclude filter. ASAP.",
                     ConsoleColor.Red);
                 ConsoleHelper.WriteLineColor(
-                    $"The following {excessiveExcludes.Count()} files couldn't be excluded: '" + string.Join("', '", excessiveExcludes) + "'",
+                    $"The following {excessiveExcludes.Count()} files couldn't be excluded: '{string.Join("', '", excessiveExcludes)}'",
                     ConsoleColor.Red);
                 result = 1;
             }

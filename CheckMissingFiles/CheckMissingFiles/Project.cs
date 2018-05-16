@@ -46,14 +46,8 @@ namespace CheckMissingFiles
             {
                 string message =
                     teamcityErrorMessage ?
-                        string.Format(
-                            "##teamcity[message text='Could not load project: {0} --> {1}' status='ERROR']",
-                            string.Join(", ", solutionfiles),
-                            ex.Message.Replace("\'", "")) :
-                        string.Format(
-                            "Couldn't load project: '{0}' --> '{1}'",
-                            "'" + string.Join("', '", solutionfiles) + "'",
-                            ex.Message);
+                        $"##teamcity[message text='Could not load project: {string.Join(", ", solutionfiles)} --> {ex.Message.Replace("\'", "")}' status='ERROR']" :
+                        $"Couldn't load project: '{string.Join("', '", solutionfiles)}' --> '{ex.Message}'";
 
                 throw new ApplicationException(message);
             }
@@ -96,8 +90,8 @@ namespace CheckMissingFiles
             }
             else
             {
-                formatStringError = "'File not found: {0}' --> '{1}'";
-                formatStringWarning = "'File not found: {0}' --> '{1}'";
+                formatStringError = "File not found: '{0}' --> '{1}'";
+                formatStringWarning = "File not found: '{0}' --> '{1}'";
             }
 
 
@@ -108,7 +102,7 @@ namespace CheckMissingFiles
 
             if (_allfiles.Count() == 0)
             {
-                ConsoleHelper.WriteLine("No files found in project: '" + string.Join("', '", solutionFiles) + $"': '{projectFile}'");
+                ConsoleHelper.WriteLine($"No files found in project: '{string.Join("', '", solutionFiles)}': '{projectFile}'");
             }
 
             if (reverseCheck)
@@ -171,9 +165,8 @@ namespace CheckMissingFiles
                     catch (ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
-                            "Couldn't construct file name: '" + string.Join("', '", solutionFiles) + $"': '{projectFile}' + '{include}': {ex.Message}",
-                            ConsoleColor.Red
-                            );
+                            $"Couldn't construct file name: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
+                            ConsoleColor.Red);
                         parseError = true;
                         continue;
                     }
@@ -199,9 +192,8 @@ namespace CheckMissingFiles
                     catch (ArgumentException ex)
                     {
                         ConsoleHelper.WriteLineColor(
-                            "Couldn't construct file name: '" + string.Join("', '", solutionFiles) + "': '" + projectFile + "' + '" + include + "': " + ex.Message,
-                            ConsoleColor.Red
-                            );
+                            $"Couldn't construct file name: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
+                            ConsoleColor.Red);
                         parseError = true;
                         continue;
                     }

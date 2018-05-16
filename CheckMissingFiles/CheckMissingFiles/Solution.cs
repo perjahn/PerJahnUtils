@@ -23,14 +23,8 @@ namespace CheckMissingFiles
             {
                 string message =
                     teamcityErrorMessage ?
-                        string.Format(
-                            "##teamcity[message text='Could not load solution: {0} --> {1}' status='ERROR']",
-                            solutionFile,
-                            ex.Message.Replace("\'", "")) :
-                        string.Format(
-                            "Couldn't load solution: '{0}' --> '{1}'",
-                            $"'{solutionFile}'",
-                            ex.Message);
+                        $"##teamcity[message text='Could not load solution: {solutionFile} --> { ex.Message.Replace("\'", "")}' status='ERROR']" :
+                        $"Couldn't load solution: '{solutionFile}' --> '{ex.Message}'";
 
                 throw new ApplicationException(message);
             }
