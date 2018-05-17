@@ -1,22 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "compare", "compare.vcxproj", "{F0239946-3654-45FB-B6E0-E84944B91534}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "compare", "compare.vcxproj", "{7BBE713F-08E8-4355-93D1-0E7639A0F8CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F0239946-3654-45FB-B6E0-E84944B91534}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F0239946-3654-45FB-B6E0-E84944B91534}.Debug|Win32.Build.0 = Debug|Win32
-		{F0239946-3654-45FB-B6E0-E84944B91534}.Release|Win32.ActiveCfg = Release|Win32
-		{F0239946-3654-45FB-B6E0-E84944B91534}.Release|Win32.Build.0 = Release|Win32
+		{7BBE713F-08E8-4355-93D1-0E7639A0F8CB}.Debug|x64.ActiveCfg = Debug|x64
+		{7BBE713F-08E8-4355-93D1-0E7639A0F8CB}.Debug|x64.Build.0 = Debug|x64
+		{7BBE713F-08E8-4355-93D1-0E7639A0F8CB}.Release|x64.ActiveCfg = Release|x64
+		{7BBE713F-08E8-4355-93D1-0E7639A0F8CB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {64ACADBD-E2B0-43DD-895B-B6B220EEAD7C}
 	EndGlobalSection
 EndGlobal
