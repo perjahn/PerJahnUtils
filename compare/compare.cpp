@@ -31,8 +31,8 @@ DWORD g_t1, g_t2;
 
 int main(int argc, char *argv[])
 {
-	char *usage =
-		"Compare 2.1\n"
+	const char *usage =
+		"Compare 2.2\n"
 		"\n"
 		"Usage: compare [-v] <file pattern 1> <file pattern 2>\n"
 		"\n"
@@ -144,10 +144,10 @@ void compare_paths(char *szPath1, char *szPath2)
 		}
 		*/
 
-	// Else assume many-many comparison
+		// Else assume many-many comparison
 
 
-	// Enumerate entries in path1
+		// Enumerate entries in path1
 	entries1 = 0;
 	if ((hFind = FindFirstFile(szPath1, &Data)) != INVALID_HANDLE_VALUE)
 	{
@@ -334,10 +334,10 @@ void compare_files(char *szFileName1, char *szFileName2)
 	__int64 i;
 
 	DWORD t1 = GetTickCount();
-	for (i = 0; i<l; i += bufsize)
+	for (i = 0; i < l; i += bufsize)
 	{
 		unsigned blocksize = bufsize;
-		if (i + bufsize>l)
+		if (i + bufsize > l)
 			blocksize = (unsigned)(l - i);
 
 		fread(buf1, blocksize, 1, fh1);
@@ -394,7 +394,7 @@ void compare_files(char *szFileName1, char *szFileName2)
 	if (t1 != t2)
 	{
 		double t = (t2 - t1) / 1000.0;
-		double mb = l*2.0 / 1024 / 1024;
+		double mb = l * 2.0 / 1024 / 1024;
 		printf(" Read %.1f mb/s.\n", mb / t);
 	}
 	else
