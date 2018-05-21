@@ -42,7 +42,8 @@ namespace CheckMissingFiles
                     "{F2A71F9B-5D33-465A-A702-920D77279786}",
                     "{930C7802-8A8C-48F9-8165-68863BCCD9DD}",
                     "{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}",
-                    "{9A19103F-16F7-4668-BE54-9A1E7A4F7556}"
+                    "{9A19103F-16F7-4668-BE54-9A1E7A4F7556}",
+                    "{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}"
                 };
                 // solution folder, website
                 string[] ignoreguids = {
