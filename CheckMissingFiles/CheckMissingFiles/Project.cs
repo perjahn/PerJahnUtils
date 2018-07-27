@@ -155,23 +155,21 @@ namespace CheckMissingFiles
                 foreach (string include in _allfilesError)
                 {
                     // Files must exist in file system.
-                    string fullfilename;
+                    string[] files;
                     try
                     {
-                        fullfilename = Path.Combine(
-                            Path.GetDirectoryName(projectFile),
-                            include);
+                        files = Directory.GetFiles(Path.GetDirectoryName(projectFile), include);
                     }
-                    catch (ArgumentException ex)
+                    catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
                     {
                         ConsoleHelper.WriteLineColor(
-                            $"Couldn't construct file name: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
+                            $"Couldn't get files: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
                             ConsoleColor.Red);
                         parseError = true;
                         continue;
                     }
 
-                    if (!File.Exists(fullfilename))
+                    if (files.Length == 0)
                     {
                         string message = string.Format(formatStringError, projectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Red);
@@ -182,22 +180,20 @@ namespace CheckMissingFiles
                 foreach (string include in _allfilesWarning)
                 {
                     // Files should exist in file system.
-                    string fullfilename;
+                    string[] files;
                     try
                     {
-                        fullfilename = Path.Combine(
-                            Path.GetDirectoryName(projectFile),
-                            include);
+                        files = Directory.GetFiles(Path.GetDirectoryName(projectFile), include);
                     }
-                    catch (ArgumentException ex)
+                    catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
                     {
                         ConsoleHelper.WriteLineColor(
-                            $"Couldn't construct file name: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
+                            $"Couldn't get files: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
                             ConsoleColor.Red);
                         parseError = true;
                         continue;
                     }
-                    if (!File.Exists(fullfilename))
+                    if (files.Length == 0)
                     {
                         string message = string.Format(formatStringWarning, projectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
