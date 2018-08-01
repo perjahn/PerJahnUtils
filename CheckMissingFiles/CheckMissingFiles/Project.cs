@@ -160,6 +160,11 @@ namespace CheckMissingFiles
                     {
                         files = Directory.GetFiles(Path.GetDirectoryName(projectFile), include);
                     }
+                    catch (DirectoryNotFoundException)
+                    {
+                        // Suppress exception message
+                        files = new string[] { };
+                    }
                     catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
                     {
                         ConsoleHelper.WriteLineColor(
@@ -184,6 +189,11 @@ namespace CheckMissingFiles
                     try
                     {
                         files = Directory.GetFiles(Path.GetDirectoryName(projectFile), include);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        // Suppress exception message
+                        files = new string[] { };
                     }
                     catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
                     {
