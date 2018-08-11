@@ -15,7 +15,7 @@ namespace sqltoelastic
         {
             DataTable providers = DbProviderFactories.GetFactoryClasses();
 
-            DataRow[] rows = providers.Select("InvariantName='" + dbprovider + "'");
+            DataRow[] rows = providers.Select($"InvariantName='{dbprovider}'");
             if (rows.Length == 0)
             {
                 StringBuilder error = new StringBuilder();

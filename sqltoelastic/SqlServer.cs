@@ -78,8 +78,7 @@ namespace sqltoelastic
                             }
                             else
                             {
-                                string data = reader.GetValue(i) as string;
-                                if (data == null)
+                                if (!(reader.GetValue(i) is string data))
                                 {
                                     rowdata.Append($"  \"{colname}\": null");
                                 }

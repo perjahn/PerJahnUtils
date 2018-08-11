@@ -34,7 +34,7 @@ namespace sqltoelastic
                     }
                     else
                     {
-                        throw new Exception($"Couldn't find id field: '{timestampfield}'");
+                        throw new Exception($"Couldn't find timestamp field: '{timestampfield}'");
                     }
 
                     string datestring = created.ToString("yyyy.MM");
