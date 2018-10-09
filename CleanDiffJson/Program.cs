@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace CleanDiffJson
 {
@@ -20,7 +18,7 @@ namespace CleanDiffJson
         static int Main(string[] args)
         {
             string usage =
-                @"CleanDiffJson 0.2 - Compare normalized json files
+                @"CleanDiffJson 0.3 - Compare normalized json files
 
 Usage: CleanDiffJson [flags] <filename1> <filename2>
 
@@ -58,7 +56,7 @@ Optional flags:
                 return -1;
             }
 
-            Console.WriteLine("Using windiff: '" + windiffpath + "'");
+            Console.WriteLine($"Using windiff: '{windiffpath}'");
 
             bool result = DiffJson(windiffpath, file1, file2);
 
@@ -100,7 +98,7 @@ Optional flags:
         {
             if (arg != "-DontSortChildren" && arg != "-DontWinDiff" && arg != "-DontDiffIfEqual" && arg != "-Log")
             {
-                Console.WriteLine("Unrecognized argument: '" + arg + "'");
+                Console.WriteLine($"Unrecognized argument: '{arg}'");
                 return false;
             }
 
@@ -129,7 +127,7 @@ Optional flags:
         {
             for (int i = 1; i <= 10000; i++)
             {
-                string fullfilename = filepath + ".CleanDiffJson" + i + ext;
+                string fullfilename = $"{filepath}.CleanDiffJson{i}{ext}";
                 if (File.GetLastWriteTime(fullfilename) < DateTime.Now.AddMinutes(-5))
                 {
                     return fullfilename;
@@ -164,8 +162,8 @@ Optional flags:
             {
                 if (_WinDiff)
                 {
-                    Console.WriteLine("Diffing: '" + file1 + "' and '" + file2 + "'");
-                    System.Diagnostics.Process.Start(windiffpath, "\"" + outfile1 + "\" \"" + outfile2 + "\"");
+                    Console.WriteLine($"Diffing: '{file1}' and '{file2}'");
+                    System.Diagnostics.Process.Start(windiffpath, $"\"{outfile1}\" \"{outfile2}\"");
                 }
             }
 
@@ -178,6 +176,7 @@ Optional flags:
 
             try
             {
+                Console.WriteLine($"Reading: '{infile}'");
                 content = File.ReadAllText(infile);
             }
             catch (IOException ex)
@@ -186,22 +185,22 @@ Optional flags:
                 return false;
             }
 
-            JObject jobject = null;
-            jobject = JObject.Parse(content);
+            JToken jtoken = null;
+            jtoken = JToken.Parse(content);
 
             if (_SortChildren)
             {
-                jobject = GetSortedObject(jobject) as JObject;
+                jtoken = GetSortedJson(jtoken);
             }
 
-            string pretty = jobject.ToString(Newtonsoft.Json.Formatting.Indented);
+            string pretty = jtoken.ToString(Newtonsoft.Json.Formatting.Indented);
 
             File.WriteAllText(outfile, pretty);
 
             return true;
         }
 
-        static JToken GetSortedObject(JToken jtoken)
+        static JToken GetSortedJson(JToken jtoken)
         {
             if (jtoken.Type == JTokenType.Object)
             {
@@ -210,10 +209,10 @@ Optional flags:
                 JObject old = jtoken as JObject;
                 JObject jobject = new JObject();
 
-                foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
+                foreach (JToken child in old.Children().OrderByDescending(c => c.Path, StringComparer.InvariantCultureIgnoreCase))
                 {
                     Log($"Adding object child: >>{child.Path}<<");
-                    jobject.AddFirst(GetSortedObject(child));
+                    jobject.AddFirst(GetSortedJson(child));
                 }
 
                 return jobject;
@@ -225,10 +224,10 @@ Optional flags:
                 JProperty old = jtoken as JProperty;
                 JProperty jproperty = new JProperty(old.Name, old.Value);
 
-                foreach (JToken child in old.Children().OrderByDescending(c => c.Path))
+                foreach (JToken child in old.Children().OrderByDescending(c => c.Path, StringComparer.InvariantCultureIgnoreCase))
                 {
                     Log($"Adding property child: >>{child.Path}<<");
-                    JToken newchild = GetSortedObject(child);
+                    JToken newchild = GetSortedJson(child);
                     jproperty.Value = newchild;
                 }
 
@@ -241,7 +240,7 @@ Optional flags:
                 JArray old = jtoken as JArray;
                 JArray jarray = new JArray();
 
-                var sortedChildren = old.Select(c => GetSortedObject(c)).OrderBy(c => c.ToString());
+                var sortedChildren = old.Select(c => GetSortedJson(c)).OrderBy(c => c.ToString(), StringComparer.InvariantCultureIgnoreCase);
 
                 foreach (JToken child in sortedChildren)
                 {
