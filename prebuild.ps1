@@ -9,15 +9,15 @@ function Main()
 
     Generate-BuildFile "all.build"
 
-    Download-Nuget
+    Restore-Nuget
 
     Remove-SpammyBuildFile
 }
 
 function Clean()
 {
-    $files = @(dir -r -i obj,bin,Debug,Release)
-    $files | ? { $_.Attributes -band [IO.FileAttributes]::Directory } | % {
+    $folders = @(dir -Recurse -Force "obj","bin","Debug","Release",".vs" -Directory)
+    $folders | % {
         Write-Host ("Deleting folder: '" + $_.FullName + "'")
         rd -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
     }
@@ -25,7 +25,7 @@ function Clean()
 
 function Generate-BuildFile([string] $buildfile)
 {
-    $files = @(dir -r -i *.sln | ? { !($_.Attributes -band [IO.FileAttributes]::Directory) })
+    $files = @(dir -Recurse "*.sln" -File)
 
     Write-Host ("Found " + $files.Count + " solutions.")
 
@@ -47,22 +47,35 @@ function Generate-BuildFile([string] $buildfile)
     $xml += '</Project>'
 
     Write-Host ("Saving generated build file: '" + $buildfile + "'")
-    sc $buildfile $xml
+    Set-Content $buildfile $xml
 }
 
-function Download-Nuget()
+function Restore-Nuget()
 {
-    curl -UseBasicParsing https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile nuget.exe
+    [string] $nugeturl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+    [string] $nugetbinary = "nuget.exe"
+    Write-Host ("Downloading: '" + $nugeturl + "' -> '" + $nugetbinary + "'")
+    Invoke-WebRequest -UseBasicParsing $nugeturl -OutFile $nugetbinary
 
-    $packagefiles = @(dir -Recurse packages.config)
+    $nugetprocesses = @()
 
+    $packagefiles = @(dir -Recurse "packages.config" -File)
     Write-Host ("Found " + $packagefiles.Count + " package files.")
-
     $packagefiles | % {
         [string] $packagefile = $_.FullName
         Write-Host ("Restoring: '" + $packagefile + "'")
-        .\nuget.exe restore $packagefile -SolutionDirectory (Split-Path $packagefile)
+        $nugetprocesses += [Diagnostics.Process]::Start($nugetbinary, ("restore " + $packagefile + " -SolutionDirectory " + (Split-Path $packagefile)))
     }
+
+    $solutionfiles = @(dir -Recurse "*.sln" -File)
+    Write-Host ("Found " + $solutionfiles.Count + " solution files.")
+    $solutionfiles | % {
+        [string] $solutionfile = $_.FullName
+        Write-Host ("Restoring: '" + $solutionfile + "'")
+        $nugetprocesses += [Diagnostics.Process]::Start($nugetbinary, ("restore " + $solutionfile))
+    }
+
+    $nugetprocesses | % { $_.WaitForExit() }
 }
 
 function Remove-SpammyBuildFile()
@@ -70,6 +83,7 @@ function Remove-SpammyBuildFile()
     [string] $spammybuildfile = "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
     if (Test-Path $spammybuildfile)
     {
+        Write-Host ("Deleting spammy build file: '" + $spammybuildfile + "'")
         del $spammybuildfile -ErrorAction SilentlyContinue
     }
 }
