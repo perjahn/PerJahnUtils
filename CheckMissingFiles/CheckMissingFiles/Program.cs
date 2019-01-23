@@ -122,8 +122,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
             }
 
 
-            bool loadError;
-            List<Project> projects = LoadProjects(solutions, teamcityErrorMessage, out loadError);
+            List<Project> projects = LoadProjects(solutions, teamcityErrorMessage, out bool loadError);
 
             bool check = CheckProjects(projects, reverseCheck);
             if (loadError || !check)
@@ -182,16 +181,16 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
         {
             var projectsToLoad = solutions
                 .SelectMany(s =>
-                    s.projectsPaths, (s, relpath) =>
+                    s.ProjectsPaths, (s, relpath) =>
                         new
                         {
-                            solutionFile = s.solutionFile,
-                            projectPath = CompactPath(Path.Combine(Path.GetDirectoryName(s.solutionFile), relpath))
+                            solutionFile = s.SolutionFile,
+                            projectPath = CompactPath(Path.Combine(Path.GetDirectoryName(s.SolutionFile), relpath))
                         })
                 .GroupBy(p => p.projectPath, (projectPath, projs) =>
                     new
                     {
-                        projectPath = projectPath,
+                        projectPath,
                         solutionFiles = projs.Select(proj => proj.solutionFile).ToArray()
                     })
                 .OrderBy(p => p.projectPath)
@@ -259,16 +258,16 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
 
         public static bool CheckProjects(List<Project> projects, bool reverseCheck)
         {
-            foreach (Project p in projects.OrderBy(p => p.projectFile))
+            foreach (Project p in projects.OrderBy(p => p.ProjectFile))
             {
                 p.Check(reverseCheck);
             }
 
-            bool parseError = projects.Any(p => p.parseError);
+            bool parseError = projects.Any(p => p.ParseError);
 
-            int missingfilesError = projects.Select(p => p.missingfilesError).Sum();
-            int missingfilesWarning = projects.Select(p => p.missingfilesWarning).Sum();
-            int excessfiles = projects.Select(p => p.excessfiles).Sum();
+            int missingfilesError = projects.Select(p => p.MissingfilesError).Sum();
+            int missingfilesWarning = projects.Select(p => p.MissingfilesWarning).Sum();
+            int excessfiles = projects.Select(p => p.Excessfiles).Sum();
 
             string msg = $"Parsed {projects.Count} projects, found";
 

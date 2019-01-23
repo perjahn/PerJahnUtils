@@ -12,14 +12,14 @@ namespace CheckMissingFiles
 {
     class Project
     {
-        public string projectFile { get; set; }
-        public string[] solutionFiles { get; set; }
+        public string ProjectFile { get; set; }
+        public string[] SolutionFiles { get; set; }
         private List<XElement> _allfiles { get; set; }
 
-        public bool parseError { get; set; }
-        public int missingfilesError { get; set; }
-        public int missingfilesWarning { get; set; }
-        public int excessfiles { get; set; }
+        public bool ParseError { get; set; }
+        public int MissingfilesError { get; set; }
+        public int MissingfilesWarning { get; set; }
+        public int Excessfiles { get; set; }
 
         private bool _teamcityErrorMessage { get; set; }
 
@@ -30,8 +30,8 @@ namespace CheckMissingFiles
 
         public Project(string projectfile, string[] solutionfiles, bool teamcityErrorMessage)
         {
-            projectFile = projectfile;
-            solutionFiles = solutionfiles;
+            ProjectFile = projectfile;
+            SolutionFiles = solutionfiles;
 
             _teamcityErrorMessage = teamcityErrorMessage;
 
@@ -40,7 +40,7 @@ namespace CheckMissingFiles
 
             try
             {
-                xdoc = XDocument.Load(projectFile);
+                xdoc = XDocument.Load(ProjectFile);
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
@@ -67,7 +67,7 @@ namespace CheckMissingFiles
             }
             catch (Exception ex)
             {
-                throw new ApplicationException($"Couldn't parse project: '{projectFile}': {ex.Message}");
+                throw new ApplicationException($"Couldn't parse project: '{ProjectFile}': {ex.Message}");
             }
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
@@ -95,31 +95,31 @@ namespace CheckMissingFiles
             }
 
 
-            parseError = false;
-            missingfilesError = 0;
-            missingfilesWarning = 0;
-            excessfiles = 0;
+            ParseError = false;
+            MissingfilesError = 0;
+            MissingfilesWarning = 0;
+            Excessfiles = 0;
 
             if (_allfiles.Count() == 0)
             {
-                ConsoleHelper.WriteLine($"No files found in project: '{string.Join("', '", solutionFiles)}': '{projectFile}'");
+                ConsoleHelper.WriteLine($"No files found in project: '{string.Join("', '", SolutionFiles)}': '{ProjectFile}'");
             }
 
             if (reverseCheck)
             {
                 // Files should exist in project file.
 
-                string projectfolder = Path.GetDirectoryName(projectFile);
+                string projectfolder = Path.GetDirectoryName(ProjectFile);
 
                 string[] files = Directory.GetFiles(projectfolder, "*", SearchOption.AllDirectories)
-                    .Where(f => !string.Equals(f, projectFile, StringComparison.OrdinalIgnoreCase)).ToArray();
+                    .Where(f => !string.Equals(f, ProjectFile, StringComparison.OrdinalIgnoreCase)).ToArray();
 
                 string[] allfiles = _allfiles.Select(el =>
                 {
                     try
                     {
                         return Path.Combine(
-                            Path.GetDirectoryName(projectFile),
+                            Path.GetDirectoryName(ProjectFile),
                             el.Attribute("Include").Value);
                     }
                     catch (ArgumentException)
@@ -134,9 +134,9 @@ namespace CheckMissingFiles
                     {
                         string filenameRelativeFromProject = filename.Substring(projectfolder.Length).TrimStart('\\');
 
-                        string message = string.Format(formatStringWarning, projectFile, filenameRelativeFromProject);
+                        string message = string.Format(formatStringWarning, ProjectFile, filenameRelativeFromProject);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
-                        excessfiles++;
+                        Excessfiles++;
                     }
                 }
             }
@@ -158,7 +158,7 @@ namespace CheckMissingFiles
                     string[] files;
                     try
                     {
-                        files = Directory.GetFiles(Path.GetDirectoryName(projectFile), include);
+                        files = Directory.GetFiles(Path.GetDirectoryName(ProjectFile), include);
                     }
                     catch (DirectoryNotFoundException)
                     {
@@ -168,17 +168,17 @@ namespace CheckMissingFiles
                     catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
                     {
                         ConsoleHelper.WriteLineColor(
-                            $"Couldn't get files: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
+                            $"Couldn't get files: '{string.Join("', '", SolutionFiles)}': '{ProjectFile}' + '{include}': {ex.Message}",
                             ConsoleColor.Red);
-                        parseError = true;
+                        ParseError = true;
                         continue;
                     }
 
                     if (files.Length == 0)
                     {
-                        string message = string.Format(formatStringError, projectFile, include);
+                        string message = string.Format(formatStringError, ProjectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Red);
-                        missingfilesError++;
+                        MissingfilesError++;
                     }
                 }
 
@@ -188,7 +188,7 @@ namespace CheckMissingFiles
                     string[] files;
                     try
                     {
-                        files = Directory.GetFiles(Path.GetDirectoryName(projectFile), include);
+                        files = Directory.GetFiles(Path.GetDirectoryName(ProjectFile), include);
                     }
                     catch (DirectoryNotFoundException)
                     {
@@ -198,16 +198,16 @@ namespace CheckMissingFiles
                     catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
                     {
                         ConsoleHelper.WriteLineColor(
-                            $"Couldn't get files: '{string.Join("', '", solutionFiles)}': '{projectFile}' + '{include}': {ex.Message}",
+                            $"Couldn't get files: '{string.Join("', '", SolutionFiles)}': '{ProjectFile}' + '{include}': {ex.Message}",
                             ConsoleColor.Red);
-                        parseError = true;
+                        ParseError = true;
                         continue;
                     }
                     if (files.Length == 0)
                     {
-                        string message = string.Format(formatStringWarning, projectFile, include);
+                        string message = string.Format(formatStringWarning, ProjectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
-                        missingfilesWarning++;
+                        MissingfilesWarning++;
                     }
                 }
             }
