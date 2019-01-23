@@ -5,6 +5,8 @@ $ErrorActionPreference = "Stop"
 
 function Main()
 {
+    Write-Host ("Current time: " + (Get-Date -f "yyyy-MM-dd HH:mm:ss"))
+
     Clean
 
     Generate-BuildFile "all.build"
