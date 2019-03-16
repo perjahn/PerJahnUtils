@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace GenerateTransform
@@ -12,22 +10,22 @@ namespace GenerateTransform
         public int Test()
         {
             bool result1 = PathTest1();
-            Console.WriteLine("PathTest1: " + result1);
+            Console.WriteLine($"PathTest1: {result1}");
 
             bool result2 = PathTest2();
-            Console.WriteLine("PathTest2: " + result2);
+            Console.WriteLine($"PathTest2: {result2}");
 
             bool result3 = CompareTest1();
-            Console.WriteLine("CompareTest1: " + result3);
+            Console.WriteLine($"CompareTest1: {result3}");
 
             bool result4 = CompareTest2();
-            Console.WriteLine("CompareTest2: " + result4);
+            Console.WriteLine($"CompareTest2: {result4}");
 
             bool result5 = CompareTest3();
-            Console.WriteLine("CompareTest3: " + result5);
+            Console.WriteLine($"CompareTest3: {result5}");
 
             bool result6 = CompareTest4();
-            Console.WriteLine("CompareTest4: " + result6);
+            Console.WriteLine($"CompareTest4: {result6}");
 
             if (result1 == false || result2 == false || result3 == false || result4 == false || result5 == false || result6 == false)
             {

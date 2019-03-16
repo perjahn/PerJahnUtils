@@ -1,5 +1,3 @@
-# edit with: powershell_ise.exe
-
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
 
@@ -12,8 +10,6 @@ function Main()
     Generate-BuildFile "all.build"
 
     Restore-Nuget
-
-    Remove-SpammyBuildFile
 }
 
 function Clean()
@@ -36,12 +32,7 @@ function Generate-BuildFile([string] $buildfile)
     $xml += '  <Target Name="Build">'
 
     $files | % {
-        [string] $filename = $_
-        if ($filename.StartsWith('.\'))
-        {
-            $filename = $filename.Substring(2)
-        }
-
+        [string] $filename = $_.FullName.Substring((pwd).Path.Length+1)
         $xml += '    <MSBuild Projects="' + $filename + '" Properties="Configuration=Release" ContinueOnError="true" />'
     }
 
@@ -54,10 +45,7 @@ function Generate-BuildFile([string] $buildfile)
 
 function Restore-Nuget()
 {
-    [string] $nugeturl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
-    [string] $nugetbinary = "nuget.exe"
-    Write-Host ("Downloading: '" + $nugeturl + "' -> '" + $nugetbinary + "'")
-    Invoke-WebRequest -UseBasicParsing $nugeturl -OutFile $nugetbinary
+    [string] $dotnetbinary = "dotnet"
 
     $nugetprocesses = @()
 
@@ -66,7 +54,7 @@ function Restore-Nuget()
     $packagefiles | % {
         [string] $packagefile = $_.FullName
         Write-Host ("Restoring: '" + $packagefile + "'")
-        $nugetprocesses += [Diagnostics.Process]::Start($nugetbinary, ("restore " + $packagefile + " -SolutionDirectory " + (Split-Path $packagefile)))
+        $nugetprocesses += [Diagnostics.Process]::Start($dotnetbinary, ("restore " + $packagefile + " -SolutionDirectory " + (Split-Path $packagefile)))
     }
 
     $solutionfiles = @(dir -Recurse "*.sln" -File)
@@ -74,20 +62,10 @@ function Restore-Nuget()
     $solutionfiles | % {
         [string] $solutionfile = $_.FullName
         Write-Host ("Restoring: '" + $solutionfile + "'")
-        $nugetprocesses += [Diagnostics.Process]::Start($nugetbinary, ("restore " + $solutionfile))
+        $nugetprocesses += [Diagnostics.Process]::Start($dotnetbinary, ("restore " + $solutionfile))
     }
 
     $nugetprocesses | % { $_.WaitForExit() }
-}
-
-function Remove-SpammyBuildFile()
-{
-    [string] $spammybuildfile = "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
-    if (Test-Path $spammybuildfile)
-    {
-        Write-Host ("Deleting spammy build file: '" + $spammybuildfile + "'")
-        del $spammybuildfile -ErrorAction SilentlyContinue
-    }
 }
 
 Main

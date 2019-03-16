@@ -2,19 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 using MySql.Data.MySqlClient;
 
 namespace ExportDateTable
 {
-    public class db : IDisposable
+    public class Db : IDisposable
     {
         private MySqlConnection _cn = null;
 
         private int CommandTimeout { get; set; }  // Ctor sets this to 600s (default is 60s)
 
         #region Dtor/Ctor
-        public db(string connstr)
+        public Db(string connstr)
         {
             _cn = new MySqlConnection(connstr);
             _cn.Open();
@@ -47,7 +46,7 @@ namespace ExportDateTable
         {
             int iReturnValue = 0;
 
-            using (MySqlCommand cmd = _cn.CreateCommand())
+            using (var cmd = _cn.CreateCommand())
             {
                 cmd.Connection = _cn;
                 cmd.CommandType = ct;
@@ -74,7 +73,7 @@ namespace ExportDateTable
 
         private object ExecuteScalar(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            using (MySqlCommand cmd = _cn.CreateCommand())
+            using (var cmd = _cn.CreateCommand())
             {
                 cmd.Connection = _cn;
                 cmd.CommandType = ct;
@@ -110,7 +109,7 @@ namespace ExportDateTable
 
         private MySqlDataReader ExecuteReader(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            using (MySqlCommand cmd = _cn.CreateCommand())
+            using (var cmd = _cn.CreateCommand())
             {
                 cmd.Connection = _cn;
                 cmd.CommandType = ct;

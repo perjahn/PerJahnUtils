@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace RemoveSolutionConfigs
 {
@@ -31,7 +30,7 @@ Usage: RemoveSolutionConfigs [-v] <solutionfile> <remove_config_1> <remove_confi
 
             if (!File.Exists(solutionfile))
             {
-                Console.WriteLine("Couldn't find file: " + solutionfile);
+                Console.WriteLine($"Couldn't find file: {solutionfile}");
                 return;
             }
 

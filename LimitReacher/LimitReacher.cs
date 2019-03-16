@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LimitReacher
 {
@@ -32,10 +30,9 @@ Value should be parsable to double.");
                 return 1;
             }
 
-            double limit;
-            if (!double.TryParse(args[1], out limit))
+            if (!double.TryParse(args[1], out double limit))
             {
-                Console.WriteLine("Couldn't parse limit: '" + args[1] + "'");
+                Console.WriteLine($"Couldn't parse limit: '{args[1]}'");
                 return 1;
             }
 
@@ -51,14 +48,14 @@ Value should be parsable to double.");
                 values.Select(v => (double)(v.date.Ticks)).ToArray());
 
             DateTime d = new DateTime((long)y);
-            Console.WriteLine("Y intercept: " + d);
+            Console.WriteLine($"Y intercept: {d}");
 
             return 0;
         }
 
         static double GetLinearRegressionYIntercept(double[] xvalues, double[] yvalues)
         {
-            var values = xvalues.Zip(yvalues, (x, y) => new { x = x, y = y }).ToArray();
+            var values = xvalues.Zip(yvalues, (x, y) => new { x, y }).ToArray();
 
             double sumx = values.Sum(v => v.x);
             double sumy = values.Sum(v => v.y);

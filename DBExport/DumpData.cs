@@ -9,7 +9,7 @@ namespace DBExport
     {
         public void DumpTable(string dbprovider, string connstr, string tablename, string filename)
         {
-            using (db mydb = new db(dbprovider, connstr))
+            using (Db mydb = new Db(dbprovider, connstr))
             {
                 string sql = $"select * from {tablename}";
 

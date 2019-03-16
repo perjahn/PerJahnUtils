@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.GACManagedAccess;
 
 namespace ProjFix
 {
-    class gac
+    class Gac
     {
         static List<string> SystemAssemblies = null;
 
@@ -26,11 +24,11 @@ namespace ProjFix
             SystemAssemblies = SystemAssemblies.Distinct().OrderBy(a => a).ToList();
             int count2 = SystemAssemblies.Count();
 
-            ConsoleHelper.WriteLine("Found " + count1 + " GAC assemblies, " + count2 + " unique names.", true);
+            ConsoleHelper.WriteLine($"Found {count1} GAC assemblies, {count2} unique names.", true);
 
             foreach (string gacass in SystemAssemblies)
             {
-                ConsoleHelper.WriteLine("'" + gacass + "'", true);
+                ConsoleHelper.WriteLine($"'{gacass}'", true);
             }
         }
 

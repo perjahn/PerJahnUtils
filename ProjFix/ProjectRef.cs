@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 
 namespace ProjFix
@@ -9,22 +8,22 @@ namespace ProjFix
     // Corresponds to a <ProjectReference> tag in project file.
     class ProjectRef : Reference
     {
-        public string project { get; set; }
-        public string package { get; set; }
+        public string Project { get; set; }
+        public string Package { get; set; }
 
         // These 2 lists are used when loading, before validating/fixing, and compacting them to single items.
-        public List<string> projects { get; set; }
-        public List<string> packages { get; set; }
+        public List<string> Projects { get; set; }
+        public List<string> Packages { get; set; }
 
 
         public void AddToDoc(XDocument xdoc, XNamespace ns)
         {
-            ConsoleHelper.WriteLine("  Adding proj ref: '" + this.include + "'", true);
+            ConsoleHelper.WriteLine($"  Adding proj ref: '{Include}'", true);
 
             XElement newref = new XElement(ns + "ProjectReference",
-                new XAttribute("Include", this.include),
-                new XElement(ns + "Project", this.project),
-                new XElement(ns + "Name", this.name)
+                new XAttribute("Include", Include),
+                new XElement(ns + "Project", Project),
+                new XElement(ns + "Name", Name)
                 );
 
             // Sort insert
@@ -47,11 +46,11 @@ namespace ProjFix
                            orderby el.Attribute("Include").Value
                            select el;
 
-                if (this.include.CompareTo(refs.First().Attribute("Include").Value) < 0)
+                if (Include.CompareTo(refs.First().Attribute("Include").Value) < 0)
                 {
                     groups.ElementAt(0).AddFirst(newref);
                 }
-                else if (this.include.CompareTo(refs.Last().Attribute("Include").Value) > 0)
+                else if (Include.CompareTo(refs.Last().Attribute("Include").Value) > 0)
                 {
                     refs.Last().AddAfterSelf(newref);
                 }
@@ -61,7 +60,7 @@ namespace ProjFix
                     {
                         string inc1 = refs.ElementAt(i).Attribute("Include").Value;
                         string inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
-                        if (this.include.CompareTo(inc1) > 0 && this.include.CompareTo(inc2) < 0)
+                        if (Include.CompareTo(inc1) > 0 && Include.CompareTo(inc2) < 0)
                         {
                             refs.ElementAt(i).AddAfterSelf(newref);
                         }

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ParseNetInfo
 {
@@ -29,7 +27,7 @@ nics:    Output from netsh interface ipv4 show addresses");
             return 0;
         }
 
-        public class state
+        public class State
         {
             public string _server;
             public string _domain;
@@ -39,20 +37,20 @@ nics:    Output from netsh interface ipv4 show addresses");
 
         static void ParseStates(string infile, string outfile)
         {
-            Console.WriteLine("-=-=- Parsing nics: " + infile + " -> " + outfile + " -=-=-");
+            Console.WriteLine($"-=-=- Parsing nics: {infile} -> {outfile} -=-=-");
             string[] rows = File.ReadAllLines(infile);
 
-            List<state> states = new List<state>();
+            var states = new List<State>();
 
 
-            state currentstate = null;
+            State currentstate = null;
             string currentprofile = null;
 
             foreach (string row in rows)
             {
                 if (row.StartsWith("Server: "))
                 {
-                    currentstate = new state { _server = row.Substring(8) };
+                    currentstate = new State { _server = row.Substring(8) };
                     continue;
                 }
                 if (currentstate == null || row == string.Empty || row.StartsWith("----------"))
@@ -75,8 +73,8 @@ nics:    Output from netsh interface ipv4 show addresses");
 
                 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("Verbose")))
                 {
-                    Console.WriteLine("name: '" + name + "'");
-                    Console.WriteLine("value: '" + value + "'");
+                    Console.WriteLine($"name: '{name}'");
+                    Console.WriteLine($"value: '{value}'");
                 }
 
                 if (value == "Profile Settings:")
@@ -101,26 +99,28 @@ nics:    Output from netsh interface ipv4 show addresses");
                         }
                         else
                         {
-                            Console.WriteLine("Unknown profile: Server: " + currentstate._server + ", profile: '" + currentprofile + "'");
+                            Console.WriteLine($"Unknown profile: Server: {currentstate._server}, profile: '{currentprofile}'");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Unknown row: Server: " + currentstate._server + ", name: '" + name + "'");
+                        Console.WriteLine($"Unknown row: Server: {currentstate._server}, name: '{name}'");
                     }
                 }
             }
 
-            List<string> output = new List<string>();
-            output.Add("Server\tDomain\tPrivate\tPubic");
+            var output = new List<string>
+            {
+                "Server\tDomain\tPrivate\tPubic"
+            };
             output.AddRange(states
-                .Select(s => s._server + '\t' + s._domain + '\t' + s._private + '\t' + s._public)
+                .Select(s => $"{s._server}\t{s._domain}\t{s._private}\t{s._public}")
                 .OrderBy(s => s));
 
             File.WriteAllLines(outfile, output);
         }
 
-        public class rule
+        public class Rule
         {
             public string _server;
             public string _rulename;
@@ -139,15 +139,15 @@ nics:    Output from netsh interface ipv4 show addresses");
 
         static void ParseRules(string infile, string outfile)
         {
-            Console.WriteLine("-=-=- Parsing nics: " + infile + " -> " + outfile + " -=-=-");
+            Console.WriteLine($"-=-=- Parsing nics: {infile} -> {outfile} -=-=-");
 
             string[] rows = File.ReadAllLines(infile);
 
-            List<rule> rules = new List<rule>();
+            var rules = new List<Rule>();
 
 
             string currentserver = null;
-            rule currentrule = null;
+            Rule currentrule = null;
             string currentname = null;
 
             foreach (string row in rows)
@@ -171,13 +171,13 @@ nics:    Output from netsh interface ipv4 show addresses");
 
                 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("Verbose")))
                 {
-                    Console.WriteLine("name: '" + name + "'");
-                    Console.WriteLine("value: '" + value + "'");
+                    Console.WriteLine($"name: '{name}'");
+                    Console.WriteLine($"value: '{value}'");
                 }
 
                 if (name == "Rule Name")
                 {
-                    currentrule = new rule { _server = currentserver };
+                    currentrule = new Rule { _server = currentserver };
                     currentrule._rulename = value;
                 }
                 else if (name == "Enabled")
@@ -219,7 +219,7 @@ nics:    Output from netsh interface ipv4 show addresses");
                     }
                     else
                     {
-                        Console.WriteLine("Unknown protocol row: Server: " + currentrule._server + ", value: '" + value + "'");
+                        Console.WriteLine($"Unknown protocol row: Server: {currentrule._server}, value: '{value}'");
                     }
                 }
                 else if (name == "LocalPort")
@@ -242,7 +242,7 @@ nics:    Output from netsh interface ipv4 show addresses");
                 }
                 else
                 {
-                    Console.WriteLine("Unknown row: Server: " + currentrule._server + ", name: '" + name + "'");
+                    Console.WriteLine($"Unknown row: Server: {currentrule._server}, name: '{name}'");
                 }
 
                 if (name != string.Empty)
@@ -251,18 +251,19 @@ nics:    Output from netsh interface ipv4 show addresses");
                 }
             }
 
-            List<string> output = new List<string>();
-            output.Add(
+            var output = new List<string>
+            {
                 "Server\tRuleName\tEnabled\tDirection\t" +
                 "Profiles\tGrouping\tLocalIP\tRemoteIP\t" +
                 "Protocol\tLocalPort\tRemotePort\tEdgeTraversal\t" +
-                "Action");
+                "Action"
+            };
             output.AddRange(rules
                 .Select(s =>
-                s._server + '\t' + s._rulename + '\t' + s._enabled + '\t' + s._direction + '\t' +
-                s._profiles + '\t' + s._grouping + '\t' + s._localip + '\t' + s._remoteip + '\t' +
-                s._protocol + '\t' + s._localport + '\t' + s._remoteport + '\t' + s._edgetraversal + '\t' +
-                s._action)
+                    $"{s._server}\t{s._rulename}\t{s._enabled}\t{s._direction}\t" +
+                    $"{s._profiles}\t{s._grouping}\t{s._localip}\t{s._remoteip}\t" +
+                    $"{s._protocol}\t{s._localport}\t{s._remoteport}\t{s._edgetraversal}\t" +
+                    $"{s._action}")
                 .OrderBy(s => s));
 
             File.WriteAllLines(outfile, output);
@@ -270,7 +271,7 @@ nics:    Output from netsh interface ipv4 show addresses");
             return;
         }
 
-        public class nic
+        public class Nic
         {
             public string _server;
             public string _name;
@@ -284,14 +285,14 @@ nics:    Output from netsh interface ipv4 show addresses");
 
         static void ParseNics(string infile, string outfile)
         {
-            Console.WriteLine("-=-=- Parsing nics: " + infile + " -> " + outfile + " -=-=-");
+            Console.WriteLine($"-=-=- Parsing nics: {infile} -> {outfile} -=-=-");
             string[] rows = File.ReadAllLines(infile);
 
-            List<nic> nics = new List<nic>();
+            var nics = new List<Nic>();
 
 
             string currentserver = null;
-            nic currentnic = null;
+            Nic currentnic = null;
             string currentname = null;
 
             foreach (string row in rows)
@@ -315,13 +316,13 @@ nics:    Output from netsh interface ipv4 show addresses");
 
                 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("Verbose")))
                 {
-                    Console.WriteLine("name: '" + name + "'");
-                    Console.WriteLine("value: '" + value + "'");
+                    Console.WriteLine($"name: '{name}'");
+                    Console.WriteLine($"value: '{value}'");
                 }
 
                 if (name.StartsWith("Configuration for interface "))
                 {
-                    currentnic = new nic { _server = currentserver };
+                    currentnic = new Nic { _server = currentserver };
                     currentnic._name = name.Substring(28).Trim('"');
                 }
                 else if (name == "DHCP enabled")
@@ -366,7 +367,7 @@ nics:    Output from netsh interface ipv4 show addresses");
                 }
                 else
                 {
-                    Console.WriteLine("Unknown row: Server: " + currentnic._server + ", name: '" + name + "'");
+                    Console.WriteLine($"Unknown row: Server: {currentnic._server}, name: '{name}'");
                 }
 
                 if (name != string.Empty)
@@ -375,14 +376,15 @@ nics:    Output from netsh interface ipv4 show addresses");
                 }
             }
 
-            List<string> output = new List<string>();
-            output.Add(
+            var output = new List<string>
+            {
                 "Server\tName\t_DhcpEnabled\tIpAddresses\t" +
-                "SubnetPrefixes\tDefaultGateway\tGatewayMetric\tInterfaceMetric");
+                "SubnetPrefixes\tDefaultGateway\tGatewayMetric\tInterfaceMetric"
+            };
             output.AddRange(nics
                 .Select(s =>
-                s._server + '\t' + s._name + '\t' + s._dhcpenabled + '\t' + s._ipaddresses + '\t' +
-                s._subnetprefixes + '\t' + s._defaultgateway + '\t' + s._gatewaymetric + '\t' + s._interfacemetric)
+                    $"{s._server}\t{s._name}\t{s._dhcpenabled}\t{s._ipaddresses}\t" +
+                    $"{s._subnetprefixes}\t{s._defaultgateway}\t{s._gatewaymetric}\t{s._interfacemetric}")
                 .OrderBy(s => s));
 
             File.WriteAllLines(outfile, output);

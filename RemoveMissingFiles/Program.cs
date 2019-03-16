@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RemoveMissingFiles
 {
@@ -18,7 +16,7 @@ namespace RemoveMissingFiles
                 Environment.UserInteractive &&
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
-                Console.WriteLine(Environment.NewLine + "Press any key to continue...");
+                Console.WriteLine($"{Environment.NewLine}Press any key to continue...");
                 Console.ReadKey(true);
             }
 
@@ -68,6 +66,5 @@ Example: RemoveMissingFiles hello.sln
 
             return 0;
         }
-
     }
 }

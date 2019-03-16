@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace GenerateTCWarningsReport
 {
@@ -30,14 +29,14 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
         {
             if (!(File.Exists(BuildLogFilename)))
             {
-                Console.WriteLine("Compilation warnings file not found: '" + BuildLogFilename + "'");
+                Console.WriteLine($"Compilation warnings file not found: '{BuildLogFilename}'");
                 Console.WriteLine("This file should be written by VS file logger.");
                 return;
             }
 
             if (!ServerUrl.StartsWith("http"))
             {
-                ServerUrl = "http://" + ServerUrl;
+                ServerUrl = $"http://{ServerUrl}";
             }
 
             // Every warning is written two times to the log by VS, selet unique warnings
@@ -50,10 +49,10 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
                 .ToList();
 
             // raw output
-            Console.WriteLine("MSBuild Warnings - " + warnings.Count + " warnings ===================================================");
+            Console.WriteLine($"MSBuild Warnings - {warnings.Count} warnings ===================================================");
             foreach (var warning in warnings)
             {
-                Console.WriteLine(" * " + warning);
+                Console.WriteLine($" * {warning}");
             }
 
             List<string> previousWarnings;
@@ -66,7 +65,7 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
             }
             else
             {
-                Console.WriteLine("Reading Teamcity properties file: '" + propfile + "'");
+                Console.WriteLine($"Reading Teamcity properties file: '{propfile}'");
                 string[] prows = File.ReadAllLines(propfile);
 
                 string buildtypeid = prows
@@ -82,15 +81,15 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
                     .Select(p => Regex.Unescape(p.Substring(23)))
                     .First();
 
-                string tcurl = ServerUrl + "/httpAuth/repository/download/" + buildtypeid + "/.lastSuccessful/" + RawOutputFile;
-                //Console.WriteLine("Teamcity username: '" + username + "'");
-                //Console.WriteLine("Teamcity password: '" + password + "'");
-                Console.WriteLine("Teamcity url: '" + tcurl + "'");
+                string tcurl = $"{ServerUrl}/httpAuth/repository/download/{buildtypeid}/.lastSuccessful/{RawOutputFile}";
+                //Console.WriteLine($"Teamcity username: '{username}'");
+                //Console.WriteLine($"Teamcity password: '{password}'");
+                Console.WriteLine($"Teamcity url: '{tcurl}'");
 
                 using (var webclient = new WebClient())
                 {
-                    string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(username + ":" + password));
-                    webclient.Headers[HttpRequestHeader.Authorization] = "Basic " + credentials;
+                    string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+                    webclient.Headers[HttpRequestHeader.Authorization] = $"Basic {credentials}";
 
                     try
                     {
@@ -126,9 +125,9 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
             }
 
             // TeamCity output
-            Console.WriteLine("##teamcity[buildStatus text='{build.status.text}, Build warnings: " + warnings.Count +
-                " (+" + newwarnings.Count + "/-" + (previousWarnings.Count - oldwarnings.Count) + ")']");
-            Console.WriteLine("##teamcity[buildStatisticValue key='buildWarnings' value='" + warnings.Count + "']");
+            Console.WriteLine("##teamcity[buildStatus text='{build.status.text}" +
+                $", Build warnings: {warnings.Count} (+{newwarnings.Count}/-{(previousWarnings.Count - oldwarnings.Count)})']");
+            Console.WriteLine($"##teamcity[buildStatisticValue key='buildWarnings' value='{warnings.Count}']");
 
             // file output
             Console.WriteLine("Writing to raw file");
@@ -146,10 +145,10 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
                 Directory.CreateDirectory(ReportFolder);
             }
             string htmlfile = Path.Combine(ReportFolder, "index.html");
-            Console.WriteLine("Writing to html file: '" + htmlfile + "'");
+            Console.WriteLine($"Writing to html file: '{htmlfile}'");
             using (var sw = new StreamWriter(htmlfile))
             {
-                sw.WriteLine("<html><head><base target='_blank' /></head><body><h1>" + warnings.Count + " Build Warnings</h1>");
+                sw.WriteLine($"<html><head><base target='_blank' /></head><body><h1>{warnings.Count} Build Warnings</h1>");
 
                 if (newwarnings.Count > 0)
                 {
@@ -164,7 +163,7 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
                             .Trim()
                             .Replace(" ", "%20");
 
-                        sw.WriteLine("<li style='color:red'><a href='https://www.google.com/search?q=" + cleanwarning + "'>" + warning + "</a></li>");
+                        sw.WriteLine($"<li style='color:red'><a href='https://www.google.com/search?q={cleanwarning}'>{warning}</a></li>");
                     }
                     sw.WriteLine("</ul>");
                 }
@@ -181,7 +180,7 @@ Example: GenerateTCWarningsReport BuildLogFilename.txt BuildWarnings.txt BuildWa
                             .Trim()
                             .Replace(" ", "%20");
 
-                        sw.WriteLine("<li><a href='https://www.google.com/search?q=" + cleanwarning + "'>" + warning + "</a></li>");
+                        sw.WriteLine($"<li><a href='https://www.google.com/search?q={cleanwarning}'>{warning}</a></li>");
                     }
                     sw.WriteLine("</ul>");
                 }

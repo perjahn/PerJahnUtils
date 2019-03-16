@@ -2,26 +2,25 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 
 namespace VerifyReferences
 {
     class Project
     {
-        public string projectFile { get; set; }
-        public List<Reference> references { get; set; }
+        public string ProjectFile { get; set; }
+        public List<Reference> References { get; set; }
 
         public Project(string projectpath, bool teamcityErrorMessage)
         {
-            projectFile = projectpath;
+            ProjectFile = projectpath;
 
             XDocument xdoc;
             XNamespace ns;
 
             try
             {
-                xdoc = XDocument.Load(projectFile);
+                xdoc = XDocument.Load(ProjectFile);
             }
             catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
@@ -39,19 +38,19 @@ namespace VerifyReferences
 
             ns = xdoc.Root.Name.Namespace;
 
-            references =
+            References =
                 xdoc.Elements(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
                     .Where(el => el.Attribute("Include") != null && el.Elements(ns + "HintPath").Count() >= 1)
                     .OrderBy(el => el.Attribute("Include").Value)
                     .Select(el => new Reference
                     {
-                        include = el.Attribute("Include").Value,
-                        shortinclude = el.Attribute("Include").Value.Split(',')[0],
-                        hintpath = el.Elements(ns + "HintPath")
+                        Include = el.Attribute("Include").Value,
+                        Shortinclude = el.Attribute("Include").Value.Split(',')[0],
+                        Hintpath = el.Elements(ns + "HintPath")
                             .OrderBy(elHintPath => elHintPath.Value)
                             .First()
                             .Value,
-                        path = CompactPath(Path.Combine(Path.GetDirectoryName(projectpath), el.Elements(ns + "HintPath")
+                        Path = CompactPath(Path.Combine(Path.GetDirectoryName(projectpath), el.Elements(ns + "HintPath")
                             .OrderBy(elHintPath => elHintPath.Value)
                             .First()
                             .Value))
@@ -81,7 +80,7 @@ namespace VerifyReferences
 
             dirs--;
 
-            return string.Join(string.Empty, Enumerable.Repeat(".." + Path.DirectorySeparatorChar, dirs).ToArray()) + pathTo.Substring(pos + 1);
+            return string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs).ToArray()) + pathTo.Substring(pos + 1);
         }
 
         // Remove unnecessary .. from path

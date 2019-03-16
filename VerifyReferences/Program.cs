@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VerifyReferences
 {
@@ -70,28 +68,28 @@ Example: VerifyReferences -r .";
         static bool Validate(List<Project> projects)
         {
             var refs = projects
-                 .SelectMany(p => p.references, (p, r) =>
+                 .SelectMany(p => p.References, (p, r) =>
                     new
                     {
                         project = p,
                         reference = r
                     })
-                .GroupBy(r => r.reference.shortinclude, (shortinclude, references) =>
+                .GroupBy(r => r.reference.Shortinclude, (shortinclude, references) =>
                     new
                     {
-                        shortinclude = shortinclude,
+                        shortinclude,
                         paths = references
                             .Select(rr =>
                                 new
                                 {
-                                    path = rr.reference.path,
+                                    rr.reference.Path,
                                     projectfiles = references
-                                        .Select(p => p.project.projectFile)
+                                        .Select(p => p.project.ProjectFile)
                                 })
-                                .GroupBy(r => r.path, (path, projects2) =>
+                                .GroupBy(r => r.Path, (path, projects2) =>
                                      new
                                      {
-                                         path = path,
+                                         path,
                                          projectfiles = projects2
                                             .SelectMany(p => p.projectfiles)
                                             .Distinct()
@@ -123,7 +121,7 @@ Example: VerifyReferences -r .";
                 foreach (var path in failref.paths)
                 {
                     Console.WriteLine("  " + path.path);
-                    foreach(var projectfile in path.projectfiles)
+                    foreach (var projectfile in path.projectfiles)
                     {
                         Console.WriteLine("    " + projectfile);
                     }

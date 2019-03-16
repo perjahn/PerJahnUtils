@@ -30,11 +30,13 @@ namespace ListProjects
 
         public static void GitList(string hostname, string username, string password)
         {
-            string sessionurl = "https://" + hostname + "/api/v3/session";
+            string sessionurl = $"https://{hostname}/api/v3/session";
 
-            NameValueCollection values = new NameValueCollection();
-            values.Add("login", username);
-            values.Add("password", password);
+            NameValueCollection values = new NameValueCollection
+            {
+                { "login", username },
+                { "password", password }
+            };
 
             string private_token = GetData(sessionurl, values).private_token;
 
@@ -42,7 +44,7 @@ namespace ListProjects
             bool found;
             do
             {
-                string projectsurl = "https://" + hostname + "/api/v3/projects?private_token=" + private_token + "&page=" + page;
+                string projectsurl = $"https://{hostname}/api/v3/projects?private_token={private_token}&page={page}";
                 found = false;
                 var results = GetData(projectsurl);
                 foreach (var result in results)
@@ -61,7 +63,7 @@ namespace ListProjects
 
         private static async Task<dynamic> GetDataDynamic(Uri uri)
         {
-            using (HttpClient client = new HttpClient())
+            using (var client = new HttpClient())
             {
                 var content = await client.GetStringAsync(uri);
                 return await Task.Run(() => JsonObject.GetDynamicJsonObject(content));
@@ -78,7 +80,7 @@ namespace JsonUtils
 
         JsonObject(object jObject)
         {
-            this._object = jObject;
+            _object = jObject;
         }
 
         public static dynamic GetDynamicJsonObject(byte[] buf)
@@ -94,7 +96,7 @@ namespace JsonUtils
         public static dynamic GetDynamicJsonObject(string json)
         {
             object o = JsonConvert.DeserializeObject(json);
-            return new JsonUtils.JsonObject(o);
+            return new JsonObject(o);
         }
 
         internal static dynamic GetDynamicJsonObject(JObject jObj)
@@ -166,11 +168,9 @@ namespace JsonUtils
         {
             string val = ((JValue)obj).ToString();
 
-            int resInt; double resDouble; DateTime resDateTime;
-
-            if (int.TryParse(val, out resInt)) return resInt;
-            if (DateTime.TryParse(val, out resDateTime)) return resDateTime;
-            if (double.TryParse(val, out resDouble)) return resDouble;
+            if (int.TryParse(val, out int resInt)) return resInt;
+            if (DateTime.TryParse(val, out DateTime resDateTime)) return resDateTime;
+            if (double.TryParse(val, out double resDouble)) return resDouble;
 
             return val;
         }
@@ -253,7 +253,7 @@ namespace JsonUtils
             }
 
             node.Elements().Remove();
-            if (!String.IsNullOrEmpty(node.Value))
+            if (!string.IsNullOrEmpty(node.Value))
             {
                 string name = "Value";
                 while (jObj[name] != null) name = "_" + name;
@@ -269,11 +269,11 @@ namespace System
 {
     public static class JsonExtensions
     {
-        public static JsonUtils.JsonObject GetDynamicJsonObject(this Uri uri, NameValueCollection values = null)
+        public static JsonObject GetDynamicJsonObject(this Uri uri, NameValueCollection values = null)
         {
             using (Net.WebClient wc = new Net.WebClient())
             {
-                wc.Encoding = System.Text.Encoding.UTF8;
+                wc.Encoding = Encoding.UTF8;
                 wc.Headers["User-Agent"] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 2.0.50727; .NET4.0C; .NET4.0E)";
 
                 if (values == null)  // GET

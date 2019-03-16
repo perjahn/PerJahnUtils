@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 
 namespace GatherOutputAssemblies
@@ -78,14 +77,14 @@ namespace GatherOutputAssemblies
                 .OrderBy(el => Path.GetFileNameWithoutExtension(el.Attribute("Include").Value))
                 .Select(el => new Reference
                 {
-                    include = el.Attribute("Include").Value,
-                    shortinclude = Path.GetFileNameWithoutExtension(el.Attribute("Include").Value),
-                    names = el
+                    Include = el.Attribute("Include").Value,
+                    Shortinclude = Path.GetFileNameWithoutExtension(el.Attribute("Include").Value),
+                    Names = el
                         .Elements(ns + "Name")
                         .OrderBy(elName => elName.Value)
                         .Select(elName => elName.Value)
                         .ToList(),
-                    name = null
+                    Name = null
                 })
                 .ToList();
 
@@ -126,17 +125,17 @@ namespace GatherOutputAssemblies
 
             foreach (Reference projref in _projectReferences)
             {
-                if (projref.names.Count > 1)
+                if (projref.Names.Count > 1)
                 {
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow,
                         "Warning: Corrupt project file: " + _path +
-                        ", project reference: '" + projref.include +
+                        ", project reference: '" + projref.Include +
                         "', selecting first Name in ProjectReference element.");
                 }
-                if (projref.names.Count >= 1)
+                if (projref.Names.Count >= 1)
                 {
-                    projref.name = projref.names[0];
-                    projref.names = null;
+                    projref.Name = projref.Names[0];
+                    projref.Names = null;
                 }
             }
 

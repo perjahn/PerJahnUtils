@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.489
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AggregateMsdnKeys", "AggregateMsdnKeys.csproj", "{D6B4C0B8-17C1-4A3B-AAF0-50B093827061}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AggregateMsdnKeys", "AggregateMsdnKeys.csproj", "{D6B4C0B8-17C1-4A3B-AAF0-50B093827061}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1ACF5DF2-8B9C-458F-B5B8-BF68714EE3CB}
 	EndGlobalSection
 EndGlobal

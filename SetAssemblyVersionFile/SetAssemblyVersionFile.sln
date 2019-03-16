@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.489
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SetAssemblyVersionFile", "SetAssemblyVersionFile.csproj", "{4118BD75-7191-444E-BC1F-1071D4C5287F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SetAssemblyVersionFile", "SetAssemblyVersionFile.csproj", "{4118BD75-7191-444E-BC1F-1071D4C5287F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AB75D2F5-0441-4C74-B0C1-402B89DA5E9D}
 	EndGlobalSection
 EndGlobal

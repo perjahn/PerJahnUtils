@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 // ToDo 1: Automatically exclude conflicting projects (projects with same name, but different guids/paths).
 // ToDo 2: Rewrite paths to projects. All solutions must currently exist in the same folder.
@@ -20,8 +19,7 @@ namespace MergeSolutions
         {
             string[] parsedArgs = ParseArgs(args);
 
-            string[] excludeProjects;
-            parsedArgs = GetSolutions(parsedArgs, out excludeProjects);
+            parsedArgs = GetSolutions(parsedArgs, out string[] excludeProjects);
 
             if (parsedArgs.Length < 3)
             {
@@ -93,14 +91,14 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
             Solution[] solutions = solutionfiles
                 .Select(s =>
                 {
-                    Console.Write("Reading solution file: '" + s + "': ");
+                    Console.Write($"Reading solution file: '{s}': ");
                     string[] filerows = File.ReadAllLines(s);
-                    Console.WriteLine("Got: " + filerows.Length + " rows.");
+                    Console.WriteLine($"Got: {filerows.Length} rows.");
 
                     return new Solution()
                     {
-                        filename = s,
-                        rows = filerows
+                        Filename = s,
+                        Rows = filerows
                     };
                 })
                 .ToArray();
@@ -118,36 +116,36 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
             List<Project> projects = new List<Project>();
 
             bool inproject = false;
-            foreach (string row in solutions.SelectMany(s => s.rows))
+            foreach (string row in solutions.SelectMany(s => s.Rows))
             {
                 if (projguids.Any(p => row.StartsWith("Project(\"{" + p + "}\")")))
                 {
                     if (row.Split(',').Length != 3)
                     {
-                        Console.WriteLine("Malformed solution file, ignoring project: '" + row + "'");
+                        Console.WriteLine($"Malformed solution file, ignoring project: '{row}'");
                     }
                     else
                     {
                         Project project = new Project();
 
                         string name = row.Split('=')[1].Split(',')[0].Trim().Trim('\"');
-                        project.fullname = name;
+                        project.Fullname = name;
 
                         if (name.Contains('(') && name.EndsWith(")"))
                         {
                             name = name.Substring(0, name.IndexOf('('));
                         }
-                        project.name = name;
+                        project.Name = name;
 
                         string guid = row.Split('=')[1].Split(',')[2].Trim().Trim('\"');
-                        project.guid = guid;
+                        project.Guid = guid;
 
                         List<string> projrows = new List<string>();
-                        project.projrows = projrows;
+                        project.Projrows = projrows;
 
                         if (_verbose)
                         {
-                            Console.WriteLine("Adding project: '" + project.name + "'");
+                            Console.WriteLine($"Adding project: '{project.Name}'");
                         }
                         projects.Add(project);
 
@@ -156,7 +154,7 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
                 }
                 if (inproject)
                 {
-                    projects.Last().projrows.Add(row);
+                    projects.Last().Projrows.Add(row);
                 }
                 if (row == "EndProject")
                 {
@@ -170,25 +168,27 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
             projects = ExcludeProjects(projects, excludeProjects);
 
 
-            foreach (Project project in projects.OrderBy(p => p.name))
+            foreach (Project project in projects.OrderBy(p => p.Name))
             {
                 if (_verbose)
                 {
-                    Console.WriteLine("Keeping unique project: '" + project.name + "'");
+                    Console.WriteLine($"Keeping unique project: '{project.Name}'");
                 }
             }
 
-            List<string> allprojrows = new List<string>();
-            allprojrows.Add("Microsoft Visual Studio Solution File, Format Version 12.00");
-            allprojrows.Add("# Visual Studio 14");
-            allprojrows.AddRange(projects.OrderBy(p => p.name).SelectMany(r => r.projrows));
+            List<string> allprojrows = new List<string>
+            {
+                "Microsoft Visual Studio Solution File, Format Version 12.00",
+                "# Visual Studio 15"
+            };
+            allprojrows.AddRange(projects.OrderBy(p => p.Name).SelectMany(r => r.Projrows));
 
             if (_globalsection)
             {
-                allprojrows.AddRange(GenerateGlobalSection(projects.Select(p => p.guid).ToArray(), new[] { "Debug", "Release" }));
+                allprojrows.AddRange(GenerateGlobalSection(projects.Select(p => p.Guid).ToArray(), new[] { "Debug", "Release" }));
             }
 
-            Console.WriteLine("Writing file: '" + outputSolution + "': " + projects.Count() + " projects, " + allprojrows.Count() + " rows.");
+            Console.WriteLine($"Writing file: '{outputSolution}': {projects.Count()} projects, {allprojrows.Count()} rows.");
             File.WriteAllLines(outputSolution, allprojrows);
 
             return 0;
@@ -222,21 +222,13 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
                 }
                 catch (IOException ex)
                 {
-                    errors.Add(
-                        "'" + inputPath +
-                        "' -> path: '" + path +
-                        "', pattern: '" + pattern +
-                        "' -> " + ex.Message);
+                    errors.Add($"'{inputPath}' -> path: '{path}', pattern: '{pattern}' -> {ex.Message}");
                     continue;
                 }
 
                 if (files.Length == 0)
                 {
-                    errors.Add(
-                        "'" + inputPath +
-                        "' -> path: '" + path +
-                        "', pattern: '" + pattern +
-                        "' -> No files found.");
+                    errors.Add($"'{inputPath}' -> path: '{path}', pattern: '{pattern}' -> No files found.");
                     continue;
                 }
 
@@ -270,11 +262,11 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
 
             foreach (Project project in projects)
             {
-                if (uniqueprojects.Any(p => p.name == project.name))
+                if (uniqueprojects.Any(p => p.Name == project.Name))
                 {
                     if (_verbose)
                     {
-                        Console.WriteLine("Ignoring redundant project: '" + project.fullname + "'");
+                        Console.WriteLine($"Ignoring redundant project: '{project.Fullname}'");
                     }
                 }
                 else
@@ -292,11 +284,11 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
 
             foreach (Project project in projects)
             {
-                if (excludeProjects.Contains(project.name))
+                if (excludeProjects.Contains(project.Name))
                 {
                     if (_verbose)
                     {
-                        Console.WriteLine("Excluding project: '" + project.fullname + "'");
+                        Console.WriteLine($"Excluding project: '{project.Fullname}'");
                     }
                 }
                 else
@@ -310,17 +302,17 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
 
         static string[] GenerateGlobalSection(string[] projectguids, string[] configs)
         {
-            List<string> rows = new List<string>();
-
-
-            rows.Add("Global");
-            rows.Add("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
+            List<string> rows = new List<string>
+            {
+                "Global",
+                "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution"
+            };
 
             foreach (string config in configs)
             {
-                rows.Add("\t\t" + config + "|Any CPU = " + config + "|Any CPU");
-                rows.Add("\t\t" + config + "|x64 = " + config + "|x64");
-                rows.Add("\t\t" + config + "|x86 = " + config + "|x86");
+                rows.Add($"\t\t{config}|Any CPU = {config}|Any CPU");
+                rows.Add($"\t\t{config}|x64 = {config}|x64");
+                rows.Add($"\t\t{config}|x86 = {config}|x86");
             }
 
             rows.Add("\tEndGlobalSection");
@@ -332,12 +324,12 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
             {
                 foreach (string config in configs)
                 {
-                    rows.Add("\t\t" + guid + "." + config + "|Any CPU.ActiveCfg = " + config + "|Any CPU");
-                    rows.Add("\t\t" + guid + "." + config + "|Any CPU.Build.0 = " + config + "|Any CPU");
-                    rows.Add("\t\t" + guid + "." + config + "|x64.ActiveCfg = " + config + "|Any CPU");
-                    rows.Add("\t\t" + guid + "." + config + "|x64.Build.0 = " + config + "|Any CPU");
-                    rows.Add("\t\t" + guid + "." + config + "|x86.ActiveCfg = " + config + "|Any CPU");
-                    rows.Add("\t\t" + guid + "." + config + "|x86.Build.0 = " + config + "|Any CPU");
+                    rows.Add($"\t\t{guid}.{config}|Any CPU.ActiveCfg = {config}|Any CPU");
+                    rows.Add($"\t\t{guid}.{config}|Any CPU.Build.0 = {config}|Any CPU");
+                    rows.Add($"\t\t{guid}.{config}|x64.ActiveCfg = {config}|Any CPU");
+                    rows.Add($"\t\t{guid}.{config}|x64.Build.0 = {config}|Any CPU");
+                    rows.Add($"\t\t{guid}.{config}|x86.ActiveCfg = {config}|Any CPU");
+                    rows.Add($"\t\t{guid}.{config}|x86.Build.0 = {config}|Any CPU");
                 }
             }
 

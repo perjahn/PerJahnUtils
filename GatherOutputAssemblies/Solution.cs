@@ -8,7 +8,7 @@ namespace GatherOutputAssemblies
     class Solution
     {
         public string _path { get; set; }
-        public string[] projectfiles { get; set; } = { };
+        public string[] Projectfiles { get; set; } = { };
 
         public Solution(string solutionfile)
         {
@@ -60,7 +60,7 @@ namespace GatherOutputAssemblies
                 }
             }
 
-            projectfiles = projects.ToArray();
+            Projectfiles = projects.ToArray();
         }
 
         public static int CopyProjectOutput(Project[] projects, string buildconfig, string outputpath, string[] includeProjects,
@@ -235,7 +235,7 @@ namespace GatherOutputAssemblies
                 }
 
                 bool include = includeProjects.Contains(Path.GetFileNameWithoutExtension(project._path));
-                bool referred = projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._path)));
+                bool referred = projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.Include) == Path.GetFileName(project._path)));
 
                 if (gatherall || include || !referred)
                 {
@@ -246,7 +246,7 @@ namespace GatherOutputAssemblies
                     string refs = "'" +
                         string.Join("', '",
                             projects
-                                .Where(p => p._projectReferences.Any(r => Path.GetFileName(r.include) == Path.GetFileName(project._path)))
+                                .Where(p => p._projectReferences.Any(r => Path.GetFileName(r.Include) == Path.GetFileName(project._path)))
                                 .OrderBy(p => Path.GetFileNameWithoutExtension(p._path))
                                 .Select(p => Path.GetFileNameWithoutExtension(p._path)))
                         + "'";

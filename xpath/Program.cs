@@ -71,14 +71,12 @@ namespace xpath
 
             foreach (XmlNode xnode in xlist)
             {
-                XmlElement xele = xnode as XmlElement;
-                if (xele != null)
+                if (xnode is XmlElement xele)
                 {
                     Console.WriteLine(xele.InnerText);
                 }
 
-                XmlAttribute xattr = xnode as XmlAttribute;
-                if (xattr != null)
+                if (xnode is XmlAttribute xattr)
                 {
                     Console.WriteLine(xattr.Value);
                 }

@@ -191,6 +191,7 @@ namespace System.GACManagedAccess
             | RETARGETABLE
     }
 
+#pragma warning disable IDE0044 // Add readonly modifier
     [StructLayout(LayoutKind.Sequential)]
     public class InstallReference
     {
@@ -230,6 +231,7 @@ namespace System.GACManagedAccess
         [MarshalAs(UnmanagedType.LPWStr)]
         string description;
     }
+#pragma warning restore IDE0044 // Add readonly modifier
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct AssemblyInfo
@@ -272,11 +274,9 @@ namespace System.GACManagedAccess
                     throw new ArgumentException("Invalid reference guid.", "guid");
             }
 
-            IAssemblyCache ac = null;
-
             int hr = 0;
 
-            hr = Utils.CreateAssemblyCache(out ac, 0);
+            hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
             if (hr >= 0)
             {
                 hr = ac.InstallAssembly((int)flags, assemblyPath, reference);
@@ -301,9 +301,7 @@ namespace System.GACManagedAccess
                     throw new ArgumentException("Invalid reference guid.", "guid");
             }
 
-            IAssemblyCache ac = null;
-
-            int hr = Utils.CreateAssemblyCache(out ac, 0);
+            int hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
             if (hr >= 0)
             {
                 hr = ac.UninstallAssembly(0, assemblyName, reference, out dispResult);
@@ -325,14 +323,14 @@ namespace System.GACManagedAccess
                 throw new ArgumentException("Invalid name", "assemblyName");
             }
 
-            AssemblyInfo aInfo = new AssemblyInfo();
-
-            aInfo.cchBuf = 1024;
+            AssemblyInfo aInfo = new AssemblyInfo
+            {
+                cchBuf = 1024
+            };
             // Get a string with the desired length
             aInfo.currentAssemblyPath = new string('\0', aInfo.cchBuf);
 
-            IAssemblyCache ac = null;
-            int hr = Utils.CreateAssemblyCache(out ac, 0);
+            int hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
             if (hr >= 0)
             {
                 hr = ac.QueryAssemblyInfo(0, assemblyName, ref aInfo);
@@ -383,7 +381,6 @@ namespace System.GACManagedAccess
         public string GetNextAssembly()
         {
             int hr = 0;
-            IAssemblyName fusionName = null;
 
             if (done)
             {
@@ -391,7 +388,7 @@ namespace System.GACManagedAccess
             }
 
             // Now get next IAssemblyName from m_AssemblyEnum
-            hr = m_AssemblyEnum.GetNextAssembly((IntPtr)0, out fusionName, 0);
+            hr = m_AssemblyEnum.GetNextAssembly((IntPtr)0, out IAssemblyName fusionName, 0);
 
             if (hr < 0)
             {
@@ -431,10 +428,8 @@ namespace System.GACManagedAccess
     {
         public AssemblyCacheInstallReferenceEnum(string assemblyName)
         {
-            IAssemblyName fusionName = null;
-
             int hr = Utils.CreateAssemblyNameObject(
-                out fusionName,
+                out IAssemblyName fusionName,
                 assemblyName,
                 CreateAssemblyNameObjectFlags.CANOF_PARSE_DISPLAY_NAME,
                 IntPtr.Zero);
@@ -452,8 +447,7 @@ namespace System.GACManagedAccess
 
         public InstallReference GetNextReference()
         {
-            IInstallReferenceItem item = null;
-            int hr = refEnum.GetNextInstallReferenceItem(out item, 0, IntPtr.Zero);
+            int hr = refEnum.GetNextInstallReferenceItem(out IInstallReferenceItem item, 0, IntPtr.Zero);
             if ((uint)hr == 0x80070103)
             {
                 // ERROR_NO_MORE_ITEMS
@@ -465,10 +459,9 @@ namespace System.GACManagedAccess
                 Marshal.ThrowExceptionForHR(hr);
             }
 
-            IntPtr refData;
             InstallReference instRef = new InstallReference(Guid.Empty, string.Empty, string.Empty);
 
-            hr = item.GetReference(out refData, 0, IntPtr.Zero);
+            hr = item.GetReference(out IntPtr refData, 0, IntPtr.Zero);
             if (hr < 0)
             {
                 Marshal.ThrowExceptionForHR(hr);

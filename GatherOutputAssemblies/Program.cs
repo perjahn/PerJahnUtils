@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace GatherOutputAssemblies
 {
@@ -150,7 +149,7 @@ test projects copied to the output folder.";
                 .ToArray();
 
             string[] projectfiles = solutions
-                .SelectMany(s => s.projectfiles)
+                .SelectMany(s => s.Projectfiles)
                 .Distinct()
                 .OrderBy(f => f)
                 .ToArray();
@@ -165,7 +164,7 @@ test projects copied to the output folder.";
             foreach (Project project in projects)
             {
                 project._solutionfiles = solutions
-                    .Where(s => s.projectfiles.Contains(project._path))
+                    .Where(s => s.Projectfiles.Contains(project._path))
                     .Select(s => s._path)
                     .OrderBy(f => f)
                     .ToArray();

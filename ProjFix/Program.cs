@@ -4,13 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace ProjFix
 {
     class Program
     {
-        private static string eol = Environment.NewLine;
+        private static readonly string eol = Environment.NewLine;
 
         static int Main(string[] args)
         {
@@ -59,7 +58,7 @@ Hintpaths are relative from current directory.";
 
             int arg;
 
-            ConsoleHelper.verboselogging = false;
+            ConsoleHelper.Verboselogging = false;
 
             for (arg = 0; arg < args.Length; arg++)
             {
@@ -93,7 +92,7 @@ Hintpaths are relative from current directory.";
                 }
                 else if (args[arg].StartsWith("-v") && args[arg].Length == 2)
                 {
-                    ConsoleHelper.verboselogging = true;
+                    ConsoleHelper.Verboselogging = true;
                 }
                 else
                 {
@@ -122,15 +121,15 @@ Hintpaths are relative from current directory.";
             solutionfile = args[args.Length - 1];
 
             ConsoleHelper.WriteLine(
-                "solutionfile:   " + (solutionfile == null ? "<null>" : "'" + solutionfile + "'") + eol +
-                "nobackup:       " + nobackup + eol +
-                "copylocal:      " + copylocal + eol +
-                "hintpaths:      " + (hintpaths == null ? "<null>" : "'" + string.Join(",", hintpaths) + "'") + eol +
-                "outputpath:     " + (outputpath == null ? "<null>" : "'" + outputpath + "'") + eol +
-                "removeversion:  " + removeversion + eol +
-                "restore:        " + restore + eol +
-                "simulate:       " + simulate + eol +
-                "verboselogging: " + ConsoleHelper.verboselogging,
+                $"solutionfile:   {(solutionfile == null ? "<null>" : $"'{solutionfile}'")}{eol}" +
+                $"nobackup:       {nobackup}{eol}" +
+                $"copylocal:      {copylocal}{eol}" +
+                $"hintpaths:      {(hintpaths == null ? "<null>" : $"'{string.Join(",", hintpaths)}'")}{eol}" +
+                $"outputpath:     {(outputpath == null ? "<null>" : $"'{outputpath}'")}{eol}" +
+                $"removeversion:  {removeversion}{eol}" +
+                $"restore:        {restore}{eol}" +
+                $"simulate:       {simulate}{eol}" +
+                $"verboselogging: {ConsoleHelper.Verboselogging}",
                 true);
 
             if (restore)
@@ -156,19 +155,4 @@ Hintpaths are relative from current directory.";
             return 0;
         }
     }
-
-    /*
-			public static class StringExtensions
-			{
-					public static int LessThan(this string s1, string s2)
-					{
-							return string.Compare(s1, s2);
-					}
-
-					public static int MoreThan(this string s1, string s2)
-					{
-							return string.Compare(s1, s2);
-					}
-			}
-	*/
 }

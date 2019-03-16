@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace ValidateSource
 {
@@ -63,9 +61,7 @@ namespace ValidateSource
 
             string[] excluderegexs = filteredArgs.Skip(1).ToArray();
 
-            string path;
-            string pattern;
-            ParsePath(filteredArgs[0], out path, out pattern);
+            ParsePath(filteredArgs[0], out string path, out string pattern);
 
             return SearchForMisformattedFiles(path, pattern, excluderegexs);
         }

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace GetMissingWarnings
@@ -53,10 +51,10 @@ namespace GetMissingWarnings
 
             if (filteredfiles.Length < files.Length)
             {
-                WriteLineColor("Excluding: " + (files.Length - filteredfiles.Length) + " files:", ConsoleColor.Yellow);
+                WriteLineColor($"Excluding: {(files.Length - filteredfiles.Length)} files:", ConsoleColor.Yellow);
                 foreach (string file in files.Where(f => !filteredfiles.Contains(f)))
                 {
-                    WriteLineColor("  '" + file + "'", ConsoleColor.Yellow);
+                    WriteLineColor($"  '{file}'", ConsoleColor.Yellow);
                 }
             }
 
@@ -68,8 +66,8 @@ namespace GetMissingWarnings
 
 
             Console.WriteLine();
-            WriteLineColor("Missing files: " + _missingfiles, ConsoleColor.Magenta);
-            WriteLineColor("Missing groups: " + _totalmissing, ConsoleColor.Magenta);
+            WriteLineColor($"Missing files: {_missingfiles}", ConsoleColor.Magenta);
+            WriteLineColor($"Missing groups: {_totalmissing}", ConsoleColor.Magenta);
         }
 
         static void LoadProject(string projectfile, bool allenabled)
@@ -83,22 +81,22 @@ namespace GetMissingWarnings
             }
             catch (IOException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + projectfile + "': " + ex.Message);
+                Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
                 return;
             }
             catch (UnauthorizedAccessException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + projectfile + "': " + ex.Message);
+                Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
                 return;
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + projectfile + "': " + ex.Message);
+                Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
                 return;
             }
             catch (System.Xml.XmlException ex)
             {
-                Console.WriteLine("Couldn't load project: '" + projectfile + "': " + ex.Message);
+                Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
                 return;
             }
 
@@ -116,7 +114,7 @@ namespace GetMissingWarnings
 
                 if (elements.Any())
                 {
-                    WriteLineColor("********** '" + projectfile + "' " + elements.Count() + " **********", ConsoleColor.Cyan);
+                    WriteLineColor($"********** '{projectfile}' {elements.Count()} **********", ConsoleColor.Cyan);
 
                     Console.WriteLine(string.Join(Environment.NewLine, elements.Select(el => el.ToString())));
                 }
@@ -137,7 +135,7 @@ namespace GetMissingWarnings
 
                 if (elements.Any())
                 {
-                    WriteLineColor("********** '" + projectfile + "' " + elements.Count() + " **********", ConsoleColor.Cyan);
+                    WriteLineColor($"********** '{projectfile}' {elements.Count()} **********", ConsoleColor.Cyan);
 
                     Console.WriteLine(string.Join(Environment.NewLine, elements.Select(el => el.ToString())));
                 }

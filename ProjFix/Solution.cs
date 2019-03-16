@@ -7,7 +7,7 @@ namespace ProjFix
 {
     class Solution
     {
-        private string _solutionfile;
+        private readonly string _solutionfile;
 
         public Solution(string solutionfile)
         {
@@ -39,17 +39,17 @@ namespace ProjFix
             }
             catch (IOException ex)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
                 return null;
             }
             catch (UnauthorizedAccessException ex)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
                 return null;
             }
             catch (ArgumentException ex)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, "Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
                 return null;
             }
 
@@ -64,7 +64,7 @@ namespace ProjFix
 
                 foreach (string projtypeguid in projtypeguids)
                 {
-                    string projtypeline = "Project(\"" + projtypeguid + "\") =";
+                    string projtypeline = $"Project(\"{projtypeguid}\") =";
 
                     if (row.StartsWith(projtypeline))
                     {
@@ -104,13 +104,13 @@ namespace ProjFix
                 }
 
                 ConsoleHelper.WriteLine(
-                        "sln_package: '" + p._sln_package +
-                        "', sln_guid: '" + p._sln_guid +
-                        "', sln_shortfilename: '" + p._sln_shortfilename +
-                        "', sln_path: '" + p._sln_path +
-                        "', proj_assemblynames: " + p2._proj_assemblynames.Count +
-                        ", proj_guids: " + p2._proj_guids.Count +
-                        ", proj_outputtypes: " + p2._proj_outputtypes.Count + ".",
+                        $"sln_package: '{p._sln_package}" +
+                        $"', sln_guid: '{p._sln_guid}" +
+                        $"', sln_shortfilename: '{p._sln_shortfilename}" +
+                        $"', sln_path: '{p._sln_path}" +
+                        $"', proj_assemblynames: {p2._proj_assemblynames.Count}" +
+                        $", proj_guids: {p2._proj_guids.Count}" +
+                        $", proj_outputtypes: {p2._proj_outputtypes.Count}.",
                         true);
 
                 p._proj_assemblynames = p2._proj_assemblynames;
@@ -184,7 +184,7 @@ namespace ProjFix
                 }
             }
 
-            ConsoleHelper.WriteLine("Fixed " + count2 + " of " + count1 + " projects.", false);
+            ConsoleHelper.WriteLine($"Fixed {count2} of {count1} projects.", false);
 
             return;
         }

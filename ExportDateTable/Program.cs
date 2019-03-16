@@ -28,7 +28,7 @@ namespace ExportDateTable
         {
             Stopwatch sw = Stopwatch.StartNew();
 
-            using (db mydb = new db(connstr))
+            using (var mydb = new Db(connstr))
             {
                 for (int row = 0; ;)
                 {
@@ -91,7 +91,6 @@ namespace ExportDateTable
 
                     System.Threading.Thread.Sleep(1000);
                 }
-
             }
         }
     }

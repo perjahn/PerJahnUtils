@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.489
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetMissingWarnings", "GetMissingWarnings.csproj", "{1DD966EB-0C3B-4303-B23D-F1B1AB9F9DBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetMissingWarnings", "GetMissingWarnings.csproj", "{1DD966EB-0C3B-4303-B23D-F1B1AB9F9DBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2B4A9003-41B9-4F39-90BC-E5D657B71917}
 	EndGlobalSection
 EndGlobal

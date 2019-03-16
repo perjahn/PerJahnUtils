@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace AggregateMsdnKeys
@@ -22,7 +21,7 @@ namespace AggregateMsdnKeys
             }
             catch (Exception ex) when (ex is IOException)
             {
-                Console.WriteLine("Couldn't get drives: " + ex.Message);
+                Console.WriteLine($"Couldn't get drives: {ex.Message}");
                 return;
             }
 
@@ -57,7 +56,7 @@ namespace AggregateMsdnKeys
 
                 var keys = xdoc
                     .Descendants("Key")
-                    .Select(el => new { name = el.Parent.Attribute("Name").Value, key = el.FirstNode.NodeType == System.Xml.XmlNodeType.Text ? el.Value.Trim() : null })
+                    .Select(el => new { name = el.Parent.Attribute("Name").Value, key = el.FirstNode.NodeType == XmlNodeType.Text ? el.Value.Trim() : null })
                     .Where(k => k.key != null);
 
                 foreach (var key in keys)
@@ -71,8 +70,10 @@ namespace AggregateMsdnKeys
                     }
                     else
                     {
-                        allkeys[key.name] = new List<string>();
-                        allkeys[key.name].Add(key.key);
+                        allkeys[key.name] = new List<string>
+                        {
+                            key.key
+                        };
                     }
                 }
             }

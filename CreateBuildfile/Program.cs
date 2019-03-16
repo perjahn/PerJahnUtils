@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Xml.Linq;
+using System.Threading;
 
 namespace CreateBuildfile
 {
@@ -24,7 +24,7 @@ namespace CreateBuildfile
         {
             // Make all string comparisons (and sort/order) invariant of current culture
             // Thus, build output file is written in a consistent manner
-            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             string usage =
 @"CreateBuildfile 1.0 - Creates MSBuild file.
@@ -80,7 +80,7 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
                             Console.WriteLine("Excluding projects:");
                             first = false;
                         }
-                        Console.WriteLine("  '" + filename + "'");
+                        Console.WriteLine($"  '{filename}'");
                     }
                 }
             }
@@ -89,22 +89,20 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
 
             foreach (string solutionfile in files)
             {
-                sb.AppendLine(
-                    @"    <MSBuild BuildInParallel=""true"" Properties=""Configuration=Release"" ContinueOnError=""true"" Projects=""" +
-                    GetRelativePath(buildfile, solutionfile) + @""" />");
+                sb.AppendLine($"    <MSBuild BuildInParallel=\"true\" Properties=\"Configuration=Release\" ContinueOnError=\"true\" Projects=\"{GetRelativePath(buildfile, solutionfile)}\" />");
             }
 
             string s = sb.ToString();
 
-            Console.WriteLine("Writing " + files.Count() + " solutions to " + buildfile + ".");
-            using (StreamWriter sw = new StreamWriter(buildfile))
+            Console.WriteLine($"Writing {files.Count()} solutions to {buildfile}.");
+            using (var sw = new StreamWriter(buildfile))
             {
                 s =
-                    @"<Project xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">" + Environment.NewLine +
-                    @"  <Target Name=""Build"">" + Environment.NewLine +
+                    $"<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">{Environment.NewLine}" +
+                    $"  <Target Name=\"Build\">{Environment.NewLine}" +
                     s +
-                    @"  </Target>" + Environment.NewLine +
-                    @"</Project>" + Environment.NewLine;
+                    $"  </Target>{Environment.NewLine}" +
+                    $"</Project>{Environment.NewLine}";
 
                 sw.Write(s);
             }
@@ -135,7 +133,7 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
 
             dirs--;
 
-            string s2 = string.Join(string.Empty, Enumerable.Repeat(".." + Path.DirectorySeparatorChar, dirs).ToArray());
+            string s2 = string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs).ToArray());
             string s3 = pathTo.Substring(pos + 1);
             string s4 = s2 + s3;
 

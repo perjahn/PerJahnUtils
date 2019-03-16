@@ -14,12 +14,10 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 
 public class Program
 {
-    static string _gitexe = @"C:\Program Files\git\bin\git.exe";
+    static readonly string _gitexe = @"C:\Program Files\git\bin\git.exe";
 
     public static int Main(string[] args)
     {
@@ -191,8 +189,7 @@ Optional environment variables:
 
         for (int i = 0; i < rows.Length; i++)
         {
-            string ipaddress, hostname;
-            if (!TryParseRow(rows[i], out ipaddress, out hostname))
+            if (!TryParseRow(rows[i], out string ipaddress, out string hostname))
             {
                 continue;
             }
@@ -239,8 +236,7 @@ Optional environment variables:
 
             for (int i = 0; i < rows.Length; i++)
             {
-                string ipaddress, hostname;
-                if (!TryParseRow(rows[i], out ipaddress, out hostname))
+                if (!TryParseRow(rows[i], out string ipaddress, out string hostname))
                 {
                     continue;
                 }
@@ -342,11 +338,11 @@ Optional environment variables:
         RunCommand(_gitexe, "--no-pager push");
     }
 
-    private class entry
+    private class Entry
     {
-        public string ipaddress { get; set; }
-        public string hostname { get; set; }
-        public bool used { get; set; }
+        public string Ipaddress { get; set; }
+        public string Hostname { get; set; }
+        public bool Used { get; set; }
     }
 
     private static void UpdateLocalHostsFile(string syncfile)
@@ -366,75 +362,71 @@ Optional environment variables:
 
         string[] rowsPatch = File.ReadAllLines(syncfile);
 
-        Dictionary<string, entry> patchvalues = new Dictionary<string, entry>();
+        Dictionary<string, Entry> patchvalues = new Dictionary<string, Entry>();
         if (!string.IsNullOrEmpty(domain))
         {
             foreach (string row in rowsPatch)
             {
-                string ipaddress, hostname;
-                if (TryParseRow(row, out ipaddress, out hostname))
+                if (TryParseRow(row, out string ipaddress, out string hostname))
                 {
                     if (!hostname.EndsWith(domain))
                     {
-                        patchvalues[hostname + domain] = new entry { ipaddress = ipaddress, used = false };
+                        patchvalues[hostname + domain] = new Entry { Ipaddress = ipaddress, Used = false };
                     }
                 }
             }
         }
         foreach (string row in rowsPatch)
         {
-            string ipaddress, hostname;
-            if (TryParseRow(row, out ipaddress, out hostname))
+            if (TryParseRow(row, out string ipaddress, out string hostname))
             {
-                patchvalues[hostname] = new entry { ipaddress = ipaddress, used = false };
+                patchvalues[hostname] = new Entry { Ipaddress = ipaddress, Used = false };
             }
         }
 
 
         int modifiedRows = 0;
 
-        List<entry> excessiveEntries = new List<entry>();
+        List<Entry> excessiveEntries = new List<Entry>();
         for (int i = 0; i < rows.Count; i++)
         {
-            string ipaddress, hostname;
-            if (TryParseRow(rows[i], out ipaddress, out hostname))
+            if (TryParseRow(rows[i], out string ipaddress, out string hostname))
             {
-                excessiveEntries.Add(new entry { hostname = hostname, ipaddress = ipaddress });
+                excessiveEntries.Add(new Entry { Hostname = hostname, Ipaddress = ipaddress });
             }
         }
 
         for (int i = 0; i < rows.Count; i++)
         {
-            string ipaddress, hostname;
-            if (!TryParseRow(rows[i], out ipaddress, out hostname))
+            if (!TryParseRow(rows[i], out string ipaddress, out string hostname))
             {
                 continue;
             }
 
             Log($"Got ip: {ipaddress}");
 
-            if (patchvalues.ContainsKey(hostname) && patchvalues[hostname].ipaddress != ipaddress)
+            if (patchvalues.ContainsKey(hostname) && patchvalues[hostname].Ipaddress != ipaddress)
             {
                 string old = rows[i];
-                rows[i] = $"{patchvalues[hostname].ipaddress,-15} {hostname}";
+                rows[i] = $"{patchvalues[hostname].Ipaddress,-15} {hostname}";
                 Log($"Updating local hosts file ip address: '{old}' -> '{rows[i]}'");
                 modifiedRows++;
             }
 
             if (patchvalues.ContainsKey(hostname))
             {
-                patchvalues[hostname].used = true;
-                excessiveEntries.Remove(excessiveEntries.First(e => e.hostname == hostname && e.ipaddress == ipaddress));
+                patchvalues[hostname].Used = true;
+                excessiveEntries.Remove(excessiveEntries.First(e => e.Hostname == hostname && e.Ipaddress == ipaddress));
             }
         }
 
-        foreach (var entry in patchvalues.Where(e => !e.Value.used))
+        foreach (var entry in patchvalues.Where(e => !e.Value.Used))
         {
-            string row = $"{entry.Value.ipaddress,-15} {entry.Key}";
+            string row = $"{entry.Value.Ipaddress,-15} {entry.Key}";
             Log($"Adding ip+host to local hosts file: '{row}'");
             rows.Add(row);
             modifiedRows++;
-            entry.Value.used = true;
+            entry.Value.Used = true;
         }
 
         if (modifiedRows > 0)
@@ -448,9 +440,9 @@ Optional environment variables:
         }
 
         Log($"Found {excessiveEntries.Count} excessive entries.");
-        foreach (entry entry in excessiveEntries)
+        foreach (Entry entry in excessiveEntries)
         {
-            Log($"{entry.ipaddress,-15} {entry.hostname}");
+            Log($"{entry.Ipaddress,-15} {entry.Hostname}");
         }
     }
 
@@ -484,10 +476,12 @@ Optional environment variables:
     {
         Log($"Running: '{exefile}' '{args}'");
 
-        Process process = new Process();
-        process.StartInfo = new ProcessStartInfo(exefile, args)
+        Process process = new Process
         {
-            UseShellExecute = false
+            StartInfo = new ProcessStartInfo(exefile, args)
+            {
+                UseShellExecute = false
+            }
         };
 
         process.Start();

@@ -5,8 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SyncNugetPackages
 {
@@ -79,7 +77,7 @@ namespace SyncNugetPackages
 
         static MD5 md5 = MD5.Create();
 
-        class myfileinfo
+        class Myfileinfo
         {
             public string filename;
             public FileInfo info;
@@ -150,7 +148,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
             };
 
             var operations = cachePaths.Zip(serverPaths, (string cachePath, string serverPath) =>
-                new { cachePath = cachePath, serverPath = serverPath });
+                new { cachePath, serverPath });
 
             foreach (var operation in operations)
             {
@@ -162,7 +160,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
                 Log("Gathering local files from " + cachePath + "...");
                 var filesCache = Directory.GetFiles(cachePath, "*", SearchOption.AllDirectories)
-                    .Select(f => new myfileinfo
+                    .Select(f => new Myfileinfo
                     {
                         filename = f.Substring(cachePathOffset),
                         info = new FileInfo(f),
@@ -172,8 +170,10 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
                 Log("Count: " + filesCache.Count());
 
-                Dictionary<string, int> copies = new Dictionary<string, int>();
-                copies["local"] = 0;
+                Dictionary<string, int> copies = new Dictionary<string, int>
+                {
+                    ["local"] = 0
+                };
                 foreach (string server in servers)
                 {
                     copies[server] = 0;
@@ -222,16 +222,18 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                 }
             }
 
-            NETRESOURCE netResource = new NETRESOURCE();
-            netResource.dwScope = ResourceScope.GlobalNet;
-            netResource.dwType = ResourceType.Disk;
-            netResource.dwDisplayType = ResourceDisplayType.Generic;
-            netResource.dwUsage = ResourceUsage.All;
+            NETRESOURCE netResource = new NETRESOURCE
+            {
+                dwScope = ResourceScope.GlobalNet,
+                dwType = ResourceType.Disk,
+                dwDisplayType = ResourceDisplayType.Generic,
+                dwUsage = ResourceUsage.All,
 
-            netResource.lpComment = null;
-            netResource.lpLocalName = localDrive;
-            netResource.lpProvider = null;
-            netResource.lpRemoteName = uncPath;
+                lpComment = null,
+                lpLocalName = localDrive,
+                lpProvider = null,
+                lpRemoteName = uncPath
+            };
 
             Log("Mapping " + uncPath + " to " + localDrive);
             result = WNetAddConnection2(netResource, null, null, 6);
@@ -246,7 +248,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
             }
         }
 
-        static void SyncFolders(string path1, int offset1, List<myfileinfo> files1, string path2,
+        static void SyncFolders(string path1, int offset1, List<Myfileinfo> files1, string path2,
             string server, bool simulate, bool verbose, ref Dictionary<string, int> copies, out long copiedsize)
         {
             copiedsize = 0;
@@ -258,17 +260,19 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
             var files2 = Directory.GetFiles(path2, "*", SearchOption.AllDirectories)
                 .SelectMany(f =>
                 {
-                    myfileinfo[] infos = new myfileinfo[1];
+                    Myfileinfo[] infos = new Myfileinfo[1];
                     try
                     {
-                        infos[0] = new myfileinfo();
-                        infos[0].filename = f.Substring(offset2);
-                        infos[0].info = new FileInfo(f);
-                        infos[0].hash = ComputeHash(f);
+                        infos[0] = new Myfileinfo
+                        {
+                            filename = f.Substring(offset2),
+                            info = new FileInfo(f),
+                            hash = ComputeHash(f)
+                        };
                     }
                     catch (Exception ex) when (ex is PathTooLongException || ex is DirectoryNotFoundException || ex is NullReferenceException)
                     {
-                        infos = new myfileinfo[0];
+                        infos = new Myfileinfo[0];
                         Log(f + ": " + ex.Message);
                     }
                     return infos;
@@ -331,7 +335,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                             File.Copy(file2.info.FullName, targetfile);
                         }
                         copiedsize += file2.info.Length;
-                        files1.Add(new myfileinfo
+                        files1.Add(new Myfileinfo
                         {
                             filename = targetfile.Substring(offset1),
                             info = new FileInfo(targetfile),
@@ -371,7 +375,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                             File.Copy(file1.info.FullName, targetfile);
                         }
                         copiedsize += file1.info.Length;
-                        files2.Add(new myfileinfo
+                        files2.Add(new Myfileinfo
                         {
                             filename = targetfile.Substring(offset2),
                             info = new FileInfo(targetfile),

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace CreatePublish
 {
@@ -16,19 +15,19 @@ namespace CreatePublish
                 @"Folder1\Folder2\Folder3",
                 @"Folder1\Folder4\File1.csproj",
                 @"..\..\Folder4\File1.csproj",
-                
+
                 @"dir1\dir2\dir3\dir4",
                 @"dir1\dir5",
                 @"..\..\..\dir5",
-                
+
                 @"c:\dir1\dir2",
                 @"c:\dir1\dir3",
                 @"..\dir3",
-                
+
                 @"c:\dir1\dir2",
                 @"d:\dir1\dir3",
                 @"d:\dir1\dir3",
-                
+
                 @"dir1\dir2",
                 @"dir1\dir3\dir4\dir5",
                 @"..\dir3\dir4\dir5",
@@ -38,15 +37,15 @@ namespace CreatePublish
 
                 @"c:\dir1\dir1", @"c:\dir2\file2.txt", @"..\..\dir2\file2.txt",
                 @"c:\dir1", @"c:\dir2\file2.txt", @"..\dir2\file2.txt",
-                
+
                 @"dir1\file.sln",
                 @"dir1\My.Web\My.Web.csproj",
                 @"..\My.Web\My.Web.csproj",
-                
+
                 @"dir1",
                 @"dir1\My.Web",
                 @"My.Web",
-                
+
                 @"",
                 @"dir1\My.Web",
                 @"dir1\My.Web"
@@ -194,7 +193,7 @@ namespace CreatePublish
             List<string> folders = path.Split(Path.DirectorySeparatorChar).ToList();
 
             // Remove redundant folders
-            for (int i = 0; i < folders.Count; )
+            for (int i = 0; i < folders.Count;)
             {
                 if (i > 0 && folders[i] == ".." && folders[i - 1] != ".." && folders[i - 1] != "")
                 {

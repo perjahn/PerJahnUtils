@@ -9,33 +9,33 @@ namespace ProjFix
     // Corresponds to a <Reference> tag in project file.
     class AssemblyRef : Reference
     {
-        public string hintpath { get; set; }
-        public bool? copylocal { get; set; }  // Xml tag name=Private
+        public string Hintpath { get; set; }
+        public bool? Copylocal { get; set; }  // Xml tag name=Private
 
         // These 2 lists are used when loading, before validating/fixing, and compacting them to single items.
-        public List<string> hintpaths { get; set; }
-        public List<string> copylocals { get; set; }
+        public List<string> Hintpaths { get; set; }
+        public List<string> Copylocals { get; set; }
 
 
         public void AddToDoc(XDocument xdoc, XNamespace ns)
         {
-            ConsoleHelper.WriteLine($"  Adding assembly ref: '{include}", true);
+            ConsoleHelper.WriteLine($"  Adding assembly ref: '{Include}", true);
 
             XElement newref;
 
-            if (hintpath == null)
+            if (Hintpath == null)
             {
                 newref = new XElement(ns + "Reference",
-                    new XAttribute("Include", include),
+                    new XAttribute("Include", Include),
                     new XElement(ns + "SpecificVersion", "False")
                     );
             }
             else
             {
                 newref = new XElement(ns + "Reference",
-                    new XAttribute("Include", include),
+                    new XAttribute("Include", Include),
                     new XElement(ns + "SpecificVersion", "False"),
-                    new XElement(ns + "HintPath", hintpath)
+                    new XElement(ns + "HintPath", Hintpath)
                     );
             }
 
@@ -55,11 +55,11 @@ namespace ProjFix
                        orderby el.Attribute("Include").Value
                        select el;
 
-            if (include.CompareTo(refs.First().Attribute("Include").Value) < 0)
+            if (Include.CompareTo(refs.First().Attribute("Include").Value) < 0)
             {
                 groups.ElementAt(0).AddFirst(newref);
             }
-            else if (include.CompareTo(refs.Last().Attribute("Include").Value) > 0)
+            else if (Include.CompareTo(refs.Last().Attribute("Include").Value) > 0)
             {
                 refs.Last().AddAfterSelf(newref);
             }
@@ -69,7 +69,7 @@ namespace ProjFix
                 {
                     string inc1 = refs.ElementAt(i).Attribute("Include").Value;
                     string inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
-                    if (include.CompareTo(inc1) > 0 && include.CompareTo(inc2) < 0)
+                    if (Include.CompareTo(inc1) > 0 && Include.CompareTo(inc2) < 0)
                     {
                         refs.ElementAt(i).AddAfterSelf(newref);
                     }
@@ -83,18 +83,18 @@ namespace ProjFix
 
             List<XElement> references2 =
                 (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
-                 where el.Attribute("Include") != null && Project.GetShortRef(el.Attribute("Include").Value) == Project.GetShortRef(include)
+                 where el.Attribute("Include") != null && Project.GetShortRef(el.Attribute("Include").Value) == Project.GetShortRef(Include)
                  select el)
             .ToList();
 
             if (references2.Count < 1)
             {
-                ConsoleHelper.WriteLine($"  Error: Couldn't update assembly ref: '{include}': Didn't find reference in project file.", false);
+                ConsoleHelper.WriteLine($"  Error: Couldn't update assembly ref: '{Include}': Didn't find reference in project file.", false);
                 return;
             }
             if (references2.Count > 1)
             {
-                ConsoleHelper.WriteLine($"  Error: Couldn't update assembly ref: '{include} ': Found too many matching references in project file.", false);
+                ConsoleHelper.WriteLine($"  Error: Couldn't update assembly ref: '{Include} ': Found too many matching references in project file.", false);
                 return;
             }
 
@@ -102,14 +102,14 @@ namespace ProjFix
 
 
             XElement hintPath = reference.Element(ns + "HintPath");
-            if (hintpath == null)
+            if (Hintpath == null)
             {
                 if (hintPath != null)
                 {
                     string oldpath = hintPath.Value;
-                    if (oldpath != hintpath)
+                    if (oldpath != Hintpath)
                     {
-                        ConsoleHelper.WriteLine($"  Updating assembly ref: Removing hintpath: '{include}': '{oldpath}'.", true);
+                        ConsoleHelper.WriteLine($"  Updating assembly ref: Removing hintpath: '{Include}': '{oldpath}'.", true);
                         hintPath.Remove();
                     }
                 }
@@ -118,26 +118,26 @@ namespace ProjFix
             {
                 if (hintPath == null)
                 {
-                    ConsoleHelper.WriteLine($"  Updating assembly ref: Adding hintpath: '{include}', '{hintpath}'.", true);
-                    hintPath = new XElement(ns + "HintPath", hintpath);
+                    ConsoleHelper.WriteLine($"  Updating assembly ref: Adding hintpath: '{Include}', '{Hintpath}'.", true);
+                    hintPath = new XElement(ns + "HintPath", Hintpath);
                     reference.Add(hintPath);
                 }
                 else
                 {
                     string oldpath = hintPath.Value;
-                    if (oldpath != hintpath)
+                    if (oldpath != Hintpath)
                     {
-                        ConsoleHelper.WriteLine($"  Updating assembly ref: Updating hintpath: '{include}': '{oldpath}' -> '{hintpath}'.", true);
-                        hintPath.Value = hintpath;
+                        ConsoleHelper.WriteLine($"  Updating assembly ref: Updating hintpath: '{Include}': '{oldpath}' -> '{Hintpath}'.", true);
+                        hintPath.Value = Hintpath;
                     }
                 }
             }
 
             XAttribute includeattr = reference.Attribute("Include");
-            if (includeattr.Value != include)
+            if (includeattr.Value != Include)
             {
-                ConsoleHelper.WriteLine($"  Updating assembly ref: Updating include: '{includeattr.Value}' -> '{include}'.", true);
-                includeattr.Value = include;
+                ConsoleHelper.WriteLine($"  Updating assembly ref: Updating include: '{includeattr.Value}' -> '{Include}'.", true);
+                includeattr.Value = Include;
             }
         }
     }

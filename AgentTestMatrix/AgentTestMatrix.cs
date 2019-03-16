@@ -7,18 +7,17 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 class AgentTestMatrix
 {
-    class test
+    class Test
     {
-        public string agentname { get; set; }
-        public string buildid { get; set; }
-        public string testname { get; set; }
-        public string status { get; set; }
-        public bool? muted { get; set; }
-        public string buildstart { get; set; }
+        public string Agentname { get; set; }
+        public string Buildid { get; set; }
+        public string Testname { get; set; }
+        public string Status { get; set; }
+        public bool? Muted { get; set; }
+        public string Buildstart { get; set; }
     }
 
     static int Main(string[] args)
@@ -80,45 +79,41 @@ TestDebug");
         bool excludeMuted = GetExcludeMuted();
         string[] excludeAgents = GetExcludeAgents();
 
-        string username, password;
-        GetCredentials(out username, out password);
+        GetCredentials(out string username, out string password);
 
-        string[] prefixFrom, prefixTo;
-        GetAgentPrefixes(out prefixFrom, out prefixTo);
+        GetAgentPrefixes(out string[] prefixFrom, out string[] prefixTo);
 
-
-
-        List<test> tests = GetTests(server, username, password, buildconfig);
+        List<Test> tests = GetTests(server, username, password, buildconfig);
 
         if (excludeAgents != null)
         {
-            tests = tests.Where(t => !excludeAgents.Contains(t.agentname)).ToList();
+            tests = tests.Where(t => !excludeAgents.Contains(t.Agentname)).ToList();
         }
 
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
         {
             string[] header = { "buildid\tagentname\ttestname\tstatus\tmuted\tbuildstart" };
 
-            File.WriteAllLines("TestDebug4.txt", Enumerable.Concat(header, tests.Select(t => $"{t.buildid}\t{t.agentname}\t{t.testname}\t{t.status}\t{t.muted}\t{t.buildstart}")));
+            File.WriteAllLines("TestDebug4.txt", Enumerable.Concat(header, tests.Select(t => $"{t.Buildid}\t{t.Agentname}\t{t.Testname}\t{t.Status}\t{t.Muted}\t{t.Buildstart}")));
         }
 
-        string[] builds = tests.GroupBy(t => t.buildid).Select(t => t.Key).ToArray();
-        string[] agents = tests.GroupBy(t => t.agentname).Select(a => a.Key).ToArray();
+        string[] builds = tests.GroupBy(t => t.Buildid).Select(t => t.Key).ToArray();
+        string[] agents = tests.GroupBy(t => t.Agentname).Select(a => a.Key).ToArray();
 
-        tests = tests.Where(t => !excludeMuted || !t.muted.HasValue || !t.muted.Value).ToList();
+        tests = tests.Where(t => !excludeMuted || !t.Muted.HasValue || !t.Muted.Value).ToList();
 
-        Log($"Found {tests.Count} tests, of which {tests.Count(t => t.status == "FAILURE")} failed, in {builds.Length} builds containing tests, on {agents.Length} build agents.");
+        Log($"Found {tests.Count} tests, of which {tests.Count(t => t.Status == "FAILURE")} failed, in {builds.Length} builds containing tests, on {agents.Length} build agents.");
 
 
-        Dictionary<string, List<test>> agentTests = new Dictionary<string, List<test>>();
+        Dictionary<string, List<Test>> agentTests = new Dictionary<string, List<Test>>();
 
         foreach (string build in builds)
         {
-            string agent = tests.Where(t => t.buildid == build).First().agentname;
+            string agent = tests.Where(t => t.Buildid == build).First().Agentname;
 
             if (!agentTests.ContainsKey(agent))
             {
-                agentTests[agent] = tests.Where(t => t.buildid == build).ToList();
+                agentTests[agent] = tests.Where(t => t.Buildid == build).ToList();
             }
         }
 
@@ -382,9 +377,9 @@ TestDebug");
         return dic;
     }
 
-    static List<test> GetTests(string server, string username, string password, string buildconfig)
+    static List<Test> GetTests(string server, string username, string password, string buildconfig)
     {
-        List<test> tests = new List<test>();
+        List<Test> tests = new List<Test>();
 
         using (WebClient client = new WebClient())
         {
@@ -425,14 +420,14 @@ TestDebug");
 
                             foreach (dynamic testOccurrence in testresults.testOccurrence)
                             {
-                                tests.Add(new test
+                                tests.Add(new Test
                                 {
-                                    agentname = agentname,
-                                    buildid = buildresult.id,
-                                    testname = testOccurrence.name,
-                                    status = testOccurrence.status,
-                                    muted = testOccurrence.muted,
-                                    buildstart = buildresult.startDate
+                                    Agentname = agentname,
+                                    Buildid = buildresult.id,
+                                    Testname = testOccurrence.name,
+                                    Status = testOccurrence.status,
+                                    Muted = testOccurrence.muted,
+                                    Buildstart = buildresult.startDate
                                 });
                             }
                         }
@@ -469,11 +464,11 @@ TestDebug");
         }
     }
 
-    static string PrintFailMatrix(string[] agents, Dictionary<string, List<test>> agentTests, string[] prefixFrom, string[] prefixTo)
+    static string PrintFailMatrix(string[] agents, Dictionary<string, List<Test>> agentTests, string[] prefixFrom, string[] prefixTo)
     {
         string[] testnames = agentTests
             .SelectMany(a => a.Value)
-            .Select(t => t.testname)
+            .Select(t => t.Testname)
             .Distinct()
             .OrderBy(t => t)
             .ToArray();
@@ -491,7 +486,7 @@ TestDebug");
             {
                 if (agentname2.StartsWith(prefixFrom[i]))
                 {
-                    string datestring = agentTests.Where(t => t.Value.First().agentname == agentname).Select(t => t.Value.First().buildstart).First();
+                    string datestring = agentTests.Where(t => t.Value.First().Agentname == agentname).Select(t => t.Value.First().Buildstart).First();
                     DateTime datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
 
                     agentname2 = $"{prefixTo[i]}{agentname2.Substring(prefixFrom[i].Length)}|{agentname2}|{datetime}|";
@@ -507,7 +502,7 @@ TestDebug");
         sb.Append("Hours since last run");
         foreach (string agentname in agents.OrderBy(a => a))
         {
-            string datestring = agentTests.Where(t => t.Value.First().agentname == agentname).Select(t => t.Value.First().buildstart).First();
+            string datestring = agentTests.Where(t => t.Value.First().Agentname == agentname).Select(t => t.Value.First().Buildstart).First();
             DateTime datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
             string hourssince = (now - datetime).TotalHours.ToString("0", CultureInfo.InvariantCulture);
 
@@ -530,9 +525,9 @@ TestDebug");
 
             foreach (string agentname in agents.OrderBy(a => a))
             {
-                if (agentTests[agentname].Any(t => t.testname == testname))
+                if (agentTests[agentname].Any(t => t.Testname == testname))
                 {
-                    if (agentTests[agentname].Any(t => t.testname == testname && t.status == "FAILURE"))
+                    if (agentTests[agentname].Any(t => t.Testname == testname && t.Status == "FAILURE"))
                     {
                         sb.Append("\tx");
                         totalfailcount++;
@@ -559,7 +554,7 @@ TestDebug");
             sb.AppendLine();
         }
 
-        string agentSums = string.Join("\t", agentTests.OrderBy(t => t.Value.First().agentname).Select(t => t.Value.Where(tt => tt.status == "FAILURE").Count()));
+        string agentSums = string.Join("\t", agentTests.OrderBy(t => t.Value.First().Agentname).Select(t => t.Value.Where(tt => tt.Status == "FAILURE").Count()));
 
         sb.AppendLine($"{testnames.Length} tests, {failcount} failed, {testnames.Length - failcount} succeded (Total: {totalfailcount} failed, {totalsuccesscount} succeded, {totalmissingcount} missing)\t{agentSums}");
 
@@ -580,36 +575,36 @@ TestDebug");
         sb.AppendLine("<style>");
         sb.AppendLine(
 @"body {
-	font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-size: 12px;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 12px;
 }
 table {
-	border-collapse: collapse;
+    border-collapse: collapse;
 }
 td {
-	font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-size: 12px;
-	padding: 1px 5px 1px 5px;
-	vertical-align: top; 
-	border: solid 1px black;
-	white-space: nowrap;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    padding: 1px 5px 1px 5px;
+    vertical-align: top;
+    border: solid 1px black;
+    white-space: nowrap;
 }
 .fail {
-	background-color: rgb(255,200,200);
+    background-color: rgb(255,200,200);
 }
 .pass {
-	background-color: rgb(200,255,200);
+    background-color: rgb(200,255,200);
 }
 .missing {
-	background-color: rgb(200,200,200);
+    background-color: rgb(200,200,200);
 }");
         sb.AppendLine("</style>");
         sb.AppendLine("<script src='http://code.jquery.com/jquery-latest.min.js'></script>");
         sb.AppendLine("<script>");
         sb.AppendLine(
 @"$(document).ready(function(){$('#checkboxID').change(function(){
-	var self = this;
-	$('tr.successes').toggle(self.checked); 
+    var self = this;
+    $('tr.successes').toggle(self.checked);
 }).change();});");
         sb.AppendLine("</script>");
         sb.AppendLine("</head>");

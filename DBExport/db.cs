@@ -6,16 +6,16 @@ using System.Text;
 
 namespace DBExport
 {
-    public class db : IDisposable
+    public class Db : IDisposable
     {
         private DbConnection _cn = null;
         private DbProviderFactory _factory = null;
 
-        public db(string dbprovider, string connstr)
+        public Db(string dbprovider, string connstr)
         {
             DataTable providers = DbProviderFactories.GetFactoryClasses();
 
-            DataRow[] rows = providers.Select("InvariantName='" + dbprovider + "'");
+            DataRow[] rows = providers.Select($"InvariantName='{dbprovider}'");
             if (rows.Length == 0)
             {
                 StringBuilder error = new StringBuilder();
@@ -48,7 +48,7 @@ namespace DBExport
 
         public DbDataReader ExecuteReaderSQL(string sql)
         {
-            using (DbCommand cmd = _cn.CreateCommand())
+            using (var cmd = _cn.CreateCommand())
             {
                 cmd.Connection = _cn;
                 cmd.CommandType = CommandType.Text;

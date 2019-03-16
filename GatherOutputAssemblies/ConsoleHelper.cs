@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace GatherOutputAssemblies
 {
     class ConsoleHelper
     {
-        public static bool loglevel { get; set; }
+        public static bool Loglevel { get; set; }
 
         public static void ColorWrite(ConsoleColor color, string s)
         {

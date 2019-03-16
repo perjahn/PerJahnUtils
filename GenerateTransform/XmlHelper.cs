@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace GenerateTransform
@@ -100,7 +98,7 @@ namespace GenerateTransform
 
                 if (parentel == null)
                 {
-                    Console.WriteLine("Adding: " + buildpath);
+                    Console.WriteLine($"Adding: {buildpath}");
 
                     XElement newel =
                         isroot ?
@@ -145,9 +143,7 @@ namespace GenerateTransform
             {
                 string concat1 = string.Join(string.Empty, attributes1.Select(a => a.Name.LocalName));
                 string concat2 = string.Join(string.Empty, attributes2.Select(a => a.Name.LocalName));
-                Console.WriteLine("WARNING: No common attributes, sorting using concat names: " +
-                    el1.Name.LocalName + " <-> " + el2.Name.LocalName +
-                    $": '{concat1}', '{concat2}'");
+                Console.WriteLine($"WARNING: No common attributes, sorting using concat names: {el1.Name.LocalName} <-> {el2.Name.LocalName}: '{concat1}', '{concat2}'");
 
                 return concat1.CompareTo(concat2);
             }

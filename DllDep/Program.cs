@@ -339,7 +339,7 @@ Return values:
 
         private static bool IsGaced(AssemblyName assemblyName)
         {
-            return gac.IsSystemAssembly(assemblyName.Name, out string _, true);
+            return Gac.IsSystemAssembly(assemblyName.Name, out string _, true);
         }
 
         private static void CheckExcessive(string msg, List<string> excludedAssemblies)

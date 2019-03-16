@@ -1,5 +1,3 @@
-# edit with: powershell_ise.exe
-
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
 
@@ -37,7 +35,7 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder)
     Write-Host ("Creating artifact folder: '" + $artifactfolder + "'")
     md $artifactfolder | Out-Null
 
-    $exefiles = dir -r -i *.exe -Exclude *.vshost.exe,nuget.exe | ? { !$_.FullName.Contains("\obj\") }
+    $exefiles = dir -r -i *.exe -Exclude *.vshost.exe,nuget.exe | ? { !$_.FullName.Contains([IO.Path]::DirectorySeparatorChar + "obj" + [IO.Path]::DirectorySeparatorChar) }
     $exefiles | % {
         [string] $source = $_.FullName
         Write-Host ("Copying file: '" + $source + "' -> '" + $artifactfolder + "'")
@@ -47,18 +45,17 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder)
 
 function Compress-Artifacts([string] $artifactfolder)
 {
-    [string] $zipexe = "C:\Program Files\7-Zip\7z.exe"
-    [string] $outfile = "PerJahnUtils.zip"
-
-    if (!(Test-Path $zipexe))
+    [string] $sevenzippath = "C:\Program Files\7-Zip\7z.exe"
+    if (Test-Path $sevenzippath)
     {
-        Write-Host ("7-zip not found: '" + $zipexe + "'") -f Yellow
-        Write-Host ("Leaving tools uncompressed in artifact folder: '" + $artifactfolder + "'") -f Green
-        return
+        Set-Alias zip $sevenzippath
+    }
+    else
+    {
+        Set-Alias zip 7z
     }
 
-    Set-Alias zip $zipexe
-
+    [string] $outfile = "PerJahnUtils.zip"
     if (Test-Path $outfile)
     {
         Write-Host ("Deleting old archive file: '" + $outfile + "'")

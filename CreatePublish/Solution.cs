@@ -7,7 +7,7 @@ namespace CreatePublish
 {
     class Solution
     {
-        private string _solutionfile;
+        private readonly string _solutionfile;
 
         public Solution(string solutionfile)
         {

@@ -49,7 +49,7 @@ namespace SetAssemblyVersionFile
         {
             LogColor("***** Updating project files *****", ConsoleColor.Cyan);
 
-            Log("Current Directory: '" + Directory.GetCurrentDirectory() + "'");
+            Log($"Current Directory: '{Directory.GetCurrentDirectory()}'");
 
             string[] projectfiles;
             try
@@ -63,7 +63,7 @@ namespace SetAssemblyVersionFile
                 throw new ApplicationException(ex.Message);
             }
 
-            Log("Project files: " + projectfiles.Length);
+            Log($"Project files: {projectfiles.Length}");
 
             foreach (string projectfile in projectfiles)
             {
@@ -82,7 +82,7 @@ namespace SetAssemblyVersionFile
             }
             catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
             {
-                throw new ApplicationException("Couldn't load project: " + ex.Message);
+                throw new ApplicationException($"Couldn't load project: {ex.Message}");
             }
 
             ns = xdoc.Root.Name.Namespace;
@@ -94,7 +94,7 @@ namespace SetAssemblyVersionFile
                 .ToArray();
             if (itemGroups.Length == 0)
             {
-                LogColor(projectfile + ": Ignoring project file. No suitable itemgroup found in project file.", ConsoleColor.Yellow);
+                LogColor($"{projectfile}: Ignoring project file. No suitable itemgroup found in project file.", ConsoleColor.Yellow);
                 return;
             }
 
@@ -110,12 +110,12 @@ namespace SetAssemblyVersionFile
                 .ToArray();
             if (links.Length > 0)
             {
-                LogColor(projectfile + ": Ignoring project file. Already contains link to specified assembly file.", ConsoleColor.DarkGray);
+                LogColor($"{projectfile}: Ignoring project file. Already contains link to specified assembly file.", ConsoleColor.DarkGray);
                 return;
             }
             else
             {
-                Console.Write(Dns.GetHostName() + ": ");
+                Console.Write($"{Dns.GetHostName()}: ");
                 LogColorFragment(projectfile, ConsoleColor.Green);
                 Console.Write(": Adding link: '");
                 LogColorFragment(relpath, ConsoleColor.Green);
@@ -124,7 +124,7 @@ namespace SetAssemblyVersionFile
 
                 XElement newlink = new XElement(ns + "Compile",
                     new XAttribute("Include", relpath),
-                    new XElement(ns + "Link", @"Properties\" + Path.GetFileName(assemblyinfofile)));
+                    new XElement(ns + "Link", $"Properties\\{Path.GetFileName(assemblyinfofile)}"));
 
                 itemGroups[0].AddFirst(newlink);
                 modified = true;
@@ -142,7 +142,7 @@ namespace SetAssemblyVersionFile
 
                 if (!File.Exists(sourcefile))
                 {
-                    LogColor(projectfile + ": Couldn't find source file: '" + sourcefile + "'", ConsoleColor.Red);
+                    LogColor($"{projectfile}: Couldn't find source file: '{sourcefile}'", ConsoleColor.Red);
                     continue;
                 }
 
@@ -162,7 +162,7 @@ namespace SetAssemblyVersionFile
                 }
                 if (modifiedsourcefile)
                 {
-                    LogColor("Updating source file: '" + sourcefile + "'", ConsoleColor.Magenta);
+                    LogColor($"Updating source file: '{sourcefile}'", ConsoleColor.Magenta);
                     File.WriteAllLines(sourcefile, newrows, Encoding.UTF8);
                 }
             }
@@ -175,15 +175,15 @@ namespace SetAssemblyVersionFile
                 .ToArray();
             foreach (XElement el in emptyelements)
             {
-                el.Value = Environment.NewLine + string.Join(string.Empty, Enumerable.Repeat("  ", el.Ancestors().Count()));
-                LogColor(projectfile + ": Fixing empty element: " + el.Name.LocalName, ConsoleColor.DarkGray);
+                el.Value = $"{Environment.NewLine}{string.Join(string.Empty, Enumerable.Repeat("  ", el.Ancestors().Count()))}";
+                LogColor($"{projectfile}: Fixing empty element: {el.Name.LocalName}", ConsoleColor.DarkGray);
                 modified = true;
             }
 
 
             if (modified)
             {
-                LogColor(projectfile + ": Saving...", ConsoleColor.Gray);
+                LogColor($"{projectfile}: Saving...", ConsoleColor.Gray);
                 xdoc.Save(projectfile);
             }
         }
@@ -210,7 +210,7 @@ namespace SetAssemblyVersionFile
 
             dirs--;
 
-            return string.Join(string.Empty, Enumerable.Repeat(".." + Path.DirectorySeparatorChar, dirs).ToArray()) + pathTo.Substring(pos + 1);
+            return string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs).ToArray()) + pathTo.Substring(pos + 1);
         }
 
         private static void LogColorFragment(string message, ConsoleColor color)
@@ -244,7 +244,7 @@ namespace SetAssemblyVersionFile
         private static void Log(string message)
         {
             string hostname = Dns.GetHostName();
-            Console.WriteLine(hostname + ": " + message);
+            Console.WriteLine($"{hostname}: {message}");
         }
     }
 }

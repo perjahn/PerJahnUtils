@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ProjFix
 {
     class ConsoleHelper
     {
-        public static bool verboselogging { get; set; }
+        public static bool Verboselogging { get; set; }
 
         private static string _deferredline = null;
         private static int _deferredcoloroffset;
@@ -40,7 +39,7 @@ namespace ProjFix
 
         public static void WriteLine(string s, bool verbose)
         {
-            if (verbose && !verboselogging)
+            if (verbose && !Verboselogging)
             {
                 return;
             }

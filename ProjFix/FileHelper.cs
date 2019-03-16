@@ -25,9 +25,9 @@ namespace ProjFix
             {
                 string s = FileHelper.GetRelativePath(paths[i], paths[i + 1]);
                 if (s == paths[i + 2])
-                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + s + "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Green, $"'{paths[i]}' -> '{paths[i + 1]}' = '{s}'");
                 else
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + s + "' (" + paths[i + 2] + ")");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{paths[i]}' -> '{paths[i + 1]}' = '{s}' ({paths[i + 2]})");
             }
         }
 
@@ -68,7 +68,7 @@ namespace ProjFix
 
             for (int i = 0; i < count; i++)
             {
-                sb.Append(".." + Path.DirectorySeparatorChar);
+                sb.Append($"..{Path.DirectorySeparatorChar}");
             }
 
             return sb.ToString();
@@ -134,9 +134,9 @@ namespace ProjFix
             {
                 string s = FileHelper.CompactPath(paths[i]);
                 if (s == paths[i + 1])
-                    ConsoleHelper.ColorWrite(ConsoleColor.Green, "'" + paths[i] + "' -> '" + s + "'");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Green, $"'{paths[i]}' -> '{s}'");
                 else
-                    ConsoleHelper.ColorWrite(ConsoleColor.Red, "'" + paths[i] + "' -> '" + s + "' (" + paths[i + 1] + ")");
+                    ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{paths[i]}' -> '{s}' ({paths[i + 1]})");
             }
         }
 

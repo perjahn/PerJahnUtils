@@ -7,7 +7,7 @@ namespace RemoveMissingFiles
 {
     class Solution
     {
-        private string _solutionfile;
+        private readonly string _solutionfile;
         private List<Project> _projects;
 
         public Solution(string solutionfile)
@@ -24,15 +24,15 @@ namespace RemoveMissingFiles
             }
             catch (IOException ex)
             {
-                throw new ApplicationException("Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't load solution: '{_solutionfile}': {ex.Message}");
             }
             catch (UnauthorizedAccessException ex)
             {
-                throw new ApplicationException("Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't load solution: '{_solutionfile}': {ex.Message}");
             }
             catch (ArgumentException ex)
             {
-                throw new ApplicationException("Couldn't load solution: '" + _solutionfile + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't load solution: '{_solutionfile}': {ex.Message}");
             }
 
             List<Project> projects = new List<Project>();
@@ -46,7 +46,7 @@ namespace RemoveMissingFiles
 
                 foreach (string projtypeguid in projtypeguids)
                 {
-                    string projtypeline = "Project(\"" + projtypeguid + "\") =";
+                    string projtypeline = $"Project(\"{projtypeguid}\") =";
 
                     if (row.StartsWith(projtypeline))
                     {
@@ -125,7 +125,7 @@ namespace RemoveMissingFiles
 
             if (count2 != 0)
             {
-                ConsoleHelper.WriteLine("Fixed " + count2 + " of " + count1 + " projects, removed " + count3 + " file references.");
+                ConsoleHelper.WriteLine($"Fixed {count2} of {count1} projects, removed {count3} file references.");
             }
 
             return;

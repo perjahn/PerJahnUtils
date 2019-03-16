@@ -4,14 +4,12 @@ using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CopyToServer
 {
     public class NetworkConnection : IDisposable
     {
-        string _networkName;
+        readonly string _networkName;
 
         public NetworkConnection(string networkName, NetworkCredential credentials)
         {

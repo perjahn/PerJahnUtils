@@ -154,12 +154,14 @@ exclude filter while code in the verified folder change over time.");
 
                     WriteColor("Project file: " + filename + ". " + ex.Message, ConsoleColor.Red);
 
-                    Diff diff = new Diff();
-                    diff.FolderName = FolderName;
-                    diff.ProjectName = ProjectName;
-                    diff.AssemblyName = string.Empty;
-                    diff.RootNamespace = string.Empty;
-                    diff.Level = Level.Error;
+                    Diff diff = new Diff
+                    {
+                        FolderName = FolderName,
+                        ProjectName = ProjectName,
+                        AssemblyName = string.Empty,
+                        RootNamespace = string.Empty,
+                        Level = Level.Error
+                    };
                     diffs.Add(diff);
 
                     continue;
@@ -177,12 +179,14 @@ exclude filter while code in the verified folder change over time.");
                         continue;
                     }
 
-                    Diff diff = new Diff();
-                    diff.FolderName = FolderName;
-                    diff.ProjectName = ProjectName;
-                    diff.AssemblyName = AssemblyName;
-                    diff.RootNamespace = RootNamespace;
-                    diff.Level = Level.Error;
+                    Diff diff = new Diff
+                    {
+                        FolderName = FolderName,
+                        ProjectName = ProjectName,
+                        AssemblyName = AssemblyName,
+                        RootNamespace = RootNamespace,
+                        Level = Level.Error
+                    };
                     diffs.Add(diff);
                 }
                 else if (FolderName != ProjectName || FolderName != AssemblyName || FolderName != RootNamespace)
@@ -192,12 +196,14 @@ exclude filter while code in the verified folder change over time.");
                         continue;
                     }
 
-                    Diff diff = new Diff();
-                    diff.FolderName = FolderName;
-                    diff.ProjectName = ProjectName;
-                    diff.AssemblyName = AssemblyName;
-                    diff.RootNamespace = RootNamespace;
-                    diff.Level = Level.Warning;
+                    Diff diff = new Diff
+                    {
+                        FolderName = FolderName,
+                        ProjectName = ProjectName,
+                        AssemblyName = AssemblyName,
+                        RootNamespace = RootNamespace,
+                        Level = Level.Warning
+                    };
                     diffs.Add(diff);
                 }
             }

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Base64Decode
 {
@@ -22,7 +20,7 @@ namespace Base64Decode
             if (args.Length == 2)
             {
                 string filename = args[1];
-                using (FileStream fs = new FileStream(filename, FileMode.Create))
+                using (var fs = new FileStream(filename, FileMode.Create))
                 {
                     fs.Write(bytes, 0, bytes.Length);
                 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 
 namespace RemoveMissingFiles
@@ -15,7 +14,7 @@ namespace RemoveMissingFiles
         public int _removedfiles { get; set; }
 
         private static string[] excludedtags = {
-			"Reference", "Folder", "Import", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
+            "Reference", "Folder", "Import", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
             "COMReference", "WCFMetadata", "WebReferences", "WCFMetadataStorage", "WebReferenceUrl" };
 
         public static Project LoadProject(string solutionfile, string projectfilepath)
@@ -32,19 +31,19 @@ namespace RemoveMissingFiles
             }
             catch (IOException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
             }
             catch (UnauthorizedAccessException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
             }
             catch (ArgumentException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
             }
             catch (System.Xml.XmlException ex)
             {
-                throw new ApplicationException("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
             }
 
             ns = xdoc.Root.Name.Namespace;
@@ -64,7 +63,7 @@ namespace RemoveMissingFiles
 
         public void Fix(string solutionfile, List<Project> projects)
         {
-            List<string> existingfiles = new List<string>();
+            var existingfiles = new List<string>();
 
             foreach (string include in _allfiles)
             {
@@ -75,9 +74,7 @@ namespace RemoveMissingFiles
                     include);
                 if (!File.Exists(fullfilename))
                 {
-                    ConsoleHelper.WriteLineColor(
-                        "'" + _sln_path + "' --> '" + include + "'",
-                        ConsoleColor.Red);
+                    ConsoleHelper.WriteLineColor($"'{_sln_path}' --> '{include}'", ConsoleColor.Red);
                     _removedfiles++;
                 }
                 else
@@ -102,12 +99,12 @@ namespace RemoveMissingFiles
             }
             catch (IOException ex)
             {
-                ConsoleHelper.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.WriteLine($"Couldn't load project: '{fullfilename}': {ex.Message}");
                 return;
             }
             catch (System.Xml.XmlException ex)
             {
-                ConsoleHelper.WriteLine("Couldn't load project: '" + fullfilename + "': " + ex.Message);
+                ConsoleHelper.WriteLine($"Couldn't load project: '{fullfilename}': {ex.Message}");
                 return;
             }
 
@@ -115,7 +112,7 @@ namespace RemoveMissingFiles
             UpdateFiles(xdoc, solutionfile);
 
 
-            ConsoleHelper.WriteLine("Writing file: '" + fullfilename + "'.");
+            ConsoleHelper.WriteLine($"Writing file: '{fullfilename}'.");
             if (!simulate)
             {
                 FileHelper.RemoveRO(fullfilename);
@@ -143,7 +140,7 @@ namespace RemoveMissingFiles
 
                 if (!_allfiles.Contains(filename))
                 {
-                    //Console.WriteLine("Removing file: '" + filename + "'");
+                    //Console.WriteLine($"Removing file: '{filename}'");
                     fileitem.Remove();
                 }
             }
