@@ -7,11 +7,15 @@ function Main()
 
     ./prebuild.ps1
 
-    dotnet build all.build /p:Configuration=Release
+    Write-Host ("*"*100) -f Cyan
+
+    dotnet build all.build -c Release -r win-x64
+
+    Write-Host ("*"*100) -f Cyan
 
     ./postbuild.ps1
 
-    Write-Host ("Done: " + $watch.Elapsed)
+    Write-Host ("Done: " + $watch.Elapsed) -f Cyan
 }
 
 Main
