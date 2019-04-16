@@ -167,7 +167,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             int projcount = 0;
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             foreach (var p in projs.OrderBy(p => p.name))
             {
@@ -190,12 +190,6 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 sb.AppendLine(
                     "Project(\"{E24C65DC-7377-472B-9ABA-BC803B73C61A}\") = \"" + $"{Path.GetFileName(websiteFolder)}\", \"http://localhost:{port}\", \"" + "{" + Guid.NewGuid().ToString().ToUpper() + "}" + $"\"{Environment.NewLine}" +
                     $"\tProjectSection(WebsiteProperties) = preProject{Environment.NewLine}" +
-                    //$"\t\tDebug.AspNetCompiler.VirtualPath = \"/localhost_{port}\"{Environment.NewLine}" +
-                    //$"\t\tDebug.AspNetCompiler.PhysicalPath = \"{websiteFolder}\\\"{Environment.NewLine}" +
-                    //$"\t\tDebug.AspNetCompiler.TargetPath = \"PrecompiledWeb\\localhost_{port}\\\"{Environment.NewLine}" +
-                    //$"\t\tRelease.AspNetCompiler.VirtualPath = \"/localhost_{port}\\\"{Environment.NewLine}" +
-                    //$"\t\tRelease.AspNetCompiler.PhysicalPath = \"{websiteFolder}\\\"{Environment.NewLine}" +
-                    //$"\t\tRelease.AspNetCompiler.TargetPath = \"PrecompiledWeb\\localhost_{port}\\\"{Environment.NewLine}" +
                     $"\t\tSlnRelativePath = \"{websiteFolder}\\\"{Environment.NewLine}" +
                     $"\tEndProjectSection{Environment.NewLine}" +
                     $"EndProject");
@@ -262,19 +256,14 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
                     newproj = new Proj();
 
-                    try
+                    var guidelement = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").FirstOrDefault();
+                    if (guidelement == null)
                     {
-                        newproj.guid = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").Single().Value.ToUpper();
+                        newproj.guid = Guid.NewGuid().ToString();
                     }
-                    catch (InvalidOperationException ex)
+                    else
                     {
-                        Console.WriteLine($"Couldn't load project: '{file}': Not a valid cs/vb/vc/sql project file: Couldn't find one valid guid: {ex.Message}.");
-                        continue;
-                    }
-                    catch (NullReferenceException ex)
-                    {
-                        Console.WriteLine($"Couldn't load project: '{file}': Not a valid cs/vb/vc/sql project file: Couldn't find one valid guid: {ex.Message}.");
-                        continue;
+                        newproj.guid = guidelement.Value.ToUpper();
                     }
 
                     XElement xele = xdoc.Element(ns + "Project").Element(ns + "PropertyGroup").Element(ns + "AssemblyName");
@@ -292,10 +281,11 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                     try
                     {
                         newproj.targets =
-                            (from el in xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup")
-                             where el.Attribute("Condition") != null
-                             orderby GetTarget(el.Attribute("Condition").Value)
-                             select GetTarget(el.Attribute("Condition").Value)).ToList();
+                            xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup")
+                                .Where(el => el.Attribute("Condition") != null)
+                                .OrderBy(el => GetTarget(el.Attribute("Condition").Value))
+                                .Select(el => GetTarget(el.Attribute("Condition").Value))
+                                .ToList();
                     }
                     catch (NullReferenceException)
                     {
@@ -319,11 +309,9 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
         {
             List<Proj> dups = new List<Proj>();
 
-            var results =
-                from Proj a in projects
-                group a by a.guid into g
-                where g.Count() > 1
-                select g;
+            var results = projects
+                .GroupBy(a => a.guid)
+                .Where(g => g.Count() > 1);
 
             foreach (var group in results)
             {
