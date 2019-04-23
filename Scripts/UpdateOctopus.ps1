@@ -7,11 +7,11 @@ function Main()
 
     [int] $msifileSize = 400mb
 
-    [string] $firstUrl = Get-FirstUrl "https://octopus.com/downloads"
+    [string] $firstUrl = Get-FirstUrl "https://octopus.com/downloads" | % { $_.Replace("&amp;", "&") }
 
-    [string] $secondUrl = Get-SecondUrl $firstUrl
+    [string] $secondUrl = Get-SecondUrl $firstUrl | % { $_.Replace("&amp;", "&") }
 
-    [string] $thirdUrl = Get-ThirdUrl $secondUrl
+    [string] $thirdUrl = Get-ThirdUrl $secondUrl | % { $_.Replace("&amp;", "&") }
 
     [string] $msifile = Split-Path -Leaf $thirdUrl
     if ((Test-Path $msifile) -and (dir $msifile).Length -ge $msifileSize)
@@ -46,7 +46,7 @@ function Robust-Download([string] $url, [string] $outfile, [int] $msifileSize)
         Log ("Downloading (try " + $tries + "): '" + $thirdUrl + "' -> '" + $outfile + "'") Cyan
         try
         {
-            Invoke-WebRequest $thirdUrl -OutFile $outfile
+            Invoke-WebRequest $thirdUrl -OutFile $outfile -UseBasicParsing
         }
         catch
         {
@@ -81,7 +81,7 @@ function Get-FirstUrl([string] $pageurl)
 
     Log ("Downloading url: '" + $pageurl + "'") Cyan
 
-    [string] $page = Invoke-WebRequest $pageurl
+    [string] $page = Invoke-WebRequest $pageurl -UseBasicParsing
     [string[]] $rows = @($page.Split("`n"))
     Log ("Got " + $rows.Count + " rows.")
 
@@ -114,7 +114,7 @@ function Get-SecondUrl([string] $pageurl)
 
     Log ("Downloading url: '" + $pageurl + "'") Cyan
 
-    [string] $page = Invoke-WebRequest $pageurl
+    [string] $page = Invoke-WebRequest $pageurl -UseBasicParsing
     [string[]] $rows = @($page.Split("`n"))
     Log ("Got " + $rows.Count + " rows.")
 
@@ -141,7 +141,7 @@ function Get-ThirdUrl([string] $pageurl)
 
     Log ("Downloading url: '" + $pageurl + "'") Cyan
 
-    [string] $page = Invoke-WebRequest $pageurl
+    [string] $page = Invoke-WebRequest $pageurl -UseBasicParsing
     [string[]] $rows = @($page.Split("`n"))
     Log ("Got " + $rows.Count + " rows.")
 
@@ -185,7 +185,7 @@ function Delete-OldFiles([string] $extension, [int] $keep)
     Log ("Found " + $files.Count + " old " + $extension + " files.")
     foreach ($file in $files)
     {
-        [string] $filername = $file.FullName
+        [string] $filename = $file.FullName
         Log ("Deleting: '" + $filename + "'")
         del $filename
     }
