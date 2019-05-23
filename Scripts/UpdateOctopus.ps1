@@ -7,20 +7,16 @@ function Main()
 
     [int] $msifileSize = 400mb
 
-    [string] $firstUrl = Get-FirstUrl "https://octopus.com/downloads" | % { $_.Replace("&amp;", "&") }
+    [string] $downloadUrl = Get-DownloadUrl
 
-    [string] $secondUrl = Get-SecondUrl $firstUrl | % { $_.Replace("&amp;", "&") }
-
-    [string] $thirdUrl = Get-ThirdUrl $secondUrl | % { $_.Replace("&amp;", "&") }
-
-    [string] $msifile = Split-Path -Leaf $thirdUrl
+    [string] $msifile = Split-Path -Leaf $downloadUrl
     if ((Test-Path $msifile) -and (dir $msifile).Length -ge $msifileSize)
     {
         Log ("Octopus already updated with: '" + $msifile + "'")
         exit 0
     }
 
-    Robust-Download $thirdUrl $msifile $msifileSize
+    Robust-Download $downloadUrl $msifile $msifileSize
 
     Install-Octopus $msifile
 
@@ -43,14 +39,14 @@ function Robust-Download([string] $url, [string] $outfile, [int] $msifileSize)
             del $outfile
         }
 
-        Log ("Downloading (try " + $tries + "): '" + $thirdUrl + "' -> '" + $outfile + "'") Cyan
+        Log ("Downloading (try " + $tries + "): '" + $url + "' -> '" + $outfile + "'") Cyan
         try
         {
-            Invoke-WebRequest $thirdUrl -OutFile $outfile -UseBasicParsing
+            Invoke-WebRequest $url -OutFile $outfile -UseBasicParsing
         }
         catch
         {
-            Log ("Couldn't download (try " + $tries + "): '" + $thirdUrl + "' -> '" + $outfile + "'") Yellow
+            Log ("Couldn't download (try " + $tries + "): '" + $url + "' -> '" + $outfile + "'") Yellow
             Start-Sleep 5
         }
 
@@ -58,11 +54,11 @@ function Robust-Download([string] $url, [string] $outfile, [int] $msifileSize)
         {
             if ($tries -lt 10)
             {
-                Log ("Couldn't download (try " + $tries + "): '" + $thirdUrl + "' -> '" + $outfile + "'") Yellow
+                Log ("Couldn't download (try " + $tries + "): '" + $url + "' -> '" + $outfile + "'") Yellow
             }
             else
             {
-                Log ("Couldn't download (try " + $tries + "): '" + $thirdUrl + "' -> '" + $outfile + "'") Red
+                Log ("Couldn't download (try " + $tries + "): '" + $url + "' -> '" + $outfile + "'") Red
                 exit 1
             }
         }
@@ -71,13 +67,9 @@ function Robust-Download([string] $url, [string] $outfile, [int] $msifileSize)
     Log ("Downloaded: '" + $outfile + "'")
 }
 
-function Get-FirstUrl([string] $pageurl)
+function Get-DownloadUrl()
 {
-    if (!$pageurl.StartsWith("https://octopus.com/"))
-    {
-        Log ("Invalid url: '" + $pageurl + "'") Red
-        exit 1
-    }
+    [string] $pageUrl =  "https://octopus.com/downloads"
 
     Log ("Downloading url: '" + $pageurl + "'") Cyan
 
@@ -96,64 +88,19 @@ function Get-FirstUrl([string] $pageurl)
                 {
                     [int] $firstQuote = $rows[$j].IndexOf("`"")
                     [int] $secondQuote = $rows[$j].IndexOf("`"", $firstQuote+1)
-                    [string] $url = "https://octopus.com" + $rows[$j].Substring($firstQuote+1, $secondQuote-$firstQuote-1)
-                    return $url
+
+                    [string] $url = $rows[$j].Substring($firstQuote+1, $secondQuote-$firstQuote-1)
+                    Log ("Got url: '" + $url + "'")
+
+                    [int] $lastSlash = $url.LastIndexOf("/")
+                    [string] $version = $url.Substring($lastSlash+1)
+
+                    [string] $downloadLink = "https://download.octopusdeploy.com/octopus/Octopus." + $version + "-x64.msi"
+                    Log ("Got download link: '" + $downloadLink + "'")
+
+                    return $downloadLink
                 }
             }
-        }
-    }
-}
-
-function Get-SecondUrl([string] $pageurl)
-{
-    if (!$pageurl.StartsWith("https://octopus.com/"))
-    {
-        Log ("Invaliud url: '" + $pageurl + "'") Red
-        exit 1
-    }
-
-    Log ("Downloading url: '" + $pageurl + "'") Cyan
-
-    [string] $page = Invoke-WebRequest $pageurl -UseBasicParsing
-    [string[]] $rows = @($page.Split("`n"))
-    Log ("Got " + $rows.Count + " rows.")
-
-    for ([int] $i=0; $i -lt $rows.Count; $i++)
-    {
-        [string] $row = $rows[$i]
-        if ($row.Contains("OctopusServer") -and $row.Contains("Windows 64-bit"))
-        {
-            [int] $firstQuote = $row.IndexOf("`"")
-            [int] $secondQuote = $row.IndexOf("`"", $firstQuote+1)
-            [string] $url = "https://octopus.com" + $row.Substring($firstQuote+1, $secondQuote-$firstQuote-1)
-            return $url
-        }
-    }
-}
-
-function Get-ThirdUrl([string] $pageurl)
-{
-    if (!$pageurl.StartsWith("https://octopus.com/"))
-    {
-        Log ("Invalid url: '" + $pageurl + "'") Red
-        exit 1
-    }
-
-    Log ("Downloading url: '" + $pageurl + "'") Cyan
-
-    [string] $page = Invoke-WebRequest $pageurl -UseBasicParsing
-    [string[]] $rows = @($page.Split("`n"))
-    Log ("Got " + $rows.Count + " rows.")
-
-    for ([int] $i=0; $i -lt $rows.Count; $i++)
-    {
-        [string] $row = $rows[$i]
-        if ($row.Contains("Your download should start shortly. If it doesn't, use this"))
-        {
-            [int] $firstQuote = $row.IndexOf("`"")
-            [int] $secondQuote = $row.IndexOf("`"", $firstQuote+1)
-            [string] $url = $row.Substring($firstQuote+1, $secondQuote-$firstQuote-1)
-            return $url
         }
     }
 }
