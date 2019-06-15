@@ -20,7 +20,7 @@ namespace CreateSolution
 
     class Program
     {
-        enum VSVersion { VS2010, VS2012, VS2013, VS2015, VS2017 };
+        enum VSVersion { VS2010, VS2012, VS2013, VS2015, VS2017, VS2019 };
 
         static void Main(string[] args)
         {
@@ -39,7 +39,7 @@ namespace CreateSolution
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             string usage =
-@"CreateSolution 2.2 - Creates VS solution file.
+@"CreateSolution 2.3 - Creates VS solution file.
 
 Usage: CreateSolution [-g] [-vX] [-wWebSiteFolder] <path> <solutionfile> [excludeprojs...]
 
@@ -48,12 +48,13 @@ Usage: CreateSolution [-g] [-vX] [-wWebSiteFolder] <path> <solutionfile> [exclud
 -v2: Generate VS2012 sln file.
 -v3: Generate VS2013 sln file.
 -v5: Generate VS2015 sln file.
--v7: Generate VS2017 sln file (default).
+-v7: Generate VS2017 sln file.
+-v9: Generate VS2019 sln file (default).
 
 Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 myproj2";
 
             bool generateGlobalSection = false;
-            VSVersion vsVersion = VSVersion.VS2017;
+            VSVersion vsVersion = VSVersion.VS2019;
             List<string> websiteFolders = new List<string>();
 
             List<string> argsWithoutFlags = new List<string>();
@@ -79,6 +80,9 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                     case "-v7":
                         vsVersion = VSVersion.VS2017;
                         break;
+                    case "-v9":
+                        vsVersion = VSVersion.VS2019;
+                        break;
                     default:
                         if (arg.StartsWith("-w"))
                         {
@@ -101,7 +105,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             string path = argsWithoutFlags[0];
             string solutionfile = argsWithoutFlags[1];
-            List<string> excludeProjects = argsWithoutFlags.Skip(2).ToList();
+            var excludeProjects = argsWithoutFlags.Skip(2).ToList();
 
             CreateSolution(path, solutionfile, generateGlobalSection, vsVersion, excludeProjects, websiteFolders);
         }
@@ -112,7 +116,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             string[] exts = { ".csproj", ".vbproj", ".vcxproj", ".sqlproj", ".modelproj" };
             string[] typeguids = {
-                "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC",
+                "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC",  // maybe optional 9A19103F-16F7-4668-BE54-9A1E7A4F7556
                 "F184B08F-C81C-45F6-A57F-5ABD9991F28F",
                 "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942",
                 "00D1A9C2-B5F0-4AF3-8072-F6C62B433612",
@@ -175,7 +179,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 {
                     if (Path.GetExtension(p.path) == exts[i])
                     {
-                        sb.AppendLine("Project(\"{" + typeguids[i] + "}\") = \"" + $"{p.name}\", \"{p.path}\", \"{p.guid}\"{Environment.NewLine}EndProject");
+                        sb.AppendLine("Project(\"{" + typeguids[i] + "}\") = \"" + $"{p.name}\", \"{p.path}\", \"{{{p.guid}}}\"{Environment.NewLine}EndProject");
                     }
                 }
                 projcount++;
@@ -229,10 +233,13 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 case VSVersion.VS2017:
                     s = $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 15{Environment.NewLine}{s}";
                     break;
+                case VSVersion.VS2019:
+                    s = $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio Version 16{Environment.NewLine}{s}";
+                    break;
             }
 
             Console.WriteLine($"Writing {projcount} projects to {solutionfile}.");
-            using (StreamWriter sw = new StreamWriter(solutionfile))
+            using (var sw = new StreamWriter(solutionfile))
             {
                 sw.Write(s);
             }
@@ -243,7 +250,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         static List<Proj> GetProjects(List<string> files, string solutionfile)
         {
-            List<Proj> projects = new List<Proj>();
+            var projects = new List<Proj>();
 
             foreach (string file in files)
             {
@@ -251,8 +258,8 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
                 try
                 {
-                    XDocument xdoc = XDocument.Load(file);
-                    XNamespace ns = xdoc.Root.Name.Namespace;
+                    var xdoc = XDocument.Load(file);
+                    var ns = xdoc.Root.Name.Namespace;
 
                     newproj = new Proj();
 
@@ -307,7 +314,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         private List<Proj> GetDuplicates(List<Proj> projects)
         {
-            List<Proj> dups = new List<Proj>();
+            var dups = new List<Proj>();
 
             var results = projects
                 .GroupBy(a => a.guid)
@@ -359,7 +366,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         static List<Proj> RemoveDups(List<Proj> projs)
         {
-            List<Proj> projs2 = projs.ToList();
+            var projs2 = projs.ToList();
 
             RemoveByGuid(projs2);
             RemoveByAssemblyName(projs2);
@@ -372,7 +379,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         private static void RemoveByGuid(List<Proj> projs2)
         {
-            List<Proj> projs3 = projs2.OrderBy(p => p.guid).ThenBy(p => p.path).ToList();  // Create tmp list
+            var projs3 = projs2.OrderBy(p => p.guid).ThenBy(p => p.path).ToList();  // Create tmp list
             bool first = true;
             foreach (var proj1 in projs3)
             {
@@ -407,7 +414,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         private static void RemoveByAssemblyName(List<Proj> projs2)
         {
-            List<Proj> projs3 = projs2.OrderBy(p => p.assemblyname).ThenBy(p => p.path).ToList();  // Create tmp list
+            var projs3 = projs2.OrderBy(p => p.assemblyname).ThenBy(p => p.path).ToList();  // Create tmp list
             bool first = true;
             foreach (var proj1 in projs3)
             {
@@ -442,7 +449,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         private static void RemoveByFileName(List<Proj> projs2)
         {
-            List<Proj> projs3 = projs2.OrderBy(p => p.name).ThenBy(p => p.path).ToList();  // Create tmp list
+            var projs3 = projs2.OrderBy(p => p.name).ThenBy(p => p.path).ToList();  // Create tmp list
             bool first = true;
             foreach (var proj1 in projs3)
             {
@@ -512,7 +519,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             // A naive, simple algorithm was also wrong. :(
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             sb.AppendLine(
                     $"Global{Environment.NewLine}" +
