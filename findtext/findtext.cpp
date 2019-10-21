@@ -4,30 +4,30 @@
 
 #define MAX_TEXTS 1000
 
-void FindInFiles(char *path);
-int ParseFile(char *filename);
-int ParseBuf(char *filename, unsigned char *buf, long long bufsize);
+void FindInFiles(char* path);
+int ParseFile(char* filename);
+int ParseBuf(char* filename, unsigned char* buf, long long bufsize);
 
-char *texts[MAX_TEXTS];
+char* texts[MAX_TEXTS];
 int textcount;
 long long textsizes[MAX_TEXTS];
 
 long long filesfound = 0;
 long long totalhits = 0;
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	if (argc < 3)
 	{
 		printf("Usage: findtext <path> <texts...>\n");
-		return;
+		return 1;
 	}
 
 
 	if (argc > MAX_TEXTS)
 	{
 		printf("Too many texts.\n");
-		return;
+		return 1;
 	}
 
 
@@ -43,12 +43,15 @@ void main(int argc, char *argv[])
 
 
 	printf("Files found: %lld\nTotal hits: %lld\n", filesfound, totalhits);
+
+	return 0;
 }
 
-void FindInFiles(char *path)
+void FindInFiles(char* path)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
+	char subpath[1000];
 
 	if ((hFind = FindFirstFile(path, &Data)) != INVALID_HANDLE_VALUE)
 	{
@@ -58,12 +61,20 @@ void FindInFiles(char *path)
 			{
 				if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
-					// Dir
 				}
 				else
 				{
-					// File
-					ParseFile(Data.cFileName);
+					if (strchr(path, '\\'))
+					{
+						strcpy(subpath, path);
+						char* p = strrchr(subpath, '\\');
+						strcpy(p + 1, Data.cFileName);
+					}
+					else
+					{
+						strcpy(subpath, Data.cFileName);
+					}
+					ParseFile(subpath);
 				}
 			}
 		} while (FindNextFile(hFind, &Data));
@@ -74,9 +85,9 @@ void FindInFiles(char *path)
 	return;
 }
 
-int ParseFile(char *filename)
+int ParseFile(char* filename)
 {
-	FILE *fh;
+	FILE* fh;
 
 	if (fopen_s(&fh, filename, "rb") || !fh)
 	{
@@ -97,7 +108,7 @@ int ParseFile(char *filename)
 		return 0;
 	}
 
-	unsigned char *buf = (unsigned char *)malloc(filesize);
+	unsigned char* buf = (unsigned char*)malloc(filesize);
 	if (!buf)
 	{
 		printf("Out of memory: '%s', %lld\n", filename, filesize);
@@ -116,7 +127,7 @@ int ParseFile(char *filename)
 	if (readresult != 1)
 	{
 		free(buf);
-		printf("Couldn't read file: %d\n", readresult);
+		printf("Couldn't read file: %zd\n", readresult);
 		return 5;
 	}
 
@@ -127,11 +138,11 @@ int ParseFile(char *filename)
 	return 0;
 }
 
-int ParseBuf(char *filename, unsigned char *buf, long long bufsize)
+int ParseBuf(char* filename, unsigned char* buf, long long bufsize)
 {
 	long long hits = 0;
 
-	for (unsigned char *p = buf; p < buf + bufsize; p++)
+	for (unsigned char* p = buf; p < buf + bufsize; p++)
 	{
 		for (int i = 0; i < textcount; i++)
 		{
@@ -142,6 +153,17 @@ int ParseBuf(char *filename, unsigned char *buf, long long bufsize)
 
 			if (!_memicmp(p, texts[i], textsizes[i]))
 			{
+				unsigned char* pStart, * pEnd, printBuf[1001];
+
+				for (pStart = p; pStart > buf&& pStart > p - 500 && *(pStart - 1) != '\r' && *(pStart - 1) != '\n'; pStart--)
+					;
+				for (pEnd = p; pEnd < buf + bufsize && pEnd < p + 500 && *pEnd != '\r' && *pEnd != '\n'; pEnd++)
+					;
+				long long size = pEnd - pStart;
+				memcpy(printBuf, pStart, size);
+				printBuf[size] = 0;
+				printf("%s %lld: %s\n", filename, pStart - buf, printBuf);
+
 				hits++;
 			}
 		}
@@ -151,7 +173,7 @@ int ParseBuf(char *filename, unsigned char *buf, long long bufsize)
 	{
 		filesfound++;
 		totalhits += hits;
-		printf("'%s': %lld\n", filename, hits);
+		//printf("'%s': %lld\n", filename, hits);
 	}
 
 	return 0;
