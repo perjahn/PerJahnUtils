@@ -83,6 +83,7 @@ namespace DBExport
                         }
                         writer.Write(reader.GetName(i));
                     }
+                    writer.WriteLine();
                 }
 
                 for (int i = 0; i < reader.FieldCount; i++)
@@ -92,7 +93,7 @@ namespace DBExport
                         writer.Write('\t');
                     }
 
-                    if (reader.GetFieldType(i) == typeof(System.Byte[]))
+                    if (reader.GetFieldType(i) == typeof(byte[]))
                     {
                         if (row == 0)
                         {
