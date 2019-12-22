@@ -69,7 +69,7 @@ function Robust-Download([string] $url, [string] $outfile, [int] $msifileSize)
 
 function Get-DownloadUrl()
 {
-    [string] $pageUrl =  "https://octopus.com/downloads"
+    [string] $pageurl =  "https://octopus.com/downloads"
 
     Log ("Downloading url: '" + $pageurl + "'") Cyan
 
