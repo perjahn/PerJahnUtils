@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "upgradeprojects": {
+      "commandName": "Project",
+      "commandLineArgs": "..\\..\\..\\..\\test\t"
+    }
+  }
+}
