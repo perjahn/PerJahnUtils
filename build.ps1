@@ -1,8 +1,7 @@
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
 
-function Main()
-{
+function Main() {
     [Diagnostics.Stopwatch] $watch = [Diagnostics.Stopwatch]::StartNew()
 
     ./prebuild.ps1
@@ -15,7 +14,7 @@ function Main()
 
     ./postbuild.ps1
 
-    Write-Host ("Done: " + $watch.Elapsed) -f Cyan
+    Write-Host "Done: $($watch.Elapsed)" -f Cyan
 }
 
 Main
