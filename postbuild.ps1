@@ -30,7 +30,27 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder) {
     Write-Host "Creating artifact folder: '$artifactfolder'"
     md $artifactfolder | Out-Null
 
-    $exefiles = dir -r *.exe -Exclude *.vshost.exe, nuget.exe | ? { !$_.FullName.Contains("$([IO.Path]::DirectorySeparatorChar)obj$([IO.Path]::DirectorySeparatorChar)") }
+    $exefiles = @(dir -r *.exe -Exclude *.vshost.exe, nuget.exe |
+        ? { !$_.FullName.Substring((pwd).Path.Length).Contains("$([IO.Path]::DirectorySeparatorChar)obj$([IO.Path]::DirectorySeparatorChar)") })
+
+    Write-Host "Found $($exefiles.Count) files."
+
+    $groups = @($exefiles | Group-Object Name)
+    $exefiles = @($groups | % {
+            if ($_.Count -eq 1) {
+                return $_
+            }
+            else {
+                $files = @($_.Group | ? { $_.FullName.Contains("$([IO.Path]::DirectorySeparatorChar)publish$([IO.Path]::DirectorySeparatorChar)") })
+                if ($files.Count -ge 1) {
+                    return $files | Select-Object -First 1
+                }
+                else {
+                    return $_ | Select-Object -First 1
+                }
+            }
+        })
+
     $exefiles | % {
         [string] $source = $_.FullName
         Write-Host "Copying file: '$source' -> '$artifactfolder'"
@@ -47,14 +67,14 @@ function Compress-Artifacts([string] $artifactfolder) {
         Set-Alias zip 7z
     }
 
-    [string] $outfile = "PerJahnUtils.zip"
+    [string] $outfile = "PerJahnUtils.7z"
     if (Test-Path $outfile) {
         Write-Host "Deleting old archive file: '$outfile'"
         del $outfile
     }
 
     Write-Host "Compressing $(@(dir $artifactfolder).Count) exe tools to $outfile..."
-    zip a -mx9 $outfile (Join-Path $artifactfolder *.exe)
+    zip a -mx9 $outfile $artifactfolder
     if (!$? -or !(Test-Path $outfile)) {
         Write-Host "Couldn't compress artifacts." -f Red
         exit 1

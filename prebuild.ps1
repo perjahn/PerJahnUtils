@@ -6,6 +6,8 @@ function Main() {
 
     Clean
 
+    SingleExe
+
     Generate-BuildFile "all.build"
 }
 
@@ -23,8 +25,46 @@ function Clean() {
     }
 }
 
+function SingleExe() {
+    $files = @(dir *.csproj -Recurse)
+    Write-Host "Found $($files.Count) project files."
+
+    foreach ($file in $files) {
+        [string] $filename = $file.FullName
+        Write-Host "Reading project file: '$filename'"
+        [xml] $xml = Get-Content $filename
+
+        $groups = @($xml.SelectNodes("/Project/PropertyGroup"))
+        foreach ($group in $groups) {
+            $newelement = $xml.CreateElement("RuntimeIdentifier")
+            $newelement.InnerText = "win10-x64"
+            $group.AppendChild($newelement) | Out-Null
+
+            $newelement = $xml.CreateElement("PublishSingleFile")
+            $newelement.InnerText = "true"
+            $group.AppendChild($newelement) | Out-Null
+
+            $newelement = $xml.CreateElement("PublishTrimmed")
+            $newelement.InnerText = "true"
+            $group.AppendChild($newelement) | Out-Null
+
+            $newelement = $xml.CreateElement("PublishReadyToRun")
+            $newelement.InnerText = "false"
+            $group.AppendChild($newelement) | Out-Null
+
+            $newelement = $xml.CreateElement("PublishReadyToRunShowWarnings")
+            $newelement.InnerText = "true"
+            $group.AppendChild($newelement) | Out-Null
+        }
+
+        $xml.Save($filename)
+    }
+}
+
 function Generate-BuildFile([string] $buildfile) {
-    $files = @(dir -Recurse "*.sln" -File) | ? { @(Get-Content $_.FullName).Contains("# Visual Studio 15") }
+    $files = @(dir -Recurse "*.sln" -File | ? {
+            @(Get-Content $_.FullName).Contains("# Visual Studio 15") -or
+            @(Get-Content $_.FullName).Contains("# Visual Studio Version 16") })
     [string[]] $filenames = $files | % { $_.FullName.Substring((pwd).Path.Length + 1) }
 
     Write-Host "Found $($files.Count) solutions."

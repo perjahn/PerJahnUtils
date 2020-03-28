@@ -1,0 +1,29 @@
+name: .NET Core
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.201
+    - name: Pre Build
+      run: pwsh ./prebuild.ps1
+    - name: Build with dotnet
+      run: dotnet build all.build -c Release -r win-x64
+    - name: Post Build
+      run: pwsh ./postbuild.ps1
+    - uses: actions/upload-artifact@v1
+      with:
+        name: PerJahnUtils
+        path: PerJahnUtils.7z
