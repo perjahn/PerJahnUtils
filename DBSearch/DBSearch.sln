@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
+# Visual Studio Version 16
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBSearch", "DBSearch.csproj", "{22444D79-A1AE-4459-BFFC-36990D55C74E}"
 EndProject
 Global

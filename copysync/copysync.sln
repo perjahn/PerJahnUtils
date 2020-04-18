@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.489
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio Version 16
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "copysync", "copysync.csproj", "{381FFDAD-5213-4689-A99E-7F4F0F21C187}"
 EndProject
 Global

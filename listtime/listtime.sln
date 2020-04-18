@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
+# Visual Studio Version 16
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "listtime", "listtime.vcxproj", "{D133AC28-2460-4546-BF98-1E5826FA3CE7}"
 EndProject
 Global

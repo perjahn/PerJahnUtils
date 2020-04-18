@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.489
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio Version 16
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FixSolutionDir", "FixSolutionDir.csproj", "{E9E48EDC-FA27-4C03-BA4C-46E72B886C5A}"
 EndProject
 Global

@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.489
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio Version 16
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetMissingWarnings", "GetMissingWarnings.csproj", "{1DD966EB-0C3B-4303-B23D-F1B1AB9F9DBC}"
 EndProject
 Global

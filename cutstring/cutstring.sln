@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
+# Visual Studio Version 16
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cutstring", "cutstring.vcxproj", "{1035D0F6-58E2-476C-8AA3-FB475559D934}"
 EndProject
 Global
