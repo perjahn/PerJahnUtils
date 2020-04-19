@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="rep.cpp">
+    <ClCompile Include="sleep.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

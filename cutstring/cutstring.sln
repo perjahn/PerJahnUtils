@@ -5,16 +5,19 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cutstring", "cutstring.vcxp
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Debug|Win32.ActiveCfg = Debug|Win32
-		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Debug|Win32.Build.0 = Debug|Win32
-		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Release|Win32.ActiveCfg = Release|Win32
-		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Release|Win32.Build.0 = Release|Win32
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Debug|x64.ActiveCfg = Debug|x64
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Debug|x64.Build.0 = Debug|x64
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Release|x64.ActiveCfg = Release|x64
+		{1035D0F6-58E2-476C-8AA3-FB475559D934}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E3AFD4E8-9C5C-461C-9C17-296361E5340E}
 	EndGlobalSection
 EndGlobal

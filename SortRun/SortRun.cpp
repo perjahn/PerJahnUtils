@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	char *usage =
-		"SortRun 0.001 gamma"
+	char* usage =
+		(char*)"SortRun 0.001 gamma"
 		"\n"
 		"Usage: SortRun <file1> <file2> <command>\n"
 		"\n"
@@ -14,23 +14,23 @@ void main(int argc, char *argv[])
 	if (argc != 4)
 	{
 		printf(usage);
-		return;
+		return 1;
 	}
 
 	if (strlen(argv[1]) > 1000)
 	{
 		printf("Filename 1 too long.");
-		return;
+		return 1;
 	}
 	if (strlen(argv[2]) > 1000)
 	{
 		printf("Filename 2 too long.");
-		return;
+		return 1;
 	}
 	if (strlen(argv[3]) > 1000)
 	{
 		printf("Command too long.");
-		return;
+		return 1;
 	}
 
 	char tempdir[1000];
@@ -38,7 +38,7 @@ void main(int argc, char *argv[])
 	if (!GetTempPath(500, tempdir))
 	{
 		printf("Couldn't get temp dir (%u).\n", GetLastError());
-		return;
+		return 1;
 	}
 
 	char command[5000];
@@ -55,5 +55,5 @@ void main(int argc, char *argv[])
 	//printf(">>>%s<<<\n", command);
 	system(command);
 
-	return;
+	return 0;
 }

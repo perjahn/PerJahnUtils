@@ -42,19 +42,19 @@ int g_counts[4];
 
 //**********************************************************
 
-void DelinkTFS(char *szPath);
+void DelinkTFS(char* szPath);
 void PrintStat(void);
 
-void FixAttrib(char *szSubPath);
-void MyDeleteFile(char *szFileName);
-void FixProjectFile(char *szFileName);
-void FixSolutionFile(char *szFileName);
+void FixAttrib(char* szSubPath);
+void MyDeleteFile(char* szFileName);
+void FixProjectFile(char* szFileName);
+void FixSolutionFile(char* szFileName);
 
 //**********************************************************
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	char *path;
+	char* path;
 
 	if (argc == 2)
 	{
@@ -75,7 +75,7 @@ void main(int argc, char *argv[])
 	}
 	else if (argc == 4 &&
 		((!strcmp(argv[1], "-s") && !strcmp(argv[2], "-v")) ||
-		(!strcmp(argv[1], "-v") && !strcmp(argv[2], "-s"))))
+			(!strcmp(argv[1], "-v") && !strcmp(argv[2], "-s"))))
 	{
 		g_simulate = true;
 		g_verbose = true;
@@ -84,23 +84,25 @@ void main(int argc, char *argv[])
 	else
 	{
 		printf(
-			"detfs 1.4\n"
+			"detfs 1.5\n"
 			"\n"
 			"Usage: detfs [-s] [-v] <path>\n"
 			"\n"
 			"-s  Simulate\n"
 			"-v  Verbose logging\n");
-		return;
+		return 1;
 	}
 
 	DelinkTFS(path);
 
 	PrintStat();
+
+	return 0;
 }
 
 //**********************************************************
 
-void EnumAll(char *buf, char *p, char *pattern, void(*Action)(char *path))
+void EnumAll(char* buf, char* p, char* pattern, void(*Action)(char* path))
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
@@ -124,7 +126,7 @@ void EnumAll(char *buf, char *p, char *pattern, void(*Action)(char *path))
 
 //**********************************************************
 
-void EnumFiles(char *buf, char *p, char *pattern, void(*FileAction)(char *path))
+void EnumFiles(char* buf, char* p, char* pattern, void(*FileAction)(char* path))
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
@@ -151,7 +153,7 @@ void EnumFiles(char *buf, char *p, char *pattern, void(*FileAction)(char *path))
 
 //**********************************************************
 
-void EnumDirs(char *buf, char *p, char *pattern, void(*DirAction)(char *path))
+void EnumDirs(char* buf, char* p, char* pattern, void(*DirAction)(char* path))
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
@@ -178,29 +180,29 @@ void EnumDirs(char *buf, char *p, char *pattern, void(*DirAction)(char *path))
 
 //**********************************************************
 
-void DelinkTFS(char *szPath)
+void DelinkTFS(char* szPath)
 {
-	char *p, szSubPath[1000];
+	char* p, szSubPath[1000];
 
 	strcpy(szSubPath, szPath);
 	p = szSubPath + strlen(szSubPath);
 
 
-	EnumAll(szSubPath, p, "*", FixAttrib);
+	EnumAll(szSubPath, p, (char*)"*", FixAttrib);
 
-	EnumFiles(szSubPath, p, "*.vspscc", MyDeleteFile);
-	EnumFiles(szSubPath, p, "*.vssscc", MyDeleteFile);
+	EnumFiles(szSubPath, p, (char*)"*.vspscc", MyDeleteFile);
+	EnumFiles(szSubPath, p, (char*)"*.vssscc", MyDeleteFile);
 
-	EnumFiles(szSubPath, p, "*.csproj", FixProjectFile);
-	EnumFiles(szSubPath, p, "*.vbproj", FixProjectFile);
-	EnumFiles(szSubPath, p, "*.vcxproj", FixProjectFile);
-	EnumFiles(szSubPath, p, "*.wixproj", FixProjectFile);
-	EnumFiles(szSubPath, p, "*.modelproj", FixProjectFile);
-	EnumFiles(szSubPath, p, "*.vdproj", FixProjectFile);
+	EnumFiles(szSubPath, p, (char*)"*.csproj", FixProjectFile);
+	EnumFiles(szSubPath, p, (char*)"*.vbproj", FixProjectFile);
+	EnumFiles(szSubPath, p, (char*)"*.vcxproj", FixProjectFile);
+	EnumFiles(szSubPath, p, (char*)"*.wixproj", FixProjectFile);
+	EnumFiles(szSubPath, p, (char*)"*.modelproj", FixProjectFile);
+	EnumFiles(szSubPath, p, (char*)"*.vdproj", FixProjectFile);
 
-	EnumFiles(szSubPath, p, "*.sln", FixSolutionFile);
+	EnumFiles(szSubPath, p, (char*)"*.sln", FixSolutionFile);
 
-	EnumDirs(szSubPath, p, "*", DelinkTFS);
+	EnumDirs(szSubPath, p, (char*)"*", DelinkTFS);
 
 
 	return;

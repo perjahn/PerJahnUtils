@@ -13,7 +13,7 @@ struct file
 	bool diff;
 } g_filedata[1000000];
 
-char **g_excludepatterns;
+char** g_excludepatterns;
 unsigned g_excludepatterncount;
 
 unsigned g_filecount;
@@ -21,8 +21,8 @@ unsigned g_totalexcluded;
 unsigned long long g_totalsize;
 unsigned g_diffcount;
 
-unsigned char *g_buf1;
-unsigned char *g_buf2;
+unsigned char* g_buf1;
+unsigned char* g_buf2;
 
 WORD colorred = FOREGROUND_RED | FOREGROUND_INTENSITY;
 WORD coloryellow = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
@@ -30,25 +30,25 @@ WORD colorgray = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 WORD colorwhite = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
-int (*g_CompareFunction)(const char *, const char *);
+int (*g_CompareFunction)(const char*, const char*);
 
-int ParseArgs(int argc, char *argv[]);
-void Gather(char *szPath);
-int Compare(const void *arg1, const void *arg2);
+int ParseArgs(int argc, char* argv[]);
+void Gather(char* szPath);
+int Compare(const void* arg1, const void* arg2);
 bool Analyze(void);
 void CompareEntries(int i, int j);
-bool CompareFiles(char *szFileName1, char *szFileName2);
+bool CompareFiles(char* szFileName1, char* szFileName2);
 
 //**********************************************************
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	int result = ParseArgs(argc, argv);
 
 	if (result == 2)
 	{
-		char *usage =
-			"difffind 3.1 - Program for finding mismatched files.\n"
+		char* usage =
+			(char*)"difffind 3.2 - Program for finding mismatched files.\n"
 			"               Useful when an exact copy of a file must exist in several locations.\n"
 			"\n"
 			"Usage: difffind [-i] <pattern> [-pattern1 -pattern2 ...]\n"
@@ -69,10 +69,10 @@ int main(int argc, char *argv[])
 
 //**********************************************************
 
-int ParseArgs(int argc, char *argv[])
+int ParseArgs(int argc, char* argv[])
 {
 	int argcount = argc;
-	char **args = argv;
+	char** args = argv;
 
 	if (argcount < 2)
 	{
@@ -99,7 +99,7 @@ int ParseArgs(int argc, char *argv[])
 	}
 
 
-	char *pszPattern = NULL;
+	char* pszPattern = NULL;
 
 	pszPattern = args[0];
 
@@ -153,13 +153,13 @@ int ParseArgs(int argc, char *argv[])
 
 //**********************************************************
 
-void Gather(char *szPath)
+void Gather(char* szPath)
 {
-	char szSubPath[1000], *p, *pPattern;
-	WIN32_FIND_DATA FindDir, *FindFile, FindExclude;
+	char szSubPath[1000], * p, * pPattern;
+	WIN32_FIND_DATA FindDir, * FindFile, FindExclude;
 	HANDLE hFind;
 
-	char **excluded = new char*[100000];
+	char** excluded = new char* [100000];
 	unsigned excludedcount = 0;
 
 
@@ -205,7 +205,7 @@ void Gather(char *szPath)
 		{
 			if (FindDir.cFileName && strcmp(FindDir.cFileName, ".") && strcmp(FindDir.cFileName, ".."))
 			{
-				if (FindDir.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)
+				if (FindDir.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
 					bool foundex = false;
 					for (unsigned ex = 0; ex < excludedcount; ex++)
@@ -239,7 +239,7 @@ void Gather(char *szPath)
 		{
 			if (FindFile->cFileName && strcmp(FindFile->cFileName, ".") && strcmp(FindFile->cFileName, ".."))
 			{
-				if (!(FindFile->dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY))
+				if (!(FindFile->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					bool foundex = false;
 					for (unsigned ex = 0; ex < excludedcount; ex++)
@@ -252,7 +252,7 @@ void Gather(char *szPath)
 					}
 					if (!foundex)
 					{
-						int size = pPattern - szPath;
+						size_t size = pPattern - szPath;
 						memcpy(g_filedata[g_filecount].szFullPath, szPath, size);
 						sprintf(g_filedata[g_filecount].szFullPath + size, "%s", FindFile->cFileName);
 						g_filecount++;
@@ -280,10 +280,10 @@ void Gather(char *szPath)
 
 //**********************************************************
 
-int Compare(const void *arg1, const void *arg2)
+int Compare(const void* arg1, const void* arg2)
 {
-	file *f1 = (file*)arg1;
-	file *f2 = (file*)arg2;
+	file* f1 = (file*)arg1;
+	file* f2 = (file*)arg2;
 
 	int diff = g_CompareFunction(f1->Data.cFileName, f2->Data.cFileName);
 	if (diff)
@@ -299,11 +299,11 @@ bool Analyze(void)
 {
 	unsigned maxsize = 0;
 
-	for (unsigned i = 0; i<g_filecount; i++)
+	for (unsigned i = 0; i < g_filecount; i++)
 	{
 		g_filedata[i].diff = false;
 
-		if (g_filedata[i].Data.nFileSizeLow>maxsize)
+		if (g_filedata[i].Data.nFileSizeLow > maxsize)
 		{
 			maxsize = g_filedata[i].Data.nFileSizeLow;
 		}
@@ -351,14 +351,14 @@ bool Analyze(void)
 
 void CompareEntries(int i, int j)
 {
-	static char *pLast = "";
+	static char* pLast = (char*)"";
 
 	if (i == j)
 	{
 		return;
 	}
 
-	file *f1, *f2;
+	file* f1, * f2;
 	f1 = &g_filedata[i];
 	f2 = &g_filedata[j];
 
@@ -396,7 +396,7 @@ void CompareEntries(int i, int j)
 	}
 
 
-	char szDir1[1000], szDir2[1000], *p;
+	char szDir1[1000], szDir2[1000], * p;
 
 	strcpy(szDir1, f1->szFullPath);
 	for (p = szDir1 + strlen(szDir1); p > szDir1 && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
@@ -433,9 +433,9 @@ void CompareEntries(int i, int j)
 //**********************************************************
 // Return: true=diff, false=identical
 
-bool CompareFiles(char *szFileName1, char *szFileName2)
+bool CompareFiles(char* szFileName1, char* szFileName2)
 {
-	FILE *fh1, *fh2;
+	FILE* fh1, * fh2;
 
 	if (!(fh1 = fopen(szFileName1, "rb")))
 	{

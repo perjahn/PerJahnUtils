@@ -33,6 +33,8 @@ Bug fix for null in search strings
 Handle embedded nulls (\0) in search string.
 Version 2.21
 64-bit file sizes
+Version 2.22
+vs2019
 
 
 To compile, change project settings:
@@ -85,20 +87,20 @@ bool g_recurse = false;          // Should recurse into sub dirs?
 bool g_show_statistics = false;  // Show statistics.
 bool g_trim_whitespace = false;  // Should space & tab be trimmed before printing?
 
-bool *g_pflags[] =
+bool* g_pflags[] =
 {
 	(bool*)&g_string_length, &g_preservecharset, &g_escape_dec, &g_print_first_row, &g_escape_hex, &g_case_sensitive,
 	&g_only_filename, (bool*)&g_maxsize, &g_line_numbers, &g_recurse, &g_show_statistics,
 	&g_trim_whitespace
 };
-char *g_flags = "bcdfhilmnrst";    // Flags, in the same order as g_pflags pointers
+char* g_flags = (char*)"bcdfhilmnrst";    // Flags, in the same order as g_pflags pointers
 
 DWORD g_time1, g_time2;
 
-unsigned char **g_aszSearch;     // Array of search tokens. This is argv+x
+unsigned char** g_aszSearch;     // Array of search tokens. This is argv+x
 unsigned g_tokens;               // Number of search tokens.
-unsigned *g_tokens_lengths;      // Length of search tokens.
-char **g_aszExcludePatterns;     // Exclude patterns. This is argv+y
+unsigned* g_tokens_lengths;      // Length of search tokens.
+char** g_aszExcludePatterns;     // Exclude patterns. This is argv+y
 unsigned g_ExcludePatterns;      // Number of exclude patterns.
 
 // Statistics
@@ -115,10 +117,10 @@ unsigned long long g_found_matches;
 
 //**********************************************************
 
-void print_color(char *szText, unsigned color)
+void print_color(char* szText, unsigned color)
 {
 	HANDLE hStdout;
-	char *pszText, *txt2 = NULL;
+	char* pszText, * txt2 = NULL;
 
 
 	if (!g_preservecharset)
@@ -157,17 +159,17 @@ void print_color(char *szText, unsigned color)
 
 //**********************************************************
 
-void process_file(char *szFileName)
+void process_file(char* szFileName)
 {
-	FILE *fh;
+	FILE* fh;
 	unsigned long long size;
 	size_t size2;
 	size_t size3;
-	unsigned char *buf;
+	unsigned char* buf;
 	bool bFound;
-	unsigned char *p, *p1, *p2;  // p1->start of line, p2->end of line
-	static unsigned char *txt = NULL;
-	static char *s = NULL;
+	unsigned char* p, * p1, * p2;  // p1->start of line, p2->end of line
+	static unsigned char* txt = NULL;
+	static char* s = NULL;
 	unsigned line = 1;
 
 
@@ -245,7 +247,7 @@ void process_file(char *szFileName)
 
 							if (g_print_first_row && line > 1)
 							{
-								unsigned char *p3;
+								unsigned char* p3;
 								char szFirstRow[10001];
 
 								// Print first row
@@ -271,20 +273,20 @@ void process_file(char *szFileName)
 							// Get start of string.
 							p1 = p;
 							if (*p1 >= ' ' || *p1 == '\t' || *p1 == 0)
-							for (; p1 > buf && (*(p1 - 1) >= ' ' || *(p1 - 1) == '\t' || *(p1 - 1) == 0) && p1 > p - g_string_length + size2; p1--)
-								;
+								for (; p1 > buf && (*(p1 - 1) >= ' ' || *(p1 - 1) == '\t' || *(p1 - 1) == 0) && p1 > p - g_string_length + size2; p1--)
+									;
 
 							// Get end of string.
 							p2 = p + size2;
 							if (*(p2 - 1) >= ' ' || *(p2 - 1) == '\t' || *(p2 - 1) == 0)
-							for (; p2 < buf + size && (*p2 >= ' ' || *p2 == '\t' || *p2 == 0); p2++)
-								;
+								for (; p2 < buf + size && (*p2 >= ' ' || *p2 == '\t' || *p2 == 0); p2++)
+									;
 
 							if (g_trim_whitespace)
 							{
-								for (; p1<p + size2 && (*p1 == '\t' || *p1 == '\n' || *p1 == '\r' || *p1 == ' '); p1++)
+								for (; p1 < p + size2 && (*p1 == '\t' || *p1 == '\n' || *p1 == '\r' || *p1 == ' '); p1++)
 									;
-								for (; p2>p && (*(p2 - 1) == '\t' || *(p2 - 1) == '\n' || *(p2 - 1) == '\r' || *(p2 - 1) == ' '); p2--)
+								for (; p2 > p && (*(p2 - 1) == '\t' || *(p2 - 1) == '\n' || *(p2 - 1) == '\r' || *(p2 - 1) == ' '); p2--)
 									;
 							}
 						}
@@ -328,8 +330,8 @@ void process_file(char *szFileName)
 						print_color(s, 0);
 
 #ifdef _DEBUG
-						printf("%u\n", p2 - buf);
-						printf("%u\n", p - buf);
+						printf("%llu\n", p2 - buf);
+						printf("%llu\n", p - buf);
 #endif
 
 						p = p2;
@@ -359,30 +361,30 @@ This is an important feature, parameter to FindFirstFile() are exactly
 what user writes. Always.
 */
 
-void process_dir(char *szDir)
+void process_dir(char* szDir)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
 	char szPath[1000];
-	char *p, *p2;
+	char* p, * p2;
 	bool bExclude;
 	unsigned exclude_count;
 	unsigned long long filesize;
-	char **exclude_names;  // Array with excluded entries.
+	char** exclude_names;  // Array with excluded entries.
 
 
 	if (g_ExcludePatterns > 0)
-		exclude_names = new char*[100000];
+		exclude_names = new char* [100000];
 	else
 		exclude_names = NULL;
 
 
 	// Search for files to exclude (currently, one unique file can be excluded multiple times)
 	exclude_count = 0;
-	for (unsigned i = 0; i<g_ExcludePatterns; i++)
+	for (unsigned i = 0; i < g_ExcludePatterns; i++)
 	{
 		strcpy(szPath, szDir);
-		for (p = szPath + strlen(szPath); p>szPath && *(p - 1) != '\\' && *(p - 1) != ':'; p--);
+		for (p = szPath + strlen(szPath); p > szPath && *(p - 1) != '\\' && *(p - 1) != ':'; p--);
 		strcpy(p, g_aszExcludePatterns[i] + 1);
 		if ((hFind = FindFirstFile(szPath, &Data)) != INVALID_HANDLE_VALUE)
 		{
@@ -404,7 +406,7 @@ void process_dir(char *szDir)
 					}
 					else
 					{
-						print_color("-=-=- MAX EXCLUDE ENTRIES REACHED -=-=-\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
+						print_color((char*)"-=-=- MAX EXCLUDE ENTRIES REACHED -=-=-\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
 					}
 				}
 			} while (FindNextFile(hFind, &Data));
@@ -547,7 +549,7 @@ void process_dir(char *szDir)
 //**********************************************************
 // Format per cent string
 
-void get_percent(unsigned long long total, unsigned long long value, char *buf)
+void get_percent(unsigned long long total, unsigned long long value, char* buf)
 {
 	int percent;
 
@@ -620,7 +622,7 @@ void show_statistics(void)
 		if (diff)
 		{
 			sprintf(s, "Time: %.1f s, scanned %.1f kB/s.\n",
-				diff / 1000.0, g_searched_bytes*1000.0 / diff / 1024);
+				diff / 1000.0, g_searched_bytes * 1000.0 / diff / 1024);
 		}
 		else
 		{
@@ -645,7 +647,7 @@ void set_options(void)
 	{
 		foundflag = false;
 
-		unsigned char *arg = g_aszSearch[0];
+		unsigned char* arg = g_aszSearch[0];
 
 		if (arg[0] == '-')
 		{
@@ -693,7 +695,7 @@ void set_options(void)
 //
 void rewrite_tokens(void)
 {
-	unsigned char *p1, *p2, *p3;
+	unsigned char* p1, * p2, * p3;
 	char buf[4];
 	long value;
 	int base = 0;
@@ -818,11 +820,11 @@ BOOL CtrlHandler(DWORD fdwCtrlType)
 //**********************************************************
 // Program entry point
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	bool foundex;
-	char *usage =
-		"mgrep 2.21\n"
+	char* usage =
+		(char*)"mgrep 2.22\n"
 		"\n"
 		"Usage: mgrep [-c] [-d|-h] [-i] [-l] [-mX] [-n] [-r] [-s] [-t]\n"
 		"             <search strings> <file pattern> [exclude file/dir patterns]\n"
@@ -842,7 +844,7 @@ void main(int argc, char *argv[])
 		"\n"
 		"Example: mgrep -c -i -l -m1000000 -r -s text1 text2 text3\n"
 		"               d:\\files\\*.j* -*.jpg -*.jpeg -*.js\n";
-	char *p;
+	char* p;
 
 	SaveColor();
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
@@ -851,11 +853,11 @@ void main(int argc, char *argv[])
 	if (argc < 3)
 	{
 		print_color(usage, 0);
-		return;
+		return 1;
 	}
 
 	g_tokens = argc - 2;
-	g_aszSearch = (unsigned char **)(argv + 1);
+	g_aszSearch = (unsigned char**)(argv + 1);
 
 
 	set_options();
@@ -880,19 +882,19 @@ void main(int argc, char *argv[])
 	if (g_tokens < 1)
 	{
 		print_color(usage, 0);
-		return;
+		return 1;
 	}
 
 	if (g_escape_dec && g_escape_hex)
 	{
-		print_color("Error: Option '-d' and '-h' cannot be used together.\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
-		return;
+		print_color((char*)"Error: Option '-d' and '-h' cannot be used together.\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
+		return 1;
 	}
 
 	if (g_tokens < 1)
 	{
 		print_color(usage, 0);
-		return;
+		return 1;
 	}
 
 	rewrite_tokens();
@@ -917,11 +919,11 @@ void main(int argc, char *argv[])
 			}
 			else
 			{
-				print_color(".", FOREGROUND_RED | FOREGROUND_INTENSITY);
+				print_color((char*)".", FOREGROUND_RED | FOREGROUND_INTENSITY);
 			}
 		}
 
-		print_color("'\n", 0);
+		print_color((char*)"'\n", 0);
 	}
 	for (unsigned i = 0; i < g_ExcludePatterns; i++)
 	{
@@ -946,7 +948,7 @@ void main(int argc, char *argv[])
 
 	RestoreColor();
 
-	return;
+	return 0;
 }
 
 //**********************************************************

@@ -6,9 +6,9 @@
 
 //**********************************************************
 
-void compare_paths(char *szPath1, char *szPath2);
-void compare_files(char *szFileName1, char *szFileName2);
-void compare_bufs(unsigned char *buf1, unsigned char *buf2, unsigned bufsize);
+void compare_paths(char* szPath1, char* szPath2);
+void compare_files(char* szFileName1, char* szFileName2);
+void compare_bufs(unsigned char* buf1, unsigned char* buf2, unsigned bufsize);
 void print_stats(void);
 
 WIN32_FIND_DATA g_dir1[100000];
@@ -29,9 +29,9 @@ DWORD g_t1, g_t2;
 
 //**********************************************************
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	const char *usage =
+	const char* usage =
 		"Compare 2.2\n"
 		"\n"
 		"Usage: compare [-v] <file pattern 1> <file pattern 2>\n"
@@ -104,9 +104,9 @@ int main(int argc, char *argv[])
 
 //**********************************************************
 
-int compare(const void *arg1, const void *arg2)
+int compare(const void* arg1, const void* arg2)
 {
-	WIN32_FIND_DATA *pe1, *pe2;
+	WIN32_FIND_DATA* pe1, * pe2;
 
 	pe1 = (WIN32_FIND_DATA*)arg1;
 	pe2 = (WIN32_FIND_DATA*)arg2;
@@ -118,13 +118,13 @@ int compare(const void *arg1, const void *arg2)
 	return strcmp(pe1->cFileName, pe2->cFileName);
 }
 
-void compare_paths(char *szPath1, char *szPath2)
+void compare_paths(char* szPath1, char* szPath2)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
-	char *p1, *p2;
+	char* p1, * p2;
 	int entries1, entries2;
-	WIN32_FIND_DATA *entries;
+	WIN32_FIND_DATA* entries;
 
 	/*
 		if(strchr(szPath1, '?') || strchr(szPath1, '*'))
@@ -270,9 +270,9 @@ void compare_paths(char *szPath1, char *szPath2)
 
 __int64 g_diffbytes;
 
-void compare_files(char *szFileName1, char *szFileName2)
+void compare_files(char* szFileName1, char* szFileName2)
 {
-	FILE *fh1, *fh2;
+	FILE* fh1, * fh2;
 	__int64 l1, l2, l;
 
 
@@ -307,7 +307,7 @@ void compare_files(char *szFileName1, char *szFileName2)
 
 
 	unsigned bufsize = 16 * 1024 * 1024;
-	unsigned char *buf1, *buf2;
+	unsigned char* buf1, * buf2;
 	buf1 = new unsigned char[bufsize];
 	if (!buf1)
 	{
@@ -410,9 +410,9 @@ void compare_files(char *szFileName1, char *szFileName2)
 
 //**********************************************************
 
-void compare_bufs(unsigned char *buf1, unsigned char *buf2, unsigned bufsize)
+void compare_bufs(unsigned char* buf1, unsigned char* buf2, unsigned bufsize)
 {
-	unsigned char *p1, *p2;
+	unsigned char* p1, * p2;
 
 
 	for (p1 = buf1, p2 = buf2; p1 < buf1 + bufsize; p1++, p2++)

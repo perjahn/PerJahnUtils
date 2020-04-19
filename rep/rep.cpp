@@ -7,11 +7,11 @@
 
 //**********************************************************
 
-unsigned char *_inbuf, *_outbuf;
-unsigned _inbufsize, _outbufsize;
+unsigned char* _inbuf, * _outbuf;
+size_t _inbufsize, _outbufsize;
 
 unsigned char _find[1000], _replace[1000];
-unsigned _findsize, _replacesize;
+size_t _findsize, _replacesize;
 char _szRename[1000];
 
 bool g_renamefiles;
@@ -22,23 +22,23 @@ bool g_verbose;  // Verbose logging
 //**********************************************************
 
 #ifdef _DEBUG
-void RemoveEvilVsJunk(char *szText);
+void RemoveEvilVsJunk(char* szText);
 #endif
-void ProcessDir(char *szFilePattern);
-void ProcessFile(char *szFileName);
-bool ReadInfile(char *szFileName);
+void ProcessDir(char* szFilePattern);
+void ProcessFile(char* szFileName);
+bool ReadInfile(char* szFileName);
 bool AllocateBuffers(void);
 void DeAllocateBuffers(void);
-unsigned ConvertHexToBytes(char *in, unsigned char *out);
-void ParseBuf(unsigned char *inbuf, unsigned char *outbuf, unsigned inbufsize, unsigned outbufsize, unsigned *outsize, bool *modified);
-void WriteOutfile(char *szFileName, unsigned char *outbuf, unsigned outsize);
+unsigned ConvertHexToBytes(char* in, unsigned char* out);
+void ParseBuf(unsigned char* inbuf, unsigned char* outbuf, size_t inbufsize, size_t outbufsize, size_t* outsize, bool* modified);
+void WriteOutfile(char* szFileName, unsigned char* outbuf, size_t outsize);
 
 //**********************************************************
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	char *szUsage =
-		"rep 2.7\n"
+	char* szUsage =
+		(char*)"rep 2.8\n"
 		"\n"
 		"Usage: rep [-f] [-h] [-s] [-v] <searchtext> <replacetext> <filepattern>\n"
 		"\n"
@@ -49,27 +49,27 @@ int main(int argc, char *argv[])
 		"    \\00 -> null.\n"
 		"-s: Recurse subdirectories.\n"
 		"-v: Verbose logging.\n";
-	char *p1, *p2, *p3;
+	char* p1, * p2, * p3;
 
-	g_renamefiles = g_escapehex = g_recurse = g_verbose= false;
+	g_renamefiles = g_escapehex = g_recurse = g_verbose = false;
 	p1 = p2 = p3 = NULL;
 
 	int arg;
-	for(arg=1; arg<argc; arg++)
+	for (arg = 1; arg < argc; arg++)
 	{
-		if(!strcmp(argv[arg], "-f"))
+		if (!strcmp(argv[arg], "-f"))
 		{
 			g_renamefiles = true;
 		}
-		else if(!strcmp(argv[arg], "-h"))
+		else if (!strcmp(argv[arg], "-h"))
 		{
 			g_escapehex = true;
 		}
-		else if(!strcmp(argv[arg], "-s"))
+		else if (!strcmp(argv[arg], "-s"))
 		{
 			g_recurse = true;
 		}
-		else if(!strcmp(argv[arg], "-v"))
+		else if (!strcmp(argv[arg], "-v"))
 		{
 			g_verbose = true;
 		}
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if(g_verbose)
+	if (g_verbose)
 	{
 		printf("%d %d %d %d\n",
 			g_renamefiles,
@@ -88,36 +88,36 @@ int main(int argc, char *argv[])
 			g_verbose);
 	}
 
-	if(arg!=argc-3)
+	if (arg != argc - 3)
 	{
 		printf(szUsage);
 	}
 
-	p1 = argv[argc-3];
-	p2 = argv[argc-2];
-	p3 = argv[argc-1];
+	p1 = argv[argc - 3];
+	p2 = argv[argc - 2];
+	p3 = argv[argc - 1];
 
-	if(p1 && p2 && p3)
+	if (p1 && p2 && p3)
 	{
 #ifdef _DEBUG
 		RemoveEvilVsJunk(p1);
 		RemoveEvilVsJunk(p2);
 #endif
 
-		unsigned len = strlen(p1);
-		if(len>=1000)
+		size_t len = strlen(p1);
+		if (len >= 1000)
 		{
-			printf("Error: searchtext too big (%u chars).", len);
+			printf("Error: searchtext too big (%llu chars).", len);
 			return 1;
 		}
 		len = strlen(p2);
-		if(len>=1000)
+		if (len >= 1000)
 		{
-			printf("Error: replacetext too big (%u chars).", len);
+			printf("Error: replacetext too big (%llu chars).", len);
 			return 1;
 		}
 
-		if(g_escapehex)
+		if (g_escapehex)
 		{
 			_findsize = ConvertHexToBytes(p1, _find);
 			_replacesize = ConvertHexToBytes(p2, _replace);
@@ -141,19 +141,19 @@ int main(int argc, char *argv[])
 // Remove evil Visual Studio junk inserted into debug params
 
 #ifdef _DEBUG
-void RemoveEvilVsJunk(char *text)
+void RemoveEvilVsJunk(char* text)
 {
-	char *junk = " xmlns=http://schemas.microsoft.com/developer/msbuild/2003";
-	int textsize = strlen(text);
-	int junksize = strlen(junk);
+	char* junk = (char*)" xmlns=http://schemas.microsoft.com/developer/msbuild/2003";
+	size_t textsize = strlen(text);
+	size_t junksize = strlen(junk);
 
-	char *p1, *p2;
+	char* p1, * p2;
 	p1 = p2 = text;
-	while(*p1)
+	while (*p1)
 	{
-		if(p1<=text+textsize-junksize && !memcmp(p1, junk, junksize))
+		if (p1 <= text + textsize - junksize && !memcmp(p1, junk, junksize))
 		{
-			p1+=junksize;
+			p1 += junksize;
 		}
 		else
 		{
@@ -162,43 +162,42 @@ void RemoveEvilVsJunk(char *text)
 			p2++;
 		}
 	}
-	*p2=0;
+	*p2 = 0;
 }
 #endif
 
 //**********************************************************
 
-void ProcessDir(char *szFilePattern)
+void ProcessDir(char* szFilePattern)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
-	char szSubPath[1000], *pPattern, *p;
+	char szSubPath[1000], * pPattern, * p;
 
-	for(pPattern=szFilePattern+strlen(szFilePattern); pPattern>szFilePattern && *(pPattern-1)!='\\' && *(pPattern-1)!=':'; pPattern--)
+	for (pPattern = szFilePattern + strlen(szFilePattern); pPattern > szFilePattern && *(pPattern - 1) != '\\' && *(pPattern - 1) != ':'; pPattern--)
 		;
 
 	strcpy(szSubPath, szFilePattern);
-	for(p=szSubPath+strlen(szSubPath); p>szSubPath && *(p-1)!='\\' && *(p-1)!=':'; p--)
+	for (p = szSubPath + strlen(szSubPath); p > szSubPath && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
 
 
-	if((hFind=FindFirstFile(szFilePattern, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szFilePattern, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				if(!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				if (!(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					// File
 					sprintf(p, "%s", Data.cFileName);
-					if(g_verbose)
+					if (g_verbose)
 						printf("File: '%s'\n", szSubPath);
 					ProcessFile(szSubPath);
 				}
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -206,64 +205,62 @@ void ProcessDir(char *szFilePattern)
 
 	sprintf(p, "*");
 
-	if(g_recurse)
+	if (g_recurse)
 	{
-		if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+		if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 		{
 			do
 			{
-				if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+				if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 				{
-					if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+					if (Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 					{
 						// Dir
 						sprintf(p, "%s\\%s", Data.cFileName, pPattern);
-						if(g_verbose)
+						if (g_verbose)
 							printf("Dir: '%s'\n", szSubPath);
 						ProcessDir(szSubPath);
 					}
 				}
-			}
-			while(FindNextFile(hFind, &Data));
+			} while (FindNextFile(hFind, &Data));
 
 			FindClose(hFind);
 		}
 	}
 
 
-	if(!g_renamefiles)
+	if (!g_renamefiles)
 	{
 		return;
 	}
 
 	sprintf(p, "*");
-	memcpy(p+1, _find, _findsize);
-	p[_findsize+1] = 0;  // Null terminate string
+	memcpy(p + 1, _find, _findsize);
+	p[_findsize + 1] = 0;  // Null terminate string
 	strcat(p, "*");
 
-	if(g_verbose)
+	if (g_verbose)
 	{
 		printf("Searching for renaming '%s'\n", szSubPath);
 	}
 
 
-	if((hFind=FindFirstFile(szSubPath, &Data))!=INVALID_HANDLE_VALUE)
+	if ((hFind = FindFirstFile(szSubPath, &Data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if(*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
+			if (*(Data.cFileName) && strcmp(Data.cFileName, ".") && strcmp(Data.cFileName, ".."))
 			{
-				unsigned outsize;
+				size_t outsize;
 				bool modified;
 				sprintf(p, "%s", Data.cFileName);
 				strcpy(_szRename, szSubPath);
-				ParseBuf((unsigned char *)p, (unsigned char *)(_szRename+(p-szSubPath)), strlen(Data.cFileName), 999, &outsize, &modified);
-				_szRename[outsize+(p-szSubPath)] = 0;
+				ParseBuf((unsigned char*)p, (unsigned char*)(_szRename + (p - szSubPath)), strlen(Data.cFileName), 999, &outsize, &modified);
+				_szRename[outsize + (p - szSubPath)] = 0;
 				printf("Renaming: '%s' -> '%s'\n", szSubPath, _szRename);
 				rename(szSubPath, _szRename);
 			}
-		}
-		while(FindNextFile(hFind, &Data));
+		} while (FindNextFile(hFind, &Data));
 
 		FindClose(hFind);
 	}
@@ -271,28 +268,28 @@ void ProcessDir(char *szFilePattern)
 
 //**********************************************************
 
-void ProcessFile(char *szFileName)
+void ProcessFile(char* szFileName)
 {
 	// Read from file (and allocate buffers)
-	if(!ReadInfile(szFileName))
+	if (!ReadInfile(szFileName))
 	{
 		return;
 	}
 
 	bool modified = false;
-	unsigned outsize;
+	size_t outsize;
 
 	ParseBuf(_inbuf, _outbuf, _inbufsize, _outbufsize, &outsize, &modified);
 
 	// Write to file
-	if(modified)
+	if (modified)
 	{
 		printf("%s\n", szFileName);
 
 		DWORD dwAttributes = GetFileAttributes(szFileName);
-		if(dwAttributes&FILE_ATTRIBUTE_READONLY)
+		if (dwAttributes & FILE_ATTRIBUTE_READONLY)
 		{
-			SetFileAttributes(szFileName, dwAttributes&~FILE_ATTRIBUTE_READONLY);
+			SetFileAttributes(szFileName, dwAttributes & ~FILE_ATTRIBUTE_READONLY);
 		}
 
 		WriteOutfile(szFileName, _outbuf, outsize);
@@ -303,11 +300,11 @@ void ProcessFile(char *szFileName)
 
 //**********************************************************
 
-bool ReadInfile(char *szFileName)
+bool ReadInfile(char* szFileName)
 {
-	FILE *fh;
+	FILE* fh;
 
-	if(!(fh = fopen(szFileName, "rb")))
+	if (!(fh = fopen(szFileName, "rb")))
 	{
 		printf("Couldn't open infile (%s).\n", szFileName);
 		return false;
@@ -315,10 +312,10 @@ bool ReadInfile(char *szFileName)
 
 	fseek(fh, 0, SEEK_END);
 	_inbufsize = ftell(fh);
-	_outbufsize = _inbufsize*2+1000;
+	_outbufsize = _inbufsize * 2 + 1000;
 	fseek(fh, 0, SEEK_SET);
 
-	if(!AllocateBuffers())
+	if (!AllocateBuffers())
 	{
 		fclose(fh);
 		return false;
@@ -336,16 +333,16 @@ bool ReadInfile(char *szFileName)
 bool AllocateBuffers(void)
 {
 	_inbuf = new unsigned char[_inbufsize];
-	if(!_inbuf)
+	if (!_inbuf)
 	{
-		printf("Out of memory (%u bytes).\n", _inbufsize);
+		printf("Out of memory (%llu bytes).\n", _inbufsize);
 		return false;
 	}
 
 	_outbuf = new unsigned char[_outbufsize];
-	if(!_outbuf)
+	if (!_outbuf)
 	{
-		printf("Out of memory (%u bytes).\n", _outbufsize);
+		printf("Out of memory (%llu bytes).\n", _outbufsize);
 		delete[] _inbuf;
 		return false;
 	}
@@ -363,23 +360,23 @@ void DeAllocateBuffers(void)
 
 //**********************************************************
 
-unsigned ConvertHexToBytes(char *in, unsigned char *out)
+unsigned ConvertHexToBytes(char* in, unsigned char* out)
 {
-	char *p1;
-	unsigned char *p2;
+	char* p1;
+	unsigned char* p2;
 	unsigned size;
 	unsigned char hexbuf[3];
 
 	hexbuf[2] = 0;
 
-	for(p1=in,p2=out; *p1; p1++,p2++)
+	for (p1 = in, p2 = out; *p1; p1++, p2++)
 	{
-		if(*p1=='\\' && isxdigit(*(p1+1)) && isxdigit(*(p1+2)))
+		if (*p1 == '\\' && isxdigit(*(p1 + 1)) && isxdigit(*(p1 + 2)))
 		{
-			hexbuf[0] = *(p1+1);
-			hexbuf[1] = *(p1+2);
-			*p2 = (unsigned char)strtol((char *)hexbuf, NULL, 16);
-			p1+=2;
+			hexbuf[0] = *(p1 + 1);
+			hexbuf[1] = *(p1 + 2);
+			*p2 = (unsigned char)strtol((char*)hexbuf, NULL, 16);
+			p1 += 2;
 		}
 		else
 		{
@@ -387,25 +384,25 @@ unsigned ConvertHexToBytes(char *in, unsigned char *out)
 		}
 	}
 
-	size = (unsigned)(p2-out);
+	size = (unsigned)(p2 - out);
 
 	return size;
 }
 
 //**********************************************************
 
-void ParseBuf(unsigned char *inbuf, unsigned char *outbuf, unsigned inbufsize, unsigned outbufsize, unsigned *outsize, bool *modified)
+void ParseBuf(unsigned char* inbuf, unsigned char* outbuf, size_t inbufsize, size_t outbufsize, size_t* outsize, bool* modified)
 {
-	unsigned char *p1, *p2;
+	unsigned char* p1, * p2;
 
-	for(p1=inbuf,p2=outbuf; p1<inbuf+inbufsize; )
+	for (p1 = inbuf, p2 = outbuf; p1 < inbuf + inbufsize; )
 	{
-		if(p1<=inbuf+inbufsize-_findsize && !memcmp(p1, _find, _findsize))
+		if (p1 <= inbuf + inbufsize - _findsize && !memcmp(p1, _find, _findsize))
 		{
 			*modified = true;
 			memcpy(p2, _replace, _replacesize);
-			p1+=_findsize;
-			p2+=_replacesize;
+			p1 += _findsize;
+			p2 += _replacesize;
 		}
 		else
 		{
@@ -415,24 +412,24 @@ void ParseBuf(unsigned char *inbuf, unsigned char *outbuf, unsigned inbufsize, u
 		}
 	}
 
-	*outsize = (unsigned)(p2-outbuf);
+	*outsize = (unsigned)(p2 - outbuf);
 
 	return;
 }
 
 //**********************************************************
 
-void WriteOutfile(char *szFileName, unsigned char *outbuf, unsigned outsize)
+void WriteOutfile(char* szFileName, unsigned char* outbuf, size_t outsize)
 {
-	FILE *fh;
+	FILE* fh;
 
-	if(!(fh = fopen(szFileName, "wb")))
+	if (!(fh = fopen(szFileName, "wb")))
 	{
 		printf("Couldn't open outfile (%s).\n", szFileName);
 		return;
 	}
 
-	if(outsize)
+	if (outsize)
 	{
 		fwrite(outbuf, outsize, 1, fh);
 	}

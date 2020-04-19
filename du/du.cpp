@@ -9,17 +9,17 @@ int _depth;
 int _maxdepth;
 FILETIME _from, _to;
 
-void RecurseDir(char *path, long long unsigned *size, long long unsigned *files, long long unsigned *dirs);
-void PrintTime(char *prefix, FILETIME *ft);
+void RecurseDir(char* path, long long unsigned* size, long long unsigned* files, long long unsigned* dirs);
+void PrintTime(char* prefix, FILETIME* ft);
 
 //**********************************************************
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	if (argc < 1 || argc > 4 || (argc == 4 && strlen(argv[3]) != 17))
 	{
 		printf(
-			"du 2.3\n"
+			"du 2.4\n"
 			"\n"
 			"Usage: du <path> [depth] [date interval]\n"
 			"\n"
@@ -28,7 +28,7 @@ void main(int argc, char *argv[])
 			"\n"
 			"date interval should be specified using this format: yyyyMMdd-yyyyMMdd\n"
 		);
-		return;
+		return 1;
 	}
 
 
@@ -100,8 +100,8 @@ void main(int argc, char *argv[])
 
 	if (_from.dwHighDateTime != 0 && _from.dwLowDateTime != 0 && _to.dwHighDateTime != 0xFFFFFFFF && _to.dwLowDateTime != 0xFFFFFFFF)
 	{
-		PrintTime("From:", &_from);
-		PrintTime("To:  ", &_to);
+		PrintTime((char*)"From:", &_from);
+		PrintTime((char*)"To:  ", &_to);
 	}
 
 	char subPath[1000];
@@ -124,19 +124,19 @@ void main(int argc, char *argv[])
 	printf("Total: Size: %llu bytes (%.1fkb / %.1fmb / %.2fgb), Files: %llu, Dirs: %llu.\n",
 		size, size / 1024.0, size / 1024 / 1024.0, size / 1024 / 1024 / 1024.0, files, dirs);
 
-	return;
+	return 0;
 }
 
 //**********************************************************
 
-void RecurseDir(char *path, long long unsigned *size, long long unsigned *files, long long unsigned *dirs)
+void RecurseDir(char* path, long long unsigned* size, long long unsigned* files, long long unsigned* dirs)
 {
 	_depth++;
 
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
 
-	char *p;
+	char* p;
 	for (p = path + strlen(path); p > path && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
 
@@ -189,7 +189,7 @@ void RecurseDir(char *path, long long unsigned *size, long long unsigned *files,
 
 //**********************************************************
 
-void PrintTime(char *prefix, FILETIME *ft)
+void PrintTime(char* prefix, FILETIME* ft)
 {
 	SYSTEMTIME st;
 

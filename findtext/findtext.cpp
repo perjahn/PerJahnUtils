@@ -155,7 +155,7 @@ int ParseBuf(char* filename, unsigned char* buf, long long bufsize)
 			{
 				unsigned char* pStart, * pEnd, printBuf[1001];
 
-				for (pStart = p; pStart > buf&& pStart > p - 500 && *(pStart - 1) != '\r' && *(pStart - 1) != '\n'; pStart--)
+				for (pStart = p; pStart > buf && pStart > p - 500 && *(pStart - 1) != '\r' && *(pStart - 1) != '\n'; pStart--)
 					;
 				for (pEnd = p; pEnd < buf + bufsize && pEnd < p + 500 && *pEnd != '\r' && *pEnd != '\n'; pEnd++)
 					;

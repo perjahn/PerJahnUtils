@@ -4,18 +4,18 @@
 #include <tchar.h>
 #include <psapi.h>
 
-void PrintProcessNameAndID(DWORD id, char *logfile);
-void Log(char *logfile, char *message);
+void PrintProcessNameAndID(DWORD id, char* logfile);
+void Log(char* logfile, char* message);
 
 DWORD _prevprocesses[1024];
 DWORD _prevprocesscount = 0;
 
-int compare(const void *arg1, const void *arg2)
+int compare(const void* arg1, const void* arg2)
 {
 	return *(DWORD*)arg1 - *(DWORD*)arg2;
 }
 
-int ListProcesses(char *logfile)
+int ListProcesses(char* logfile)
 {
 	DWORD processes[1024], needed, processcount;
 	unsigned int i, j;
@@ -32,7 +32,7 @@ int ListProcesses(char *logfile)
 
 	qsort(processes, processcount, sizeof(DWORD), compare);
 
-	Log(logfile, "Added:");
+	Log(logfile, (char*)"Added:");
 	for (i = 0; i < processcount; i++)
 	{
 		bool found = false;
@@ -49,7 +49,7 @@ int ListProcesses(char *logfile)
 		}
 	}
 
-	Log(logfile, "Removed:");
+	Log(logfile, (char*)"Removed:");
 	for (i = 0; i < _prevprocesscount; i++)
 	{
 		bool found = false;
@@ -72,7 +72,7 @@ int ListProcesses(char *logfile)
 	return 0;
 }
 
-void PrintProcessNameAndID(DWORD id, char *logfile)
+void PrintProcessNameAndID(DWORD id, char* logfile)
 {
 	TCHAR processname[MAX_PATH] = TEXT("<unknown>");
 
@@ -96,9 +96,9 @@ void PrintProcessNameAndID(DWORD id, char *logfile)
 	CloseHandle(process);
 }
 
-void Log(char *logfile, char *message)
+void Log(char* logfile, char* message)
 {
-	FILE *fh;
+	FILE* fh;
 	if (fh = fopen(logfile, "a"))
 	{
 		printf("%s\n", message);

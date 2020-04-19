@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 
-void main(void)
+int main(void)
 {
 	unsigned days, hours, minutes, seconds;
 	DWORD uptime = GetTickCount();
@@ -11,4 +11,6 @@ void main(void)
 	seconds = uptime/1000-minutes*60-hours*3600-days*24*3600;
 
 	printf("%u days, %uh, %um, %us\n", days, hours, minutes, seconds);
+
+	return 0;
 }

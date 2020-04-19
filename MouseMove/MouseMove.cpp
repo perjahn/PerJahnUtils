@@ -1,6 +1,6 @@
 //**********************************************************
 //
-// MouseMove 1.2
+// MouseMove 1.3
 //
 // Written by Per Jahn
 //
@@ -30,13 +30,13 @@ struct movenode
 {
 	int x, y;
 	unsigned long long time;
-	movenode *next;
-} *start, *end;
+	movenode* next;
+} *start, * end;
 
 //**********************************************************
 
 HINSTANCE  g_hInstance;
-DWORD      g_OldIcon;
+HICON      g_OldIcon;
 int        g_widthcount;
 
 //**********************************************************
@@ -67,7 +67,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_INITDIALOG:
 		// Set Class icon
-		g_OldIcon = SetClassLong(hDlg, GCL_HICON, (LONG)LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_ICON)));
+		g_OldIcon = (HICON)SetClassLongPtr(hDlg, GCLP_HICON, (LONG_PTR)LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_ICON)));
 
 		SetTimer(hDlg, 1, 100, NULL);
 		return TRUE;  // return FALSE if modeless and SetFocus is called
@@ -89,7 +89,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			KillTimer(hDlg, 1);
 
 			// Remove Class icon
-			SetClassLong(hDlg, GCL_HICON, g_OldIcon);
+			SetClassLongPtr(hDlg, GCLP_HICON, (LONG_PTR)g_OldIcon);
 
 			EndDialog(hDlg, 0);  // Close dialogwindow
 			return TRUE;
@@ -106,7 +106,7 @@ void UpdateCount(int x, int y)
 {
 	auto time = GetTickCount64();
 
-	movenode *node = new movenode;
+	movenode* node = new movenode;
 	node->x = x;
 	node->y = y;
 	node->time = time;
@@ -130,7 +130,7 @@ void UpdateTimer(HWND hwnd)
 	auto time = GetTickCount64();
 
 	int count1 = 0, count2 = 0, x = 0, y = 0;
-	for (movenode *node = start; node;)
+	for (movenode* node = start; node;)
 	{
 		if (node->time < time - 1000)
 		{

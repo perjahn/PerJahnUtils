@@ -16,20 +16,20 @@ struct direntry
 	SYSTEMTIME stC;
 	SYSTEMTIME stA;
 	unsigned long long s;
-	direntry *pNext;
-} *pStart, *pEnd;
+	direntry* pNext;
+} *pStart, * pEnd;
 
 unsigned _sort;
 
-void ListDir(wchar_t *szPath);
+void ListDir(char* szPath);
 void PrintEntry(direntry e);
 
 HMODULE hModule;
-int (WINAPI *StrCmpLogicalW)(LPCWSTR psz1, LPCWSTR psz2);
+int (WINAPI* StrCmpLogicalW)(LPCWSTR psz1, LPCWSTR psz2);
 
 //**********************************************************
 
-void wmain(int argc, wchar_t *argv[])
+int main(int argc, char* argv[])
 {
 	if (argc > 3)
 	{
@@ -45,14 +45,14 @@ void wmain(int argc, wchar_t *argv[])
 			" -sl - Sort by name, Logical.\n"
 			"\n"
 			"Uppercase sort option (-sW, -sC, -sA, -sN, -sI, -sL) means 'sort backwards.'\n");
-		return;
+		return 1;
 	}
 
 
 	// Late binding of compare function, does only exist in WinXP or newer OS.
-	hModule = LoadLibrary(L"shlwapi.dll");
+	hModule = LoadLibrary("shlwapi.dll");
 	if (hModule)
-		StrCmpLogicalW = (int (WINAPI *)(LPCWSTR psz1, LPCWSTR psz2))GetProcAddress(hModule, "StrCmpLogicalW");
+		StrCmpLogicalW = (int (WINAPI*)(LPCWSTR psz1, LPCWSTR psz2))GetProcAddress(hModule, "StrCmpLogicalW");
 	else
 		StrCmpLogicalW = NULL;
 
@@ -61,19 +61,19 @@ void wmain(int argc, wchar_t *argv[])
 
 	if (argc > 1)
 	{
-		if (!_wcsicmp(argv[1], L"-sw"))
+		if (!_stricmp(argv[1], "-sw"))
 			_sort = 1;
-		else if (!_wcsicmp(argv[1], L"-sc"))
+		else if (!_stricmp(argv[1], "-sc"))
 			_sort = 2;
-		else if (!_wcsicmp(argv[1], L"-sa"))
+		else if (!_stricmp(argv[1], "-sa"))
 			_sort = 3;
-		else if (!_wcsicmp(argv[1], L"-ss"))
+		else if (!_stricmp(argv[1], "-ss"))
 			_sort = 4;
-		else if (!_wcsicmp(argv[1], L"-sn"))
+		else if (!_stricmp(argv[1], "-sn"))
 			_sort = 5;
-		else if (!_wcsicmp(argv[1], L"-si"))
+		else if (!_stricmp(argv[1], "-si"))
 			_sort = 6;
-		else if (!_wcsicmp(argv[1], L"-sl"))
+		else if (!_stricmp(argv[1], "-sl"))
 			_sort = 7;
 		else
 			;  // Unsorted
@@ -87,82 +87,97 @@ void wmain(int argc, wchar_t *argv[])
 			ListDir(argv[1]);
 	}
 	else
-		ListDir(L"*");
+	{
+		char star[2];
+		star[0] = '*';
+		star[1] = 0;
+		ListDir(star);
+	}
 
-	return;
+	return 0;
 }
 
 //**********************************************************
 
-int compare(const void *arg1, const void *arg2)
+int compare(const void* arg1, const void* arg2)
 {
-	direntry *entry1, *entry2;
+	direntry* entry1, * entry2;
 	unsigned long long x1, x2;
 
 	entry1 = (direntry*)arg1;
 	entry2 = (direntry*)arg2;
 
-	switch (_sort&~0x10)
+	switch (_sort & ~0x10)
 	{
 	case 1:
 	{
-					x1 = entry1->w;
-					x2 = entry2->w;
-					if (_sort & 0x10)
-						return (x1 == x2) ? 0 : ((x1<x2) ? -1 : 1);
-					else
-						return (x1 == x2) ? 0 : ((x1>x2) ? -1 : 1);
+		x1 = entry1->w;
+		x2 = entry2->w;
+		if (_sort & 0x10)
+			return (x1 == x2) ? 0 : ((x1 < x2) ? -1 : 1);
+		else
+			return (x1 == x2) ? 0 : ((x1 > x2) ? -1 : 1);
 	}
 	case 2:
 	{
-					x1 = entry1->c;
-					x2 = entry2->c;
-					if (_sort & 0x10)
-						return (x1 == x2) ? 0 : ((x1<x2) ? -1 : 1);
-					else
-						return (x1 == x2) ? 0 : ((x1>x2) ? -1 : 1);
+		x1 = entry1->c;
+		x2 = entry2->c;
+		if (_sort & 0x10)
+			return (x1 == x2) ? 0 : ((x1 < x2) ? -1 : 1);
+		else
+			return (x1 == x2) ? 0 : ((x1 > x2) ? -1 : 1);
 	}
 	case 3:
 	{
-					x1 = entry1->a;
-					x2 = entry2->a;
-					if (_sort & 0x10)
-						return (x1 == x2) ? 0 : ((x1<x2) ? -1 : 1);
-					else
-						return (x1 == x2) ? 0 : ((x1>x2) ? -1 : 1);
+		x1 = entry1->a;
+		x2 = entry2->a;
+		if (_sort & 0x10)
+			return (x1 == x2) ? 0 : ((x1 < x2) ? -1 : 1);
+		else
+			return (x1 == x2) ? 0 : ((x1 > x2) ? -1 : 1);
 	}
 	case 4:
 	{
-					x1 = entry1->s;
-					x2 = entry2->s;
-					if (_sort & 0x10)
-						return (x1 == x2) ? 0 : ((x1<x2) ? -1 : 1);
-					else
-						return (x1 == x2) ? 0 : ((x1>x2) ? -1 : 1);
+		x1 = entry1->s;
+		x2 = entry2->s;
+		if (_sort & 0x10)
+			return (x1 == x2) ? 0 : ((x1 < x2) ? -1 : 1);
+		else
+			return (x1 == x2) ? 0 : ((x1 > x2) ? -1 : 1);
 	}
 	case 5:
 	{
-					if (_sort & 0x10)
-						return _wcsicmp(entry2->Data.cFileName, entry1->Data.cFileName);
-					else
-						return _wcsicmp(entry1->Data.cFileName, entry2->Data.cFileName);
+		if (_sort & 0x10)
+			return _stricmp(entry2->Data.cFileName, entry1->Data.cFileName);
+		else
+			return _stricmp(entry1->Data.cFileName, entry2->Data.cFileName);
 	}
 	case 6:
 	{
-					if (_sort & 0x10)
-						return wcscmp(entry2->Data.cFileName, entry1->Data.cFileName);
-					else
-						return wcscmp(entry1->Data.cFileName, entry2->Data.cFileName);
+		if (_sort & 0x10)
+			return strcmp(entry2->Data.cFileName, entry1->Data.cFileName);
+		else
+			return strcmp(entry1->Data.cFileName, entry2->Data.cFileName);
 	}
 	case 7:
 	{
-					if (!StrCmpLogicalW)
-						return 0;
+		if (!StrCmpLogicalW)
+			return 0;
 
-					if (_sort & 0x10)
-						return StrCmpLogicalW(entry2->Data.cFileName, entry1->Data.cFileName);
-					else
-						return StrCmpLogicalW(entry1->Data.cFileName, entry2->Data.cFileName);
+		wchar_t w1[2000], w2[2000];
+
+		size_t l1 = strlen(entry1->Data.cFileName) + 1;
+		size_t l2 = strlen(entry2->Data.cFileName) + 1;
+		if (l1 > 1000 || l2 > 1000)
+			return 0;
+
+		MultiByteToWideChar(0, 0, entry1->Data.cFileName, (int)l1, w1, (int)l1 * 2);
+		MultiByteToWideChar(0, 0, entry2->Data.cFileName, (int)l2, w2, (int)l2 * 2);
+
+		if (_sort & 0x10)
+			return StrCmpLogicalW(w2, w1);
+		else
+			return StrCmpLogicalW(w1, w2);
 	}
 	default:
 		return 0;
@@ -171,11 +186,11 @@ int compare(const void *arg1, const void *arg2)
 
 //**********************************************************
 
-void ListDir(wchar_t *szPath)
+void ListDir(char* szPath)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
-	direntry *pNode, *EntryArray;
+	direntry* pNode, * EntryArray;
 	unsigned count = 0;
 	unsigned i;
 
@@ -215,7 +230,7 @@ void ListDir(wchar_t *szPath)
 	EntryArray = new direntry[count];
 	if (!EntryArray)
 	{
-		printf("Out of memory (%u bytes).\n", sizeof(direntry)*count);
+		printf("Out of memory (%llu bytes).\n", sizeof(direntry) * count);
 		return;
 	}
 
@@ -267,7 +282,7 @@ void PrintEntry(direntry e)
 {
 	char szFileName[2000];
 
-	if (*(e.Data.cFileName) && wcscmp(e.Data.cFileName, L".") && wcscmp(e.Data.cFileName, L".."))
+	if (*(e.Data.cFileName) && strcmp(e.Data.cFileName, ".") && strcmp(e.Data.cFileName, ".."))
 	{
 		if (e.Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
@@ -276,12 +291,12 @@ void PrintEntry(direntry e)
 			CharToOem(e.Data.cFileName, szFileName);
 
 			short x = 1;
-			wprintf(
-				L"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
-				L"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
-				L"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
-				L"             "
-				L"%S\n",
+			printf(
+				"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
+				"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
+				"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
+				"             "
+				"%s\n",
 				e.stW.wYear, e.stW.wMonth, e.stW.wDay, e.stW.wHour, e.stW.wMinute, e.stW.wSecond, e.stW.wMilliseconds,
 				e.stC.wYear, e.stC.wMonth, e.stC.wDay, e.stC.wHour, e.stC.wMinute, e.stC.wSecond, e.stC.wMilliseconds,
 				e.stA.wYear, e.stA.wMonth, e.stA.wDay, e.stA.wHour, e.stA.wMinute, e.stA.wSecond, e.stA.wMilliseconds,
@@ -294,12 +309,12 @@ void PrintEntry(direntry e)
 			CharToOem(e.Data.cFileName, szFileName);
 
 			short x = 1;
-			wprintf(
-				L"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
-				L"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
-				L"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
-				L"%11llu  "
-				L"%S\n",
+			printf(
+				"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
+				"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
+				"%4hu-%02hu-%02hu %02hu:%02hu.%02hu.%03hu  "
+				"%11llu  "
+				"%s\n",
 				e.stW.wYear, e.stW.wMonth, e.stW.wDay, e.stW.wHour, e.stW.wMinute, e.stW.wSecond, e.stW.wMilliseconds,
 				e.stC.wYear, e.stC.wMonth, e.stC.wDay, e.stC.wHour, e.stC.wMinute, e.stC.wSecond, e.stC.wMilliseconds,
 				e.stA.wYear, e.stA.wMonth, e.stA.wDay, e.stA.wHour, e.stA.wMinute, e.stA.wSecond, e.stA.wMilliseconds,

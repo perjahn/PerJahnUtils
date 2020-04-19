@@ -5,17 +5,13 @@
 #include <malloc.h>
 #include "resource.h"
 
-#ifndef GCL_HICON
-#define GCL_HICON (-14)
-#endif
-
 //**********************************************************
 
 HINSTANCE g_instance;
-char *g_commandline;
+char* g_commandline;
 
 INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void LoadFile(HWND hDlg, char *filename);
+void LoadFile(HWND hDlg, char* filename);
 
 //**********************************************************
 
@@ -39,7 +35,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetClassLongPtr(hDlg, GCL_HICON, (LONG_PTR)LoadIcon(g_instance, MAKEINTRESOURCE(IDI_ICON)));
+		SetClassLongPtr(hDlg, GCLP_HICON, (LONG_PTR)LoadIcon(g_instance, MAKEINTRESOURCE(IDI_ICON)));
 
 		if (g_commandline && *g_commandline)
 		{
@@ -82,10 +78,10 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 //**********************************************************
 
-void LoadFile(HWND hDlg, char *filename)
+void LoadFile(HWND hDlg, char* filename)
 {
 	char error[2000];
-	FILE *fh;
+	FILE* fh;
 
 	if (!(fh = fopen(filename, "rb")))
 	{
@@ -98,7 +94,7 @@ void LoadFile(HWND hDlg, char *filename)
 	long filesize = ftell(fh);
 	long bufsize = filesize + 1;
 
-	char *buf = (char *)malloc(bufsize);
+	char* buf = (char*)malloc(bufsize);
 	if (!buf)
 	{
 		fclose(fh);
@@ -109,7 +105,7 @@ void LoadFile(HWND hDlg, char *filename)
 
 	fseek(fh, 0, SEEK_SET);
 
-	fread(buf, filesize + 1, 1, fh);
+	fread(buf, (long long)filesize + 1, 1, fh);
 
 	fclose(fh);
 
@@ -123,7 +119,7 @@ void LoadFile(HWND hDlg, char *filename)
 	buf[bufsize - 1] = 0;
 
 	SetWindowText(hDlg, filename);
-	SetDlgItemText(hDlg, IDC_TEXT, (char *)buf);
+	SetDlgItemText(hDlg, IDC_TEXT, (char*)buf);
 
 	free(buf);
 }

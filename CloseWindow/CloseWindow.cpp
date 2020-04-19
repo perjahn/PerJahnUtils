@@ -8,9 +8,9 @@
 //**********************************************************
 
 HINSTANCE g_hInstance;
-char *g_pCmdLine;
+char* g_pCmdLine;
 
-BOOL CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void Close(HWND hDlg);
 
 //**********************************************************
@@ -25,7 +25,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 
 	g_hInstance = hInstance;
-	char *p;
+	char* p;
 	g_pCmdLine = lpCmdLine;
 
 	// Make cmd line lower case
@@ -44,12 +44,12 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 //**********************************************************
 
-BOOL CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetClassLong(hDlg, GCL_HICON, (LONG)LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_ICON)));
+		SetClassLongPtr(hDlg, GCLP_HICON, (LONG_PTR)LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_ICON)));
 
 		if (!strcmp(g_pCmdLine, "-enum"))
 		{
@@ -92,7 +92,7 @@ BOOL CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 //**********************************************************
 
 char szText[100000];
-char *p;
+char* p;
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
@@ -106,7 +106,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 		}
 		else
 		{
-			for (char *p = szTitle; *p; p++)
+			for (char* p = szTitle; *p; p++)
 				*p = tolower(*p);
 
 			if (strstr(szTitle, g_pCmdLine))
@@ -121,6 +121,8 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 
 //**********************************************************
 
+char szTextOld[100000];
+
 void Close(HWND hDlg)
 {
 	if (!strcmp(g_pCmdLine, "-enum"))
@@ -133,7 +135,6 @@ void Close(HWND hDlg)
 
 	if (!strcmp(g_pCmdLine, "-enum"))
 	{
-		char szTextOld[100000];
 		GetDlgItemText(hDlg, IDC_EDIT, szTextOld, 100000);
 		if (strcmp(szTextOld, szText))
 		{

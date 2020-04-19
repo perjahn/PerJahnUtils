@@ -6,9 +6,7 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7BBE713F-08E8-4355-93D1-0E7639A0F8CB}.Debug|x64.ActiveCfg = Debug|x64
@@ -20,6 +18,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {64ACADBD-E2B0-43DD-895B-B6B220EEAD7C}
+		SolutionGuid = {60F32AFC-B7C1-408B-90BE-D74E110BA3A8}
 	EndGlobalSection
 EndGlobal

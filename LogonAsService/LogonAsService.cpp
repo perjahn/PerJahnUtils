@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ntsecapi.h>
 
-int wmain(int argc, wchar_t *argv[])
+int main(int argc, char* argv[])
 {
 	if (argc != 2)
 	{
@@ -11,7 +11,7 @@ int wmain(int argc, wchar_t *argv[])
 		return 0;
 	}
 
-	wchar_t *AccountName = argv[1];
+	char* AccountName = argv[1];
 
 
 	LSA_HANDLE handle;
@@ -28,18 +28,18 @@ int wmain(int argc, wchar_t *argv[])
 	}
 
 
-	wchar_t *SystemName = NULL;
+	char* SystemName = NULL;
 	unsigned char buf[1000];
-	SID *psid = (SID*)buf;
+	SID* psid = (SID*)buf;
 	DWORD sidsize = 1000;
-	wchar_t ReferencedDomainName[1000];
+	char ReferencedDomainName[1000];
 	DWORD cchReferencedDomainName = 1000;
 	SID_NAME_USE eUse;
 
 	ZeroMemory(psid, 1000);
 
-	wchar_t *backslash = wcschr(AccountName, '\\');
-	wchar_t *at = wcschr(AccountName, '@');
+	char* backslash = wcschr(AccountName, '\\');
+	char* at = wcschr(AccountName, '@');
 	if (backslash)
 	{
 		SystemName = AccountName;

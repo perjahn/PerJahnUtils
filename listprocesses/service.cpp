@@ -7,39 +7,39 @@
 class Service
 {
 public:
-	Service(char *servicename, BOOL fCanStop = TRUE, BOOL fCanShutdown = TRUE, BOOL fCanPauseContinue = FALSE);
+	Service(char* servicename, BOOL fCanStop = TRUE, BOOL fCanShutdown = TRUE, BOOL fCanPauseContinue = FALSE);
 	~Service(void);
-	static BOOL Run(Service &service);
+	static BOOL Run(Service& service);
 	void Stop();
 
 protected:
 	void SetStatus(DWORD currentstate, DWORD dwWin32ExitCode = NO_ERROR, DWORD dwWaitHint = 0);
-	void WriteEventLogEntry(char *message, WORD type);
-	void WriteErrorLogEntry(char *function, DWORD error = GetLastError());
+	void WriteEventLogEntry(char* message, WORD type);
+	void WriteErrorLogEntry(char* function, DWORD error = GetLastError());
 	void ServiceWorkerThread(void);
 
 private:
-	static void WINAPI ServiceMain(DWORD argc, char *argv[]);
+	static void WINAPI ServiceMain(DWORD argc, char* argv[]);
 	static void WINAPI ServiceCtrlHandler(DWORD ctrl);
-	void Start(DWORD argc, char *argv[]);
+	void Start(DWORD argc, char* argv[]);
 	void Shutdown();
-	static Service *s_service;
-	char *_name;
+	static Service* s_service;
+	char* _name;
 	SERVICE_STATUS _status;
 	SERVICE_STATUS_HANDLE _statusHandle;
 	BOOL _stopping;
 	HANDLE _hStoppedEvent;
 };
 
-Service *Service::s_service = NULL;
+Service* Service::s_service = NULL;
 
 class CThreadPool
 {
 public:
 	template <typename T>
-	static void QueueUserWorkItem(void (T::*function)(void), T *object, ULONG flags = WT_EXECUTELONGFUNCTION)
+	static void QueueUserWorkItem(void (T::* function)(void), T* object, ULONG flags = WT_EXECUTELONGFUNCTION)
 	{
-		typedef std::pair<void (T::*)(), T *> CallbackType;
+		typedef std::pair<void (T::*)(), T*> CallbackType;
 		std::auto_ptr<CallbackType> p(new CallbackType(function, object));
 
 		if (::QueueUserWorkItem(ThreadProc<T>, p.get(), flags))
@@ -56,18 +56,18 @@ private:
 	template <typename T>
 	static DWORD WINAPI ThreadProc(PVOID context)
 	{
-		typedef std::pair<void (T::*)(), T *> CallbackType;
+		typedef std::pair<void (T::*)(), T*> CallbackType;
 
-		std::auto_ptr<CallbackType> p(static_cast<CallbackType *>(context));
+		std::auto_ptr<CallbackType> p(static_cast<CallbackType*>(context));
 
 		(p->second->*p->first)();
 		return 0;
 	}
 };
 
-Service::Service(char *servicename, BOOL fCanStop, BOOL fCanShutdown, BOOL fCanPauseContinue)
+Service::Service(char* servicename, BOOL fCanStop, BOOL fCanShutdown, BOOL fCanPauseContinue)
 {
-	_name = (servicename == NULL) ? "" : servicename;
+	_name = (servicename == NULL) ? (char*)"" : servicename;
 	_statusHandle = NULL;
 	_status.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	_status.dwCurrentState = SERVICE_START_PENDING;
@@ -103,23 +103,23 @@ Service::~Service(void)
 	}
 }
 
-void Service::Start(DWORD argc, char *argv[])
+void Service::Start(DWORD argc, char* argv[])
 {
 	try
 	{
 		SetStatus(SERVICE_START_PENDING);
-		WriteEventLogEntry("ListProcesses Start", EVENTLOG_INFORMATION_TYPE);
+		WriteEventLogEntry((char*)"ListProcesses Start", EVENTLOG_INFORMATION_TYPE);
 		CThreadPool::QueueUserWorkItem(&Service::ServiceWorkerThread, this);
 		SetStatus(SERVICE_RUNNING);
 	}
 	catch (DWORD dwError)
 	{
-		WriteErrorLogEntry("ListProcesses Start", dwError);
+		WriteErrorLogEntry((char*)"ListProcesses Start", dwError);
 		SetStatus(SERVICE_STOPPED, dwError);
 	}
 	catch (...)
 	{
-		WriteEventLogEntry("ListProcesses failed to start.", EVENTLOG_ERROR_TYPE);
+		WriteEventLogEntry((char*)"ListProcesses failed to start.", EVENTLOG_ERROR_TYPE);
 		SetStatus(SERVICE_STOPPED);
 	}
 }
@@ -130,7 +130,7 @@ void Service::Stop()
 	try
 	{
 		SetStatus(SERVICE_STOP_PENDING);
-		WriteEventLogEntry("ListProcesses Stop", EVENTLOG_INFORMATION_TYPE);
+		WriteEventLogEntry((char*)"ListProcesses Stop", EVENTLOG_INFORMATION_TYPE);
 
 		_stopping = TRUE;
 		if (WaitForSingleObject(_hStoppedEvent, INFINITE) != WAIT_OBJECT_0)
@@ -141,17 +141,17 @@ void Service::Stop()
 	}
 	catch (DWORD dwError)
 	{
-		WriteErrorLogEntry("ListProcesses Stop", dwError);
+		WriteErrorLogEntry((char*)"ListProcesses Stop", dwError);
 		SetStatus(dwOriginalState);
 	}
 	catch (...)
 	{
-		WriteEventLogEntry("ListProcesses failed to stop.", EVENTLOG_ERROR_TYPE);
+		WriteEventLogEntry((char*)"ListProcesses failed to stop.", EVENTLOG_ERROR_TYPE);
 		SetStatus(dwOriginalState);
 	}
 }
 
-BOOL Service::Run(Service &service)
+BOOL Service::Run(Service& service)
 {
 	s_service = &service;
 
@@ -164,7 +164,7 @@ BOOL Service::Run(Service &service)
 	return StartServiceCtrlDispatcher(serviceTable);
 }
 
-void WINAPI Service::ServiceMain(DWORD argc, char *argv[])
+void WINAPI Service::ServiceMain(DWORD argc, char* argv[])
 {
 	assert(s_service != NULL);
 
@@ -196,11 +196,11 @@ void Service::Shutdown()
 	}
 	catch (DWORD dwError)
 	{
-		WriteErrorLogEntry("ListProcesses Shutdown", dwError);
+		WriteErrorLogEntry((char*)"ListProcesses Shutdown", dwError);
 	}
 	catch (...)
 	{
-		WriteEventLogEntry("ListProcesses failed to shut down.", EVENTLOG_ERROR_TYPE);
+		WriteEventLogEntry((char*)"ListProcesses failed to shut down.", EVENTLOG_ERROR_TYPE);
 	}
 }
 
@@ -216,10 +216,10 @@ void Service::SetStatus(DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD dwWai
 	SetServiceStatus(_statusHandle, &_status);
 }
 
-void Service::WriteEventLogEntry(char *message, WORD type)
+void Service::WriteEventLogEntry(char* message, WORD type)
 {
 	HANDLE hEventSource = NULL;
-	const char *strings[2] = { NULL, NULL };
+	const char* strings[2] = { NULL, NULL };
 
 	hEventSource = RegisterEventSource(NULL, _name);
 	if (hEventSource)
@@ -233,7 +233,7 @@ void Service::WriteEventLogEntry(char *message, WORD type)
 	}
 }
 
-void Service::WriteErrorLogEntry(char *function, DWORD error)
+void Service::WriteErrorLogEntry(char* function, DWORD error)
 {
 	char message[260];
 	StringCchPrintf(message, ARRAYSIZE(message), "%s failed w/err 0x%08lx", function, error);
@@ -247,7 +247,7 @@ void Service::ServiceWorkerThread(void)
 		char curdir[1000];
 		GetCurrentDirectory(1000, curdir);
 
-		FILE *fh;
+		FILE* fh;
 		if (fh = fopen("C:\\test\\logfile.log", "a"))
 		{
 			fprintf(fh, "%d: '%s'\n", GetTickCount(), curdir);
@@ -259,7 +259,7 @@ void Service::ServiceWorkerThread(void)
 	SetEvent(_hStoppedEvent);
 }
 
-void InstallService(char *servicename, char *displayname, DWORD starttype, char *dependencies, char *account, char *password)
+void InstallService(char* servicename, char* displayname, DWORD starttype, char* dependencies, char* account, char* password)
 {
 	char path[MAX_PATH];
 	SC_HANDLE SCManager = NULL;
@@ -300,7 +300,7 @@ Cleanup:
 	}
 }
 
-void UninstallService(char *servicename)
+void UninstallService(char* servicename)
 {
 	SC_HANDLE schSCManager = NULL;
 	SC_HANDLE schService = NULL;
@@ -369,34 +369,34 @@ Cleanup:
 	}
 }
 
-int ListProcesses(char *logfile);
+int ListProcesses(char* logfile);
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	char *servicename = "ListProcesses";
-	char *displayname = "ListProcesses";
+	char* servicename = (char*)"ListProcesses";
+	char* displayname = (char*)"ListProcesses";
 	DWORD starttype = SERVICE_AUTO_START;
-	char *dependencies = "";
-	char *account = "NT AUTHORITY\\LocalService";
-	char *password = NULL;
+	char* dependencies = (char*)"";
+	char* account = (char*)"NT AUTHORITY\\LocalService";
+	char* password = NULL;
 
 	if ((argc > 1) && ((*argv[1] == '-' || (*argv[1] == '/'))))
 	{
-		if (stricmp("install", argv[1] + 1) == 0)
+		if (_stricmp("install", argv[1] + 1) == 0)
 		{
 			InstallService(servicename, displayname, starttype, dependencies, account, password);
 		}
-		else if (stricmp("remove", argv[1] + 1) == 0)
+		else if (_stricmp("remove", argv[1] + 1) == 0)
 		{
 			UninstallService(servicename);
 		}
-		else if (stricmp("list", argv[1] + 1) == 0)
+		else if (_stricmp("list", argv[1] + 1) == 0)
 		{
-			ListProcesses("C:\\test\\logfile.log");
+			ListProcesses((char*)"C:\\test\\logfile.log");
 			Sleep(5000);
-			ListProcesses("C:\\test\\logfile.log");
+			ListProcesses((char*)"C:\\test\\logfile.log");
 			Sleep(5000);
-			ListProcesses("C:\\test\\logfile.log");
+			ListProcesses((char*)"C:\\test\\logfile.log");
 		}
 	}
 	else

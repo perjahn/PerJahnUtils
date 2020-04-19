@@ -7,17 +7,17 @@
 long g_filecount;
 long g_rowcount;
 
-void recurse_dir(char *path);
-void process_file(char *filename);
+void recurse_dir(char* path);
+void process_file(char* filename);
 
 //**********************************************************
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	if (argc != 2)
 	{
 		printf("usage: sloc <path>\n");
-		return;
+		return 1;
 	}
 
 	char path[1000];
@@ -25,7 +25,7 @@ void main(int argc, char *argv[])
 	strcpy(path, argv[1]);
 
 	// Fix end of pattern to do what's expected.
-	int length = strlen(path);
+	size_t length = strlen(path);
 	if (!strcmp(path, "."))
 	{
 		strcpy(path + length, "\\*");
@@ -51,18 +51,18 @@ void main(int argc, char *argv[])
 	printf("Files: %d\n", g_filecount);
 	printf("Rows: %d\n", g_rowcount);
 
-	return;
+	return 0;
 }
 
 //**********************************************************
 
-void recurse_dir(char *path)
+void recurse_dir(char* path)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
 	char szSubPath[1000];
 
-	char *p, *p2;
+	char* p, * p2;
 
 	for (p = path + strlen(path); p > path && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 		;
@@ -116,11 +116,11 @@ void recurse_dir(char *path)
 
 //**********************************************************
 
-void process_file(char *filename)
+void process_file(char* filename)
 {
 	g_filecount++;
 
-	FILE *fh;
+	FILE* fh;
 
 	fh = fopen(filename, "rb");
 
@@ -134,7 +134,7 @@ void process_file(char *filename)
 
 	long size = ftell(fh);
 
-	unsigned char *buf = new unsigned char[size];
+	unsigned char* buf = new unsigned char[size];
 	if (!buf)
 	{
 		fclose(fh);

@@ -2,14 +2,14 @@
 #include <wincred.h>
 #include <stdio.h>
 
-void main(void)
+int main(void)
 {
 	unsigned long count;
-	CREDENTIAL **creds;
+	CREDENTIAL** creds;
 	if (!CredEnumerate(NULL, 0, &count, &creds))
 	{
 		printf("Couldn't enumerate creds: %lu\n", GetLastError());
-		return;
+		return 1;
 	}
 
 	printf("Cred count: %d\n", count);
@@ -36,4 +36,6 @@ void main(void)
 	CredFree(creds);
 
 	getchar();
+
+	return 0;
 }

@@ -1,8 +1,9 @@
 #include <windows.h>
 #include <wtsapi32.h>
 #include <stdio.h>
+#include <string.h>
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	PWTS_SESSION_INFO_1 pSessionInfos;
 	DWORD level;
@@ -16,18 +17,18 @@ void main(int argc, char *argv[])
 
 		for (unsigned i = 0; i < sessioncount; i++)
 		{
-			wchar_t ComputerName[1000];
+			char ComputerName[1000];
 			DWORD size = 1000;
 			if (!GetComputerNameEx(ComputerNameDnsHostname, ComputerName, &size))
 			{
-				wcscmp(ComputerName, TEXT("UNKNOWN"));
+				strcmp(ComputerName, TEXT("UNKNOWN"));
 			}
 
 			if (!*(pSessionInfos[i].pSessionName) ||
-				(wcscmp(pSessionInfos[i].pSessionName, L"RDP-Tcp") && !wcsncmp(pSessionInfos[i].pSessionName, L"RDP-", 4)) ||
-				!wcsncmp(pSessionInfos[i].pSessionName, L"ICA-", 4))
+				(strcmp(pSessionInfos[i].pSessionName, "RDP-Tcp") && !strncmp(pSessionInfos[i].pSessionName, "RDP-", 4)) ||
+				!strncmp(pSessionInfos[i].pSessionName, "ICA-", 4))
 			{
-				printf("%S: Kicking: '%S', '%S'\n",
+				printf("%s: Kicking: '%s', '%s'\n",
 					ComputerName,
 					pSessionInfos[i].pSessionName ? pSessionInfos[i].pSessionName : TEXT("-"),
 					pSessionInfos[i].pUserName ? pSessionInfos[i].pUserName : TEXT("-"));
@@ -42,7 +43,7 @@ void main(int argc, char *argv[])
 			}
 			else
 			{
-				printf("%S: Not kicking: '%S', '%S'\n",
+				printf("%s: Not kicking: '%s', '%s'\n",
 					ComputerName,
 					pSessionInfos[i].pSessionName ? pSessionInfos[i].pSessionName : TEXT("-"),
 					pSessionInfos[i].pUserName ? pSessionInfos[i].pUserName : TEXT("-"));
@@ -55,4 +56,6 @@ void main(int argc, char *argv[])
 	{
 		printf("Couldn't enumerate rdp sessions.\n");
 	}
+
+	return 0;
 }

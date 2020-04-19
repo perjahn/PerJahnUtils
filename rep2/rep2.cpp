@@ -9,10 +9,10 @@
 #define filemodewrite "w"
 #endif
 
-int replacefile(char *filename, char *find, char *replace);
-bool replacebuf(char *buf, char *find, char *replace, int insize, int findsize, int replacesize, int *outsize);
+int replacefile(char* filename, char* find, char* replace);
+bool replacebuf(char* buf, char* find, char* replace, int insize, int findsize, int replacesize, int* outsize);
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	if (argc != 4)
 	{
@@ -25,9 +25,9 @@ int main(int argc, char *argv[])
 	return result;
 }
 
-int replacefile(char *filename, char *find, char *replace)
+int replacefile(char* filename, char* find, char* replace)
 {
-	FILE *fh;
+	FILE* fh;
 	if (!(fh = fopen(filename, filemoderead)))
 	{
 		printf("Couldn't open file for reading: '%s'\n", filename);
@@ -38,11 +38,11 @@ int replacefile(char *filename, char *find, char *replace)
 	int insize = ftell(fh);
 	int findsize = (int)strlen(find);
 	int replacesize = (int)strlen(replace);
-	int bufsize = (int)((long)insize*(long)replacesize / findsize);
+	int bufsize = (int)((long)insize * (long)replacesize / findsize);
 
 	printf("bufsize: %d\n", bufsize);
 
-	char *buf = (char*)malloc(bufsize);
+	char* buf = (char*)malloc(bufsize);
 	if (!buf)
 	{
 		fclose(fh);
@@ -75,12 +75,12 @@ int replacefile(char *filename, char *find, char *replace)
 	return 0;
 }
 
-bool replacebuf(char *buf, char *find, char *replace, int insize, int findsize, int replacesize, int *outsize)
+bool replacebuf(char* buf, char* find, char* replace, int insize, int findsize, int replacesize, int* outsize)
 {
 	printf("insize: %d, findsize: %d, replacesize: %d\n", insize, findsize, replacesize);
 
 	bool modified = false;
-	char *p;
+	char* p;
 	*outsize = insize;
 	for (p = buf; p < buf + *outsize - findsize; p++)
 	{

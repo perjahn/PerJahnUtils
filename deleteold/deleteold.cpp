@@ -1,6 +1,6 @@
 //**********************************************************
 //
-// DeleteOld 1.4
+// DeleteOld 1.5
 //
 // Written by Per Jahn
 //
@@ -19,7 +19,7 @@
 //**********************************************************
 
 bool g_deletedirs = false;
-FILE *fhLogFile = NULL;
+FILE* fhLogFile = NULL;
 bool g_recurse = false;
 bool g_simulate = false;
 int g_count = -1;  // Maximum file count in each directory (instead of date threshold). -1 = don't use.
@@ -29,16 +29,16 @@ int g_depth;
 
 WIN32_FIND_DATA exclude_names[100000];  // Array with excluded entries.
 
-int SetOptions(int argc, char *argv[]);
-void PrintTime(char *szPrefix, unsigned long long time);
-void PrintTime(char *szPrefix, FILETIME *ft);
-void ExpandPath(char *szPath);
-void ProcessFile(char *szFileName, FILETIME *ft);
-int compare(const void *arg1, const void *arg2);
+int SetOptions(int argc, char* argv[]);
+void PrintTime(char* szPrefix, unsigned long long time);
+void PrintTime(char* szPrefix, FILETIME* ft);
+void ExpandPath(char* szPath);
+void ProcessFile(char* szFileName, FILETIME* ft);
+int compare(const void* arg1, const void* arg2);
 
 //**********************************************************
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	int params;
 	FILETIME ft;
@@ -50,7 +50,7 @@ void main(int argc, char *argv[])
 	if (params != 2)
 	{
 		printf(
-			"DeleteOld 1.4\n"
+			"DeleteOld 1.5\n"
 			"\n"
 			"Usage: deleteold [-c|-c2] [-d] [-l] [-n] [-r] [-s] <path> <days>\n"
 			" -c   - match against create date instead of last modified date\n"
@@ -62,7 +62,7 @@ void main(int argc, char *argv[])
 			" -s   - simulate\n"
 			" path - dir/file/pattern to delete\n"
 			" days - timedate threshold\n");
-		return;
+		return 1;
 	}
 
 	if (g_count >= 0)
@@ -71,7 +71,7 @@ void main(int argc, char *argv[])
 		if (g_count < 1)
 		{
 			printf("Number of files (days) must be atleast 1 when using '-n'.\n");
-			return;
+			return 1;
 		}
 	}
 	else
@@ -79,16 +79,16 @@ void main(int argc, char *argv[])
 		GetSystemTimeAsFileTime(&ft);
 		FileTimeToLocalFileTime(&ft, &g_ftOld);
 
-		PrintTime("Now", &g_ftOld);
+		PrintTime((char*)"Now", &g_ftOld);
 
 		oldtime = (((unsigned long long)(g_ftOld.dwHighDateTime)) << 32) + g_ftOld.dwLowDateTime;
 		oneday = (unsigned long long)24 * 3600 * 10000000;
-		oldtime -= atoi(argv[argc - 1])*oneday;
+		oldtime -= atoi(argv[argc - 1]) * oneday;
 
 		g_ftOld.dwHighDateTime = (DWORD)(oldtime >> 32);
 		g_ftOld.dwLowDateTime = (DWORD)(oldtime & 0x00000000FFFFFFFF);
 
-		PrintTime("Old", &g_ftOld);
+		PrintTime((char*)"Old", &g_ftOld);
 	}
 
 	g_depth = 0;
@@ -97,13 +97,13 @@ void main(int argc, char *argv[])
 	if (fhLogFile)
 		fclose(fhLogFile);
 
-	return;
+	return 0;
 }
 
 //**********************************************************
 // Return resulting parameters after options
 
-int SetOptions(int argc, char *argv[])
+int SetOptions(int argc, char* argv[])
 {
 	bool bFoundOption = true;
 	int i = 1;
@@ -165,7 +165,7 @@ int SetOptions(int argc, char *argv[])
 
 //**********************************************************
 
-void PrintTime(char *szPrefix, unsigned long long time)
+void PrintTime(char* szPrefix, unsigned long long time)
 {
 	FILETIME ft;
 
@@ -179,7 +179,7 @@ void PrintTime(char *szPrefix, unsigned long long time)
 
 //**********************************************************
 
-void PrintTime(char *szPrefix, FILETIME *ft)
+void PrintTime(char* szPrefix, FILETIME* ft)
 {
 	SYSTEMTIME st;
 
@@ -189,8 +189,8 @@ void PrintTime(char *szPrefix, FILETIME *ft)
 		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 	if (fhLogFile)
 		fprintf(fhLogFile, "%s: %04hu-%02hu-%02hu %02hu:%02hu:%02hu.%03hu\n",
-		szPrefix,
-		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+			szPrefix,
+			st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 
 	return;
 }
@@ -206,7 +206,7 @@ szPath can be:
 use szPath (i.e. argv) to search with
 */
 
-void ExpandPath(char *szPath)
+void ExpandPath(char* szPath)
 {
 	HANDLE hFind;
 	WIN32_FIND_DATA Data;
@@ -223,7 +223,7 @@ void ExpandPath(char *szPath)
 	g_depth++;
 
 	// Find first occurance of x\x*x\x or x\x?x\x
-	char *p, *p1, *p2;
+	char* p, * p1, * p2;
 
 	for (p = p1 = szPath; p < szPath + strlen(szPath) && *p != '?' && *p != '*'; p++)
 	{
@@ -246,7 +246,7 @@ void ExpandPath(char *szPath)
 
 		// p1->first char of token, p2->backslash after token
 
-		int size = p2 - szPath;
+		size_t size = p2 - szPath;
 
 		memcpy(szSearch, szPath, size);
 		szSearch[size] = 0;  // Null terminate string
@@ -353,10 +353,10 @@ void ExpandPath(char *szPath)
 
 					qsort(exclude_names, countMatch, sizeof(WIN32_FIND_DATA), compare);
 
-					for (int i = 0; i<countDelete; i++)
+					for (int i = 0; i < countDelete; i++)
 					{
 						strcpy(szFileName, szPath);
-						for (p = szFileName + strlen(szFileName); p>szFileName && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
+						for (p = szFileName + strlen(szFileName); p > szFileName && *(p - 1) != '\\' && *(p - 1) != ':'; p--)
 							;
 						strcpy(p, exclude_names[i].cFileName);
 
@@ -387,7 +387,7 @@ void ExpandPath(char *szPath)
 								;
 							strcpy(p, Data.cFileName);
 
-							FILETIME *ft;
+							FILETIME* ft;
 
 							if (g_usedate == 1)
 								ft = &(Data.ftLastWriteTime);
@@ -512,7 +512,7 @@ void ExpandPath(char *szPath)
 //**********************************************************
 // Delete file if older than date
 
-void ProcessFile(char *szFileName, FILETIME *ft)
+void ProcessFile(char* szFileName, FILETIME* ft)
 {
 	LONG l;
 	///	unsigned long long t;
@@ -546,15 +546,15 @@ void ProcessFile(char *szFileName, FILETIME *ft)
 
 //**********************************************************
 
-int compare(const void *arg1, const void *arg2)
+int compare(const void* arg1, const void* arg2)
 {
-	WIN32_FIND_DATA *entry1, *entry2;
+	WIN32_FIND_DATA* entry1, * entry2;
 
 	entry1 = (WIN32_FIND_DATA*)arg1;
 	entry2 = (WIN32_FIND_DATA*)arg2;
 
 
-	FILETIME *ft1, *ft2;
+	FILETIME* ft1, * ft2;
 	LONG l;
 
 

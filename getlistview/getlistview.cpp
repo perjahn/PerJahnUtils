@@ -13,18 +13,18 @@ BOOL CALLBACK EnumChildProc(HWND hwnd, LPARAM lParam);
 
 //**********************************************************
 
-void main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	if(argc!=2)
+	if (argc != 2)
 	{
 		printf("Usage: getlistview <window handle>\n\n");
 		ListList();
-		return;
+		return 1;
 	}
 
 	InitCommonControls();
 
-	long l = strtoul(argv[1], NULL, 16);
+	long long l = strtoul(argv[1], NULL, 16);
 	HWND hwndList = (HWND)l;
 
 	int items = ListView_GetItemCount(hwndList);
@@ -47,9 +47,9 @@ void main(int argc, char *argv[])
 	// av struct i processen. Och sen alltid läsa av från en 64-bit kompilerad exe.
 
 	LVITEM lvi;
-	wchar_t wszText[1000];
+	char szText[1000];
 	DWORD pid;
-	void *plvi, *text;
+	void* plvi, * text;
 	HANDLE hProc;
 	SIZE_T copied;
 
@@ -59,21 +59,21 @@ void main(int argc, char *argv[])
 	text = VirtualAllocEx(hProc, NULL, 2000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 
-	for(int i=0; i<items; i++)
+	for (int i = 0; i < items; i++)
 	{
-		for(int c=0; c<cols; c++)
+		for (int c = 0; c < cols; c++)
 		{
 			ZeroMemory(&lvi, sizeof(LVITEM));
-			lvi.pszText = (wchar_t*)text;
+			lvi.pszText = (char*)text;
 			lvi.cchTextMax = 1000;
 			lvi.iSubItem = c;
 
 			WriteProcessMemory(hProc, plvi, &lvi, sizeof(LVITEM), &copied);
 			SendMessage(hwndList, LVM_GETITEMTEXT, i, (LPARAM)plvi);
-			ReadProcessMemory(hProc, text, (LPVOID)wszText, 2000, &copied);
+			ReadProcessMemory(hProc, text, (LPVOID)szText, 2000, &copied);
 
-			//printf(c?"\t'%S'":"'%S'", wszText);
-			printf(c?"\t%S":"%S", wszText);
+			//printf(c?"\t'%S'":"'%S'", szText);
+			printf(c ? "\t%S" : "%S", szText);
 		}
 
 		printf("\n");
@@ -82,8 +82,7 @@ void main(int argc, char *argv[])
 	VirtualFreeEx(hProc, text, 0, MEM_RELEASE);
 	VirtualFreeEx(hProc, plvi, 0, MEM_RELEASE);
 
-
-	return;
+	return 0;
 }
 
 //**********************************************************
@@ -99,9 +98,9 @@ void ListList(void)
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
-	wchar_t szTitle[1000];
+	char szTitle[1000];
 
-	if(!GetWindowText(hwnd, szTitle, 1000))
+	if (!GetWindowText(hwnd, szTitle, 1000))
 	{
 		*szTitle = 0;
 	}
@@ -115,15 +114,15 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 
 BOOL CALLBACK EnumChildProc(HWND hwnd, LPARAM lParam)
 {
-	wchar_t szClassName[1000];
-	wchar_t *pszTitle = (wchar_t*)lParam;
+	char szClassName[1000];
+	char* pszTitle = (char*)lParam;
 
-	if(GetClassName(hwnd, szClassName, 1000))
+	if (GetClassName(hwnd, szClassName, 1000))
 	{
-		if(!wcscmp(szClassName, L"SysListView32"))
+		if (!strcmp(szClassName, "SysListView32"))
 		{
 			//CharToOem(pszTitle, szTitle);  // Convert to DOS code page
-			printf("'%S' %08X\n", pszTitle, hwnd);
+			printf("'%s' %08llX\n", pszTitle, (long long)hwnd);
 		}
 	}
 

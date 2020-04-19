@@ -25,10 +25,6 @@
 //#include <time.h>           // Time
 #include "resource.h"       // Resources
 
-#ifndef GCL_HICON
-#define GCL_HICON (-14)
-#endif
-
 //**********************************************************
 
 HINSTANCE g_instance;
@@ -38,8 +34,8 @@ long      g_offset;
 char      filename[1000];
 
 INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void LoadFile(HWND hDlg, char *filename, char *error, FILETIME *lastwritetime, bool newfile);
-unsigned long long FixCRLF(char *inbuf, unsigned long long size, char *outbuf);
+void LoadFile(HWND hDlg, char* filename, char* error, FILETIME* lastwritetime, bool newfile);
+unsigned long long FixCRLF(char* inbuf, unsigned long long size, char* outbuf);
 
 //**********************************************************
 
@@ -65,7 +61,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_INITDIALOG:
 		// Set Class icon
-		SetClassLongPtr(hDlg, GCL_HICON, (LONG_PTR)LoadIcon(g_instance, MAKEINTRESOURCE(IDI_ICON)));
+		SetClassLongPtr(hDlg, GCLP_HICON, (LONG_PTR)LoadIcon(g_instance, MAKEINTRESOURCE(IDI_ICON)));
 
 		SetTimer(hDlg, 1, 500, NULL);
 
@@ -116,7 +112,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 //**********************************************************
 
-void LoadFile(HWND hDlg, char *filename, char *error, FILETIME *lastwritetime, bool newfile)
+void LoadFile(HWND hDlg, char* filename, char* error, FILETIME* lastwritetime, bool newfile)
 {
 	*error = 0;
 
@@ -143,7 +139,7 @@ void LoadFile(HWND hDlg, char *filename, char *error, FILETIME *lastwritetime, b
 	*lastwritetime = FileEntry.ftLastWriteTime;
 
 
-	FILE *fh;
+	FILE* fh;
 	if (!(fh = fopen(filename, "rb")))
 	{
 		sprintf(error, "Couldn't open file: '%s'", filename);
@@ -167,14 +163,14 @@ void LoadFile(HWND hDlg, char *filename, char *error, FILETIME *lastwritetime, b
 			g_offset = size;
 		}
 
-		bufsize = size - g_offset;
+		bufsize = (long long)size - (long long)g_offset;
 	}
 
 
 	if (bufsize)
 	{
-		char *buf1;
-		buf1 = (char *)malloc(bufsize);
+		char* buf1;
+		buf1 = (char*)malloc(bufsize);
 		if (!buf1)
 		{
 			fclose(fh);
@@ -182,8 +178,8 @@ void LoadFile(HWND hDlg, char *filename, char *error, FILETIME *lastwritetime, b
 			return;
 		}
 
-		char *buf2;
-		buf2 = (char *)malloc(bufsize * 2 + 1);  // For null terminator
+		char* buf2;
+		buf2 = (char*)malloc(bufsize * 2 + 1);  // For null terminator
 		if (!buf2)
 		{
 			fclose(fh);
@@ -223,9 +219,9 @@ void LoadFile(HWND hDlg, char *filename, char *error, FILETIME *lastwritetime, b
 
 //**********************************************************
 
-unsigned long long FixCRLF(char *inbuf, unsigned long long size, char *outbuf)
+unsigned long long FixCRLF(char* inbuf, unsigned long long size, char* outbuf)
 {
-	char *p1, *p2;
+	char* p1, * p2;
 
 	for (p1 = inbuf, p2 = outbuf; p1 < inbuf + size; p1++, p2++)
 	{
