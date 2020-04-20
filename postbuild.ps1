@@ -30,15 +30,16 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder) {
     Write-Host "Creating artifact folder: '$artifactfolder'"
     md $artifactfolder | Out-Null
 
-    $exefiles = @(dir -r *.exe -Exclude *.vshost.exe, nuget.exe |
+    $exefiles = @(dir -Recurse -File *.exe -Exclude *.vshost.exe, nuget.exe |
         ? { !$_.FullName.Substring((pwd).Path.Length).Contains("$([IO.Path]::DirectorySeparatorChar)obj$([IO.Path]::DirectorySeparatorChar)") })
 
     Write-Host "Found $($exefiles.Count) files."
 
     $groups = @($exefiles | Group-Object Name)
+
     $exefiles = @($groups | % {
             if ($_.Count -eq 1) {
-                return $_
+                return $_ | Select-Object -First 1
             }
             else {
                 $files = @($_.Group | ? { $_.FullName.Contains("$([IO.Path]::DirectorySeparatorChar)publish$([IO.Path]::DirectorySeparatorChar)") })
@@ -51,11 +52,20 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder) {
             }
         })
 
-    $exefiles | % {
-        [string] $source = $_.FullName
-        Write-Host "Copying file: '$source' -> '$artifactfolder'"
-        copy $source $artifactfolder
+    Write-Host "Moving $($exefiles.Count) files."
+
+    foreach ($exefile in $exefiles) {
+        [string] $source = $exefile.FullName
+        if ($source.Contains("Log") ) {
+            Write-Host "Not moving file: '$source' -> '$artifactfolder'"
+        }
+        else {
+            Write-Host "Moving file: '$source' -> '$artifactfolder'"
+            move $source $artifactfolder
+        }
     }
+
+    Write-Host "Done moving."
 }
 
 function Compress-Artifacts([string] $artifactfolder) {
@@ -77,7 +87,7 @@ function Compress-Artifacts([string] $artifactfolder) {
     zip a -mx9 $outfile $artifactfolder
     if (!$? -or !(Test-Path $outfile)) {
         Write-Host "Couldn't compress artifacts." -f Red
-        exit 1
+        exit 7
     }
 
     Write-Host "Produced artifact: '$outfile'" -f Green

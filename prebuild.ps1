@@ -62,9 +62,13 @@ function SingleExe() {
 }
 
 function Generate-BuildFile([string] $buildfile) {
-    $files = @(dir -Recurse "*.sln" -File | ? {
-            @(Get-Content $_.FullName).Contains("# Visual Studio 15") -or
-            @(Get-Content $_.FullName).Contains("# Visual Studio Version 16") })
+    if (Test-Path "C:\Windows") {
+        $files = @(dir -Recurse "*.sln" -File | ? { Test-Path ([IO.Path]::ChangeExtension($_.FullName, ".vcxproj")) })
+    }
+    else {
+        $files = @(dir -Recurse "*.sln" -File | ? { !(Test-Path ([IO.Path]::ChangeExtension($_.FullName, ".vcxproj"))) })
+    }
+
     [string[]] $filenames = $files | % { $_.FullName.Substring((pwd).Path.Length + 1) }
 
     Write-Host "Found $($files.Count) solutions."
