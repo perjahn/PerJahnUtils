@@ -15,7 +15,7 @@ function Main() {
 
     Compress-Artifacts $artifactfolder
 
-    Write-Host "Current time: $(Get-Date -f "yyyy-MM-dd HH:mm:ss")"
+    Write-Host "Current time: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")"
 }
 
 function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder) {

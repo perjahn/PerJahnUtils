@@ -2,7 +2,7 @@ Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
 
 function Main() {
-    Write-Host "Current time: $(Get-Date -f "yyyy-MM-dd HH:mm:ss")"
+    Write-Host "Current time: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")"
 
     Clean
 
