@@ -39,18 +39,18 @@
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
-            // 
+            //
             // label1
-            // 
+            //
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(12, 15);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(92, 13);
             this.label1.TabIndex = 0;
             this.label1.Text = "&Connection string:";
-            // 
+            //
             // button1
-            // 
+            //
             this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.button1.Location = new System.Drawing.Point(850, 11);
             this.button1.Name = "button1";
@@ -59,20 +59,20 @@
             this.button1.Text = "Go!";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
+            //
             // dataGridView1
-            // 
-            this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Location = new System.Drawing.Point(12, 222);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.Size = new System.Drawing.Size(984, 496);
             this.dataGridView1.TabIndex = 6;
-            // 
+            //
             // cbProviders
-            // 
+            //
             this.cbProviders.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbProviders.DisplayMember = "Name";
             this.cbProviders.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -83,10 +83,10 @@
             this.cbProviders.Size = new System.Drawing.Size(250, 21);
             this.cbProviders.TabIndex = 2;
             this.cbProviders.ValueMember = "InvariantName";
-            // 
+            //
             // tbSql
-            // 
-            this.tbSql.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.tbSql.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbSql.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::SQLUtil.Properties.Settings.Default, "SQL", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.tbSql.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -97,9 +97,9 @@
             this.tbSql.Size = new System.Drawing.Size(984, 175);
             this.tbSql.TabIndex = 5;
             this.tbSql.Text = global::SQLUtil.Properties.Settings.Default.SQL;
-            // 
+            //
             // cbSchema
-            // 
+            //
             this.cbSchema.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbSchema.AutoSize = true;
             this.cbSchema.Location = new System.Drawing.Point(931, 4);
@@ -108,10 +108,10 @@
             this.cbSchema.TabIndex = 4;
             this.cbSchema.Text = "Schema";
             this.cbSchema.UseVisualStyleBackColor = true;
-            // 
+            //
             // cbConnstr
-            // 
-            this.cbConnstr.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.cbConnstr.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cbConnstr.FormattingEnabled = true;
             this.cbConnstr.Location = new System.Drawing.Point(110, 12);
@@ -119,9 +119,9 @@
             this.cbConnstr.Size = new System.Drawing.Size(478, 21);
             this.cbConnstr.TabIndex = 7;
             this.cbConnstr.Leave += new System.EventHandler(this.cbConnstr_Leave);
-            // 
+            //
             // cbSaveToFile
-            // 
+            //
             this.cbSaveToFile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbSaveToFile.AutoSize = true;
             this.cbSaveToFile.Location = new System.Drawing.Point(931, 21);
@@ -130,15 +130,15 @@
             this.cbSaveToFile.TabIndex = 8;
             this.cbSaveToFile.Text = "Save to file";
             this.cbSaveToFile.UseVisualStyleBackColor = true;
-            // 
+            //
             // saveFileDialog1
-            // 
+            //
             this.saveFileDialog1.Filter = "csv files|*.txt|tab files|*.txt";
             this.saveFileDialog1.FilterIndex = 2;
             this.saveFileDialog1.RestoreDirectory = true;
-            // 
+            //
             // Form1
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1008, 730);

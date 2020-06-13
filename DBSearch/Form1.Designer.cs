@@ -70,9 +70,9 @@
             this.groupBox1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
+            //
             // groupBox2
-            // 
+            //
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(this.tbPassword);
             this.groupBox2.Controls.Add(this.lblPassword);
@@ -84,9 +84,9 @@
             this.groupBox2.Size = new System.Drawing.Size(227, 75);
             this.groupBox2.TabIndex = 41;
             this.groupBox2.TabStop = false;
-            // 
+            //
             // tbPassword
-            // 
+            //
             this.tbPassword.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::DBSearch.Properties.Settings.Default, "Password", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.tbPassword.Enabled = false;
             this.tbPassword.Location = new System.Drawing.Point(70, 45);
@@ -95,9 +95,9 @@
             this.tbPassword.Size = new System.Drawing.Size(146, 20);
             this.tbPassword.TabIndex = 46;
             this.tbPassword.Text = global::DBSearch.Properties.Settings.Default.Password;
-            // 
+            //
             // lblPassword
-            // 
+            //
             this.lblPassword.AutoSize = true;
             this.lblPassword.Enabled = false;
             this.lblPassword.Location = new System.Drawing.Point(6, 48);
@@ -105,9 +105,9 @@
             this.lblPassword.Size = new System.Drawing.Size(56, 13);
             this.lblPassword.TabIndex = 45;
             this.lblPassword.Text = "&Password:";
-            // 
+            //
             // tbUsername
-            // 
+            //
             this.tbUsername.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::DBSearch.Properties.Settings.Default, "Username", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.tbUsername.Enabled = false;
             this.tbUsername.Location = new System.Drawing.Point(70, 19);
@@ -115,9 +115,9 @@
             this.tbUsername.Size = new System.Drawing.Size(146, 20);
             this.tbUsername.TabIndex = 44;
             this.tbUsername.Text = global::DBSearch.Properties.Settings.Default.Username;
-            // 
+            //
             // lblUsername
-            // 
+            //
             this.lblUsername.AutoSize = true;
             this.lblUsername.Enabled = false;
             this.lblUsername.Location = new System.Drawing.Point(6, 22);
@@ -125,9 +125,9 @@
             this.lblUsername.Size = new System.Drawing.Size(58, 13);
             this.lblUsername.TabIndex = 43;
             this.lblUsername.Text = "&Username:";
-            // 
+            //
             // cbSQLLogin
-            // 
+            //
             this.cbSQLLogin.AutoSize = true;
             this.cbSQLLogin.Location = new System.Drawing.Point(6, 0);
             this.cbSQLLogin.Name = "cbSQLLogin";
@@ -136,9 +136,9 @@
             this.cbSQLLogin.Text = "SQL Authentication";
             this.cbSQLLogin.UseVisualStyleBackColor = true;
             this.cbSQLLogin.CheckedChanged += new System.EventHandler(this.cbSQLLogin_CheckedChanged);
-            // 
+            //
             // cbDBPattern
-            // 
+            //
             this.cbDBPattern.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbDBPattern.AutoSize = true;
             this.cbDBPattern.Location = new System.Drawing.Point(551, 122);
@@ -147,9 +147,9 @@
             this.cbDBPattern.TabIndex = 34;
             this.cbDBPattern.Text = "DB pattern";
             this.cbDBPattern.UseVisualStyleBackColor = true;
-            // 
+            //
             // groupBox1
-            // 
+            //
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.Controls.Add(this.rbDBObjects);
             this.groupBox1.Controls.Add(this.rbData);
@@ -159,9 +159,9 @@
             this.groupBox1.TabIndex = 38;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Search Options";
-            // 
+            //
             // rbDBObjects
-            // 
+            //
             this.rbDBObjects.AutoSize = true;
             this.rbDBObjects.Location = new System.Drawing.Point(6, 42);
             this.rbDBObjects.Name = "rbDBObjects";
@@ -169,9 +169,9 @@
             this.rbDBObjects.TabIndex = 40;
             this.rbDBObjects.Text = "Database objects";
             this.rbDBObjects.UseVisualStyleBackColor = true;
-            // 
+            //
             // rbData
-            // 
+            //
             this.rbData.AutoSize = true;
             this.rbData.Checked = true;
             this.rbData.Location = new System.Drawing.Point(6, 19);
@@ -181,18 +181,18 @@
             this.rbData.TabStop = true;
             this.rbData.Text = "Data";
             this.rbData.UseVisualStyleBackColor = true;
-            // 
+            //
             // tbMaxHits
-            // 
+            //
             this.tbMaxHits.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.tbMaxHits.Location = new System.Drawing.Point(722, 42);
             this.tbMaxHits.Name = "tbMaxHits";
             this.tbMaxHits.Size = new System.Drawing.Size(50, 20);
             this.tbMaxHits.TabIndex = 37;
             this.tbMaxHits.Text = "100";
-            // 
+            //
             // label3
-            // 
+            //
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(623, 45);
@@ -200,9 +200,9 @@
             this.label3.Size = new System.Drawing.Size(93, 13);
             this.label3.TabIndex = 36;
             this.label3.Text = "&Max hits per table:";
-            // 
+            //
             // btGetDBs
-            // 
+            //
             this.btGetDBs.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btGetDBs.Location = new System.Drawing.Point(545, 93);
             this.btGetDBs.Name = "btGetDBs";
@@ -211,11 +211,11 @@
             this.btGetDBs.Text = "Get all DBs";
             this.btGetDBs.UseVisualStyleBackColor = true;
             this.btGetDBs.Click += new System.EventHandler(this.btGetDBs_Click);
-            // 
+            //
             // listView1
-            // 
-            this.listView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.listView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
@@ -231,96 +231,96 @@
             this.listView1.TabIndex = 50;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
-            // 
+            //
             // columnHeader1
-            // 
+            //
             this.columnHeader1.Text = "Database";
             this.columnHeader1.Width = 100;
-            // 
+            //
             // columnHeader2
-            // 
+            //
             this.columnHeader2.Text = "Table";
             this.columnHeader2.Width = 100;
-            // 
+            //
             // columnHeader3
-            // 
+            //
             this.columnHeader3.Text = "Column";
             this.columnHeader3.Width = 100;
-            // 
+            //
             // columnHeader4
-            // 
+            //
             this.columnHeader4.Text = "Value";
             this.columnHeader4.Width = 275;
-            // 
+            //
             // contextMenuStrip1
-            // 
+            //
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.copyToolStripMenuItem,
             this.copyNameToolStripMenuItem,
             this.copyValueToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
             this.contextMenuStrip1.Size = new System.Drawing.Size(180, 70);
-            // 
+            //
             // copyToolStripMenuItem
-            // 
+            //
             this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
             this.copyToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
             this.copyToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
             this.copyToolStripMenuItem.Text = "&Copy";
             this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
-            // 
+            //
             // copyNameToolStripMenuItem
-            // 
+            //
             this.copyNameToolStripMenuItem.Name = "copyNameToolStripMenuItem";
             this.copyNameToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
             this.copyNameToolStripMenuItem.Text = "Copy &name column";
             this.copyNameToolStripMenuItem.Click += new System.EventHandler(this.copyNameToolStripMenuItem_Click);
-            // 
+            //
             // copyValueToolStripMenuItem
-            // 
+            //
             this.copyValueToolStripMenuItem.Name = "copyValueToolStripMenuItem";
             this.copyValueToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
             this.copyValueToolStripMenuItem.Text = "Copy &value column";
             this.copyValueToolStripMenuItem.Click += new System.EventHandler(this.copyValueToolStripMenuItem_Click);
-            // 
+            //
             // label6
-            // 
+            //
             this.label6.AutoSize = true;
             this.label6.Location = new System.Drawing.Point(12, 16);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(31, 13);
             this.label6.TabIndex = 20;
             this.label6.Text = "&Text:";
-            // 
+            //
             // label2
-            // 
+            //
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(12, 97);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(61, 13);
             this.label2.TabIndex = 31;
             this.label2.Text = "&Databases:";
-            // 
+            //
             // label5
-            // 
+            //
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(12, 42);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(49, 13);
             this.label5.TabIndex = 27;
             this.label5.Text = "&Provider:";
-            // 
+            //
             // label1
-            // 
+            //
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(12, 69);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(41, 13);
             this.label1.TabIndex = 29;
             this.label1.Text = "&Server:";
-            // 
+            //
             // btSearch
-            // 
+            //
             this.btSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btSearch.Location = new System.Drawing.Point(697, 12);
             this.btSearch.Name = "btSearch";
@@ -329,10 +329,10 @@
             this.btSearch.Text = "Go!";
             this.btSearch.UseVisualStyleBackColor = true;
             this.btSearch.Click += new System.EventHandler(this.btSearch_Click);
-            // 
+            //
             // cbProvider
-            // 
-            this.cbProvider.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.cbProvider.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cbProvider.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::DBSearch.Properties.Settings.Default, "Provider", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.cbProvider.DisplayMember = "Name";
@@ -344,10 +344,10 @@
             this.cbProvider.TabIndex = 28;
             this.cbProvider.Text = global::DBSearch.Properties.Settings.Default.Provider;
             this.cbProvider.ValueMember = "InvariantName";
-            // 
+            //
             // cbServer
-            // 
-            this.cbServer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.cbServer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cbServer.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::DBSearch.Properties.Settings.Default, "Server", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.cbServer.FormattingEnabled = true;
@@ -356,10 +356,10 @@
             this.cbServer.Size = new System.Drawing.Size(460, 21);
             this.cbServer.TabIndex = 30;
             this.cbServer.Text = global::DBSearch.Properties.Settings.Default.Server;
-            // 
+            //
             // tbSearch
-            // 
-            this.tbSearch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.tbSearch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbSearch.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::DBSearch.Properties.Settings.Default, "SearchText", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.tbSearch.Location = new System.Drawing.Point(79, 13);
@@ -367,11 +367,11 @@
             this.tbSearch.Size = new System.Drawing.Size(460, 20);
             this.tbSearch.TabIndex = 21;
             this.tbSearch.Text = global::DBSearch.Properties.Settings.Default.SearchText;
-            // 
+            //
             // tbDatabases
-            // 
+            //
             this.tbDatabases.AcceptsReturn = true;
-            this.tbDatabases.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.tbDatabases.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbDatabases.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::DBSearch.Properties.Settings.Default, "Databases", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.tbDatabases.Location = new System.Drawing.Point(79, 93);
@@ -381,9 +381,9 @@
             this.tbDatabases.Size = new System.Drawing.Size(460, 125);
             this.tbDatabases.TabIndex = 32;
             this.tbDatabases.Text = global::DBSearch.Properties.Settings.Default.Databases;
-            // 
+            //
             // cbSearchtype
-            // 
+            //
             this.cbSearchtype.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbSearchtype.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbSearchtype.FormattingEnabled = true;
@@ -396,18 +396,18 @@
             this.cbSearchtype.Size = new System.Drawing.Size(121, 21);
             this.cbSearchtype.TabIndex = 26;
             this.cbSearchtype.SelectedIndexChanged += new System.EventHandler(this.cbSearchtype_SelectedIndexChanged);
-            // 
+            //
             // dtp1
-            // 
+            //
             this.dtp1.Format = System.Windows.Forms.DateTimePickerFormat.Short;
             this.dtp1.Location = new System.Drawing.Point(79, 13);
             this.dtp1.Name = "dtp1";
             this.dtp1.Size = new System.Drawing.Size(125, 20);
             this.dtp1.TabIndex = 22;
             this.dtp1.Value = new System.DateTime(2011, 4, 20, 1, 23, 0, 0);
-            // 
+            //
             // dtp2
-            // 
+            //
             this.dtp2.Format = System.Windows.Forms.DateTimePickerFormat.Time;
             this.dtp2.Location = new System.Drawing.Point(210, 13);
             this.dtp2.Name = "dtp2";
@@ -415,17 +415,17 @@
             this.dtp2.Size = new System.Drawing.Size(85, 20);
             this.dtp2.TabIndex = 23;
             this.dtp2.Value = new System.DateTime(2011, 5, 1, 1, 23, 45, 0);
-            // 
+            //
             // dtp3
-            // 
+            //
             this.dtp3.Format = System.Windows.Forms.DateTimePickerFormat.Short;
             this.dtp3.Location = new System.Drawing.Point(301, 13);
             this.dtp3.Name = "dtp3";
             this.dtp3.Size = new System.Drawing.Size(125, 20);
             this.dtp3.TabIndex = 24;
-            // 
+            //
             // dtp4
-            // 
+            //
             this.dtp4.Format = System.Windows.Forms.DateTimePickerFormat.Time;
             this.dtp4.Location = new System.Drawing.Point(432, 13);
             this.dtp4.Name = "dtp4";
@@ -433,9 +433,9 @@
             this.dtp4.Size = new System.Drawing.Size(85, 20);
             this.dtp4.TabIndex = 25;
             this.dtp4.Value = new System.DateTime(2011, 5, 2, 1, 23, 45, 0);
-            // 
+            //
             // Form1
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 564);

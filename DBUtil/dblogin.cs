@@ -53,7 +53,7 @@
             win.tbDatabase.Text = _database;
             win.tbUsername.Text = _username;
             win.tbPassword.Text = _password;
-        
+
 
             if(win.ShowDialog() = Windows.Forms.DialogResult.OK)
             {
@@ -63,11 +63,11 @@
         }
 
         /*
-             TODO: Insert code to perform custom authentication using the provided username and password 
-             (See http://go.microsoft.com/fwlink/?LinkId=35339).  
-             The custom principal can then be attached to the current thread's principal as follows: 
+             TODO: Insert code to perform custom authentication using the provided username and password
+             (See http://go.microsoft.com/fwlink/?LinkId=35339).
+             The custom principal can then be attached to the current thread's principal as follows:
                      My.User.CurrentPrincipal = CustomPrincipal
-             where CustomPrincipal is the IPrincipal implementation used to perform authentication. 
+             where CustomPrincipal is the IPrincipal implementation used to perform authentication.
              Subsequently, My.User will return identity information encapsulated in the CustomPrincipal object
              such as the username, display name, etc.
         */
