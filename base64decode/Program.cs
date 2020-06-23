@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -9,21 +8,21 @@ namespace base64decode
     {
         static int Main(string[] args)
         {
-            if (args.Length != 1 && args.Length != 2)
+            bool usefile = args.Contains("-f");
+            var parsedArgs = args.Where(a => a != "-f").ToArray();
+            if (parsedArgs.Length != 1 && parsedArgs.Length != 2)
             {
-                Console.WriteLine("Usage: base64decode <string> [outfile]");
+                Console.WriteLine("Usage: base64decode [-f] <filename or string> [outfile]");
                 return 1;
             }
 
-            //string text = File.ReadAllText(args[0]);
-            byte[] bytes = Convert.FromBase64String(args[0]);
-            if (args.Length == 2)
+            byte[] bytes = usefile ?
+                File.ReadAllBytes(parsedArgs[0]) :
+                Convert.FromBase64String(parsedArgs[0]);
+
+            if (parsedArgs.Length == 2)
             {
-                string filename = args[1];
-                using (var fs = new FileStream(filename, FileMode.Create))
-                {
-                    fs.Write(bytes, 0, bytes.Length);
-                }
+                File.WriteAllBytes(parsedArgs[1], bytes);
             }
             else
             {

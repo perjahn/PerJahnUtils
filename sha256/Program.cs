@@ -10,24 +10,17 @@ namespace sha256
     {
         static int Main(string[] args)
         {
-            if (args.Length != 1)
+            bool usefile = args.Contains("-f");
+            var parsedArgs = args.Where(a => a != "-f").ToArray();
+            if (parsedArgs.Length != 1)
             {
-                Console.WriteLine("sha256 <filename or string>");
+                Console.WriteLine("Usage: sha256 [-f] <filename or string>");
                 return 1;
             }
 
-            string content;
-            byte[] buf;
-            if (File.Exists(args[0]))
-            {
-                buf = File.ReadAllBytes(args[0]);
-                Console.WriteLine(GetHashString(buf));
-            }
-            else
-            {
-                content = args[0];
-                Console.WriteLine(GetHashString(Encoding.UTF8.GetBytes(content)));
-            }
+            Console.WriteLine(GetHashString(usefile ?
+                File.ReadAllBytes(parsedArgs[0]) :
+                Encoding.UTF8.GetBytes(parsedArgs[0])));
 
             return 0;
         }

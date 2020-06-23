@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace base64encode
 {
@@ -9,15 +9,17 @@ namespace base64encode
     {
         static int Main(string[] args)
         {
-            if (args.Length != 1)
+            bool usefile = args.Contains("-f");
+            var parsedArgs = args.Where(a => a != "-f").ToArray();
+            if (parsedArgs.Length != 1)
             {
-                Console.WriteLine("Usage: base64encode <filename>");
+                Console.WriteLine("Usage: base64encode [-f] <filename or string>");
                 return 1;
             }
 
-            byte[] bytes = File.ReadAllBytes(args[0]);
-            string encodedstring = Convert.ToBase64String(bytes);
-            Console.WriteLine(encodedstring);
+            Console.WriteLine(Convert.ToBase64String(usefile ?
+                File.ReadAllBytes(parsedArgs[0]) :
+                Encoding.UTF8.GetBytes(parsedArgs[0])));
 
             return 0;
         }
