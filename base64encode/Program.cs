@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Base64Encode
+namespace base64encode
 {
     class Program
     {
@@ -11,7 +11,7 @@ namespace Base64Encode
         {
             if (args.Length != 1)
             {
-                Console.WriteLine("Usage: Base64Encode <filename>");
+                Console.WriteLine("Usage: base64encode <filename>");
                 return 1;
             }
 

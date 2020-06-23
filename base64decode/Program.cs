@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Base64Decode
+namespace base64decode
 {
     class Program
     {
@@ -11,7 +11,7 @@ namespace Base64Decode
         {
             if (args.Length != 1 && args.Length != 2)
             {
-                Console.WriteLine("Usage: Base64Decode <string> [outfile]");
+                Console.WriteLine("Usage: base64decode <string> [outfile]");
                 return 1;
             }
 

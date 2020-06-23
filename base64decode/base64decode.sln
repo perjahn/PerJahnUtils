@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Base64Decode", "Base64Decode.csproj", "{27323427-9279-4AE2-A213-029DF8E14C16}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "base64decode", "base64decode.csproj", "{27323427-9279-4AE2-A213-029DF8E14C16}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
