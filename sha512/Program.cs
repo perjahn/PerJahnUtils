@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace sha256
+namespace sha512
 {
     class Program
     {
@@ -16,7 +16,7 @@ namespace sha256
             parsedArgs = parsedArgs.Where(a => a != "-base64").ToArray();
             if (parsedArgs.Length != 1)
             {
-                Console.WriteLine("Usage: sha256 [-f] [-base64] <filename or string>");
+                Console.WriteLine("Usage: sha512 [-f] [-base64] <filename or string>");
                 return 1;
             }
 
@@ -38,7 +38,7 @@ namespace sha256
 
         public static string GetHashString(byte[] buf, bool useBase64)
         {
-            using var crypto = new SHA256Managed();
+            using var crypto = new SHA512Managed();
             return useBase64 ?
                 Convert.ToBase64String(crypto.ComputeHash(buf)):
                 string.Concat(crypto.ComputeHash(buf).Select(b => b.ToString("x2")));
