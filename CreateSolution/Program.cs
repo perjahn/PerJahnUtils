@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Xml.Linq;
@@ -11,11 +12,11 @@ namespace CreateSolution
 {
     class Proj
     {
-        public string path;
-        public string name;
-        public string guid;
-        public string assemblyname;
-        public List<string> targets;
+        public string path = string.Empty;
+        public string name = string.Empty;
+        public string guid = string.Empty;
+        public string assemblyname = string.Empty;
+        public List<string> targets = new List<string>();
     };
 
     class Program
@@ -252,34 +253,41 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
         {
             var projects = new List<Proj>();
 
-            foreach (string file in files)
+            foreach (string filename in files)
             {
                 Proj newproj;
 
                 try
                 {
-                    var xdoc = XDocument.Load(file);
+                    var xdoc = XDocument.Load(filename);
                     var ns = xdoc.Root.Name.Namespace;
 
                     newproj = new Proj();
 
-                    var guidelement = xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").FirstOrDefault();
+                    var guidelement = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").FirstOrDefault();
                     if (guidelement == null)
                     {
-                        newproj.guid = Guid.NewGuid().ToString();
+                        byte[] bytes = File.ReadAllBytes(filename);
+                        byte[] hash;
+                        using (MD5 md5 = MD5.Create())
+                        {
+                            hash = md5.ComputeHash(bytes);
+                        }
+                        var guid = new Guid(hash);
+                        newproj.guid = guid.ToString().ToUpper();
                     }
                     else
                     {
                         newproj.guid = guidelement.Value.ToUpper();
                     }
 
-                    XElement xele = xdoc.Element(ns + "Project").Element(ns + "PropertyGroup").Element(ns + "AssemblyName");
-                    newproj.assemblyname = xele?.Value;
+                    XElement xele = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").FirstOrDefault();
+                    newproj.assemblyname = xele?.Value ?? string.Empty;
 
-                    newproj.name = Path.GetFileNameWithoutExtension(file);
+                    newproj.name = Path.GetFileNameWithoutExtension(filename);
 
                     string file1 = Path.GetFullPath(solutionfile);
-                    string file2 = Path.GetFullPath(file);
+                    string file2 = Path.GetFullPath(filename);
 
                     string file3 = GetRelativePath(file1, file2);
 
@@ -297,12 +305,11 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                     catch (NullReferenceException)
                     {
                         // No targets found
-                        newproj.targets = new List<string>();
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Couldn't load project: '{file}': {ex.ToString()}");
+                    Console.WriteLine($"Couldn't load project: '{filename}': {ex.ToString()}");
                     continue;
                 }
 
@@ -421,7 +428,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 int count = 0;
                 foreach (var proj2 in projs2)
                 {
-                    if (proj1.assemblyname != null && proj2.assemblyname != null && string.CompareOrdinal(proj1.assemblyname, proj2.assemblyname) == 0)
+                    if (proj1.assemblyname != string.Empty && proj2.assemblyname != string.Empty && string.CompareOrdinal(proj1.assemblyname, proj2.assemblyname) == 0)
                     {
                         count++;
                     }
@@ -437,7 +444,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
                     foreach (var proj2 in projs3)
                     {
-                        if (proj1.assemblyname != null && proj2.assemblyname != null && string.CompareOrdinal(proj1.assemblyname, proj2.assemblyname) == 0)
+                        if (proj1.assemblyname != string.Empty && proj2.assemblyname != string.Empty && string.CompareOrdinal(proj1.assemblyname, proj2.assemblyname) == 0)
                         {
                             Console.WriteLine($"  Assemblyname: '{proj2.assemblyname}', File: '{proj2.path}', Project: '{proj2.name}'.");
                             projs2.Remove(proj2);

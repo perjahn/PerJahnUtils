@@ -4,5 +4,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 </Project>
