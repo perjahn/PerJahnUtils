@@ -40,7 +40,7 @@ namespace CreateSolution
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             string usage =
-@"CreateSolution 2.3 - Creates VS solution file.
+@"CreateSolution 2.4 - Creates VS solution file.
 
 Usage: CreateSolution [-g] [-vX] [-wWebSiteFolder] <path> <solutionfile> [excludeprojs...]
 
@@ -264,10 +264,23 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
                     newproj = new Proj();
 
+                    string file1 = Path.GetFullPath(solutionfile);
+                    string file2 = Path.GetFullPath(filename);
+
+                    string relpath = GetRelativePath(file1, file2);
+
+                    newproj.path = relpath;
+
                     var guidelement = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").FirstOrDefault();
                     if (guidelement == null)
                     {
-                        byte[] bytes = File.ReadAllBytes(filename);
+                        byte[] pathbuf = Encoding.UTF8.GetBytes(relpath);
+                        byte[] filebuf = File.ReadAllBytes(filename);
+
+                        byte[] bytes = new byte[pathbuf.Length + filebuf.Length];
+                        Buffer.BlockCopy(pathbuf, 0, bytes, 0, pathbuf.Length);
+                        Buffer.BlockCopy(filebuf, 0, bytes, pathbuf.Length, filebuf.Length);
+
                         byte[] hash;
                         using (MD5 md5 = MD5.Create())
                         {
@@ -285,13 +298,6 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                     newproj.assemblyname = xele?.Value ?? string.Empty;
 
                     newproj.name = Path.GetFileNameWithoutExtension(filename);
-
-                    string file1 = Path.GetFullPath(solutionfile);
-                    string file2 = Path.GetFullPath(filename);
-
-                    string file3 = GetRelativePath(file1, file2);
-
-                    newproj.path = file3;
 
                     try
                     {
