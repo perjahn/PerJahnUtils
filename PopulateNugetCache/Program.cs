@@ -19,8 +19,8 @@ namespace PopulateNugetCache
                     "\n" +
                     "Usage: populate <sourcepath> [-dryrun] [-move] [-verbose]\n" +
                     "\n" +
-                    "-dryrun:   Simulate without side effects." +
-                    "-move:     Move files insted of copy (usually faster)." +
+                    "-dryrun:   Simulate without side effects.\n" +
+                    "-move:     Move files insted of copy (usually faster).\n" +
                     "-verbose:  Loglevel verbose logging.");
                 return 1;
             }
