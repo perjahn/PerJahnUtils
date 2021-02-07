@@ -125,9 +125,10 @@ namespace upgradeprojects
                 e.Name = e.Name.LocalName;
             }
 
-            xdoc.Root.Attributes().Remove();
+            xdoc.Root?.Attributes().Remove();
+
             XAttribute attribute = new XAttribute("Sdk", "Microsoft.NET.Sdk");
-            xdoc.Root.Add(attribute);
+            xdoc.Root?.Add(attribute);
 
             var references = xdoc.Elements("Project").Elements("ItemGroup").Elements("Reference");
             foreach (var reference in references)
@@ -141,11 +142,11 @@ namespace upgradeprojects
 
                     if (includeValues.Length == 0)
                     {
-                        reference.Attribute("Include").Value = string.Empty;
+                        includeAttribute.Value = string.Empty;
                     }
                     else
                     {
-                        reference.Attribute("Include").Value = includeValues[0];
+                        includeAttribute.Value = includeValues[0];
                     }
 
                     var version = includeValues.FirstOrDefault(t => t.StartsWith("Version="));
@@ -217,7 +218,7 @@ namespace upgradeprojects
                 .Where(e => removePropertyGroupChildren.Contains(e.Name.LocalName))
                 .Remove();
 
-            xdoc.Root.Elements("Import")
+            xdoc.Root?.Elements("Import")
                 .Remove();
 
             xdoc.DescendantNodes().OfType<XComment>()

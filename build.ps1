@@ -8,7 +8,7 @@ function Main() {
 
     Write-Host ("*"*100) -f Cyan
 
-    dotnet build all.build -c Release -r win-x64
+    dotnet build all.build -c Release
 
     Write-Host ("*"*100) -f Cyan
 

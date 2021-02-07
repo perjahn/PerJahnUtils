@@ -8,16 +8,16 @@ namespace SyncFiles
     class LogWriter
     {
         public static bool Verbose { get; set; }
-        public static string Logfile { get; set; }
+        public static string Logfile { get; set; } = string.Empty;
 
         public static void WriteLine(string message, bool verbose = false)
         {
             if (LogWriter.Verbose || !verbose)
             {
                 Console.WriteLine(message);
-
-                using (var sw = new StreamWriter(Logfile, true))
+                if (Logfile != string.Empty)
                 {
+                    using var sw = new StreamWriter(Logfile, true);
                     sw.WriteLine(message);
                 }
             }

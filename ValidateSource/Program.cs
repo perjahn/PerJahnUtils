@@ -2,27 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace ValidateSource
 {
     class Program
     {
-        #region RestoreConsoleColorOnBreak
-        static ConsoleColor _color;
-        delegate bool ConsoleEventDelegate(int eventType);
-        static ConsoleEventDelegate handler;
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
-
-        static bool ConsoleEventCallback(int eventType)
-        {
-            Console.ForegroundColor = _color;
-            return false;
-        }
-        #endregion
-
         static long _rowsTrailing;
         static long _filesTrailing;
         static long _rowsTotalTrailing;
@@ -42,11 +27,7 @@ namespace ValidateSource
 
         static int Main(string[] args)
         {
-            _color = Console.ForegroundColor;
-            handler = new ConsoleEventDelegate(ConsoleEventCallback);
-            SetConsoleCtrlHandler(handler, true);
-
-            string[] filteredArgs = ParseArguments(args);
+            string[]? filteredArgs = ParseArguments(args);
             if (filteredArgs == null)
             {
                 return 2;
@@ -61,12 +42,12 @@ namespace ValidateSource
 
             string[] excluderegexs = filteredArgs.Skip(1).ToArray();
 
-            ParsePath(filteredArgs[0], out string path, out string pattern);
+            ParsePath(filteredArgs[0], out string path, out string? pattern);
 
             return SearchForMisformattedFiles(path, pattern, excluderegexs);
         }
 
-        static string[] ParseArguments(string[] args)
+        static string[]? ParseArguments(string[] args)
         {
             _fixTrailing = _fixIndentation = false;
             _indentationsize = 4;
@@ -145,11 +126,11 @@ Return values:
 Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
         }
 
-        static void ParsePath(string inpath, out string outpath, out string pattern)
+        static void ParsePath(string inpath, out string outpath, out string? pattern)
         {
             if (Path.GetFileName(inpath).Contains('?') || Path.GetFileName(inpath).Contains('*'))
             {
-                outpath = Path.GetDirectoryName(inpath);
+                outpath = Path.GetDirectoryName(inpath) ?? string.Empty;
                 if (outpath == string.Empty)
                 {
                     outpath = ".";
@@ -163,14 +144,14 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             }
         }
 
-        static int SearchForMisformattedFiles(string path, string pattern, string[] excluderegexs)
+        static int SearchForMisformattedFiles(string path, string? pattern, string[] excluderegexs)
         {
-            string[] filesTrailing = GetTrailingFiles(path, pattern, excluderegexs);
+            string[]? filesTrailing = GetTrailingFiles(path, pattern, excluderegexs);
             if (filesTrailing == null)
             {
                 return 2;
             }
-            string[] filesIndentation = GetIndentationFiles(path, pattern, excluderegexs);
+            string[]? filesIndentation = GetIndentationFiles(path, pattern, excluderegexs);
             if (filesIndentation == null)
             {
                 return 2;
@@ -241,7 +222,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             }
         }
 
-        static string[] GetTrailingFiles(string path, string pattern, string[] excluderegexs)
+        static string[]? GetTrailingFiles(string path, string? pattern, string[] excluderegexs)
         {
             WriteLineColor("-=-=- Searching for trailing whitespaces -=-=-", ConsoleColor.Magenta, 1);
 
@@ -343,7 +324,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             return outfiles.ToArray();
         }
 
-        static string[] GetIndentationFiles(string path, string pattern, string[] excluderegexs)
+        static string[]? GetIndentationFiles(string path, string? pattern, string[] excluderegexs)
         {
             WriteLineColor("-=-=- Searching for inconsistent indentation -=-=-", ConsoleColor.Magenta, 1);
 

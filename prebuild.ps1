@@ -6,77 +6,59 @@ function Main() {
 
     Clean
 
-    SingleExe
-
     Generate-BuildFile "all.build"
 }
 
 function Clean() {
-    $folders = @(dir -Recurse -Force "obj", "bin", "Debug", "Release", ".vs", "x64", "packages" -Directory)
+    [string[]] $filter = "obj", "bin", "Debug", "Release", ".vs", "x64", "packages"
+
+    [string[]] $folders = @(dir -Recurse -Force $filter -Directory | % { $_.FullName.Substring((pwd).Path.Length + 1) })
     $folders | % {
-        Write-Host "Deleting folder: '$($_.FullName)'"
-        rd -Recurse -Force $_.FullName -ErrorAction SilentlyContinue
+        Write-Host "Deleting folder: '$_'"
+        rd -Recurse -Force $_ -ErrorAction SilentlyContinue
     }
 
-    $folders = @(dir -Recurse -Force "obj", "bin", "Debug", "Release", ".vs", "x64", "packages" -Directory)
+    [string[]] $folders = @(dir -Recurse -Force $filter -Directory | % { $_.FullName.Substring((pwd).Path.Length + 1) })
     $folders | % {
-        Write-Host "Deleting folder: '$($_.FullName)'" -f Yellow
-        rd -Recurse -Force $_.FullName
-    }
-}
-
-function SingleExe() {
-    $files = @(dir *.csproj -Recurse)
-    Write-Host "Found $($files.Count) project files."
-
-    foreach ($file in $files) {
-        [string] $filename = $file.FullName
-        Write-Host "Reading project file: '$filename'"
-        [xml] $xml = Get-Content $filename
-
-        $groups = @($xml.SelectNodes("/Project/PropertyGroup"))
-        foreach ($group in $groups) {
-            $newelement = $xml.CreateElement("RuntimeIdentifier")
-            $newelement.InnerText = "win10-x64"
-            $group.AppendChild($newelement) | Out-Null
-
-            $newelement = $xml.CreateElement("PublishSingleFile")
-            $newelement.InnerText = "true"
-            $group.AppendChild($newelement) | Out-Null
-
-            $newelement = $xml.CreateElement("PublishTrimmed")
-            $newelement.InnerText = "true"
-            $group.AppendChild($newelement) | Out-Null
-
-            $newelement = $xml.CreateElement("PublishReadyToRun")
-            $newelement.InnerText = "false"
-            $group.AppendChild($newelement) | Out-Null
-
-            $newelement = $xml.CreateElement("PublishReadyToRunShowWarnings")
-            $newelement.InnerText = "true"
-            $group.AppendChild($newelement) | Out-Null
+        if (Test-Path $_) {
+            Write-Host "Deleting folder: '$_'" -f Yellow
+            rd -Recurse -Force $_
         }
-
-        $xml.Save($filename)
     }
 }
 
 function Generate-BuildFile([string] $buildfile) {
+    [string[]] $slnfiles = @(dir -Recurse "*.sln" -File | % { $_.FullName })
+
     if (Test-Path "C:\Windows") {
-        $files = @(dir -Recurse "*.sln" -File | ? { Test-Path ([IO.Path]::ChangeExtension($_.FullName, ".vcxproj")) })
+        [string[]] $slnfiles = @($slnfiles | ? { Test-Path ([IO.Path]::ChangeExtension($_.FullName, ".vcxproj")) })
     }
     else {
-        $files = @(dir -Recurse "*.sln" -File | ? { !(Test-Path ([IO.Path]::ChangeExtension($_.FullName, ".vcxproj"))) })
+        [string[]] $slnfiles = @($slnfiles | ? {
+            [string] $filename = [IO.Path]::ChangeExtension($_, ".vcxproj")
+            if (Test-Path $filename) {
+                return $false
+            }
+
+            [string] $filename = [IO.Path]::ChangeExtension($_, ".csproj")
+            [string] $content = [IO.File]::ReadAllText($filename)
+            if (!$content.Contains("Microsoft.NET.Sdk")) {
+                Write-Host "Excluding old C# project: '$($filename.Substring((pwd).Path.Length + 1))'" -f Yellow
+                return $false
+            }
+
+            return $true
+        })
     }
 
-    [string[]] $filenames = $files | % { $_.FullName.Substring((pwd).Path.Length + 1) }
+    [string[]] $slnfiles = @($slnfiles | % { $_.Substring((pwd).Path.Length + 1) })
 
-    Write-Host "Found $($files.Count) solutions."
+    Write-Host "Found $($slnfiles.Count) solutions."
 
     [string[]] $xml = @()
     $xml += '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'
     $xml += '  <Target Name="Build">'
-    $xml += '    <MSBuild Targets="Restore;Build;Publish" Projects="' + ($filenames -join ";") + '" Properties="Configuration=Release;Runtime=win-x64" ContinueOnError="true" BuildInParallel="true" />'
+    $xml += '    <MSBuild Targets="Restore;Build;Publish" Projects="' + ($slnfiles -join ";") + '" Properties="Configuration=Release;Runtime=win-x64" ContinueOnError="true" BuildInParallel="true" />'
     $xml += '  </Target>'
     $xml += '</Project>'
 

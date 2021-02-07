@@ -16,11 +16,11 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.201
+        dotnet-version: 5.0.102
     - name: Pre Build
       run: pwsh ./prebuild.ps1
     - name: Build with dotnet
-      run: dotnet build all.build -c Release -r win-x64
+      run: dotnet build all.build -c Release
     - name: Post Build
       run: pwsh ./postbuild.ps1
     - uses: actions/upload-artifact@v1

@@ -10,9 +10,9 @@ namespace SyncFiles
     {
         public static bool CompareMetadata { get; set; }
         public static bool Simulate { get; set; }
-        public static string[] Identifiers { get; set; }
+        public static string[]? Identifiers { get; set; } = null;
         public static long Maxsize { get; set; }
-        public static string[] Excludes { get; set; }
+        public static string[]? Excludes { get; set; } = null;
 
         static void Log(string message, bool verbose = false, ConsoleColor? color = null)
         {
@@ -30,8 +30,8 @@ namespace SyncFiles
 
         public static void SyncFiles(string sourcefile, string targetfile, string sourcepath, string targetpath)
         {
-            string[] sourcefiles = GetLines(sourcefile);
-            string[] targetfiles = GetLines(targetfile);
+            string[]? sourcefiles = GetLines(sourcefile);
+            string[]? targetfiles = GetLines(targetfile);
 
             if (sourcefiles == null || targetfiles == null)
             {
@@ -70,7 +70,7 @@ namespace SyncFiles
             ShowFastStatistics(targetfiles, filestocopy);
 
 
-            string[] missingfolders = filestocopy.Select(f => Path.GetDirectoryName(f.Split('\t')[2])).Distinct().ToArray();
+            string[] missingfolders = filestocopy.Select(f => Path.GetDirectoryName(f.Split('\t')[2]) ?? string.Empty).Distinct().ToArray();
             Log($"Potentially missing target folders: {missingfolders.Length}");
 
             //ShowSlowStatistics(targetpath, filestocopy);
@@ -86,50 +86,16 @@ namespace SyncFiles
             Copy(sourcepath, targetpath, filestocopy);
         }
 
-        static string[] GetLines(string filename)
+        static string[]? GetLines(string filename)
         {
             try
             {
                 return File.ReadAllLines(filename).Where(l => l != string.Empty).ToArray();
             }
-            catch (FileNotFoundException ex)
+            catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException || ex is IOException)
             {
                 LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
                 return null;
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-                return null;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-                return null;
-            }
-            catch (IOException ex)
-            {
-                LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
-                return null;
-            }
-        }
-
-        static bool ShouldCopyProductFile(string path)
-        {
-            if (path.StartsWith("ProductContent"))
-            {
-                if (Identifiers.Any(path.Contains))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return true;
             }
         }
 
@@ -321,8 +287,8 @@ namespace SyncFiles
                 string sourcepath2 = Path.Combine(sourcepath, filename);
                 string targetpath2 = Path.Combine(targetpath, filename);
 
-                FileInfo fiSource = null;
-                FileInfo fiTarget = null;
+                FileInfo? fiSource = null;
+                FileInfo? fiTarget = null;
 
                 try
                 {
@@ -332,35 +298,13 @@ namespace SyncFiles
                         fiTarget = new FileInfo(targetpath2);
                     }
                 }
-                catch (FileNotFoundException ex)
+                catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException || ex is IOException)
                 {
                     Log($"Copying: '{sourcepath2}' -> '{targetpath2}'");
                     Log(ex.Message);
                     errors++;
                     continue;
                 }
-                catch (DirectoryNotFoundException ex)
-                {
-                    Log($"Copying: '{sourcepath2}' -> '{targetpath2}");
-                    Log(ex.Message);
-                    errors++;
-                    continue;
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    Log($"Copying: '{sourcepath2}' -> '{targetpath2}'");
-                    Log(ex.Message);
-                    errors++;
-                    continue;
-                }
-                catch (IOException ex)
-                {
-                    Log($"Copying: '{sourcepath2}' -> '{targetpath2}'");
-                    Log(ex.Message);
-                    errors++;
-                    continue;
-                }
-
 
                 try
                 {
@@ -391,22 +335,7 @@ namespace SyncFiles
                     copiedfiles++;
                     copiedsize += filesize;
                 }
-                catch (FileNotFoundException ex)
-                {
-                    Log(ex.Message);
-                    errors++;
-                }
-                catch (DirectoryNotFoundException ex)
-                {
-                    Log(ex.Message);
-                    errors++;
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    Log(ex.Message);
-                    errors++;
-                }
-                catch (IOException ex)
+                catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException || ex is IOException)
                 {
                     Log(ex.Message);
                     errors++;

@@ -157,7 +157,7 @@ namespace PopulateNugetCache
                 string sourceFolder = operationFolder.OrderBy(p => p).First();
                 string targetFolder = Path.Combine(targetRootFolder, operationFolder.Key);
 
-                var parentFolder = Path.GetDirectoryName(targetFolder);
+                var parentFolder = Path.GetDirectoryName(targetFolder) ?? string.Empty;
                 if (!Directory.Exists(parentFolder))
                 {
                     Log($"Creating folder: '{parentFolder}'", verbose: true);

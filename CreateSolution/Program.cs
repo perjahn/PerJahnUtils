@@ -260,6 +260,11 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 try
                 {
                     var xdoc = XDocument.Load(filename);
+                    if (xdoc == null || xdoc.Root == null)
+                    {
+                        Console.WriteLine($"Ignoring invalid project: '{filename}'");
+                        continue;
+                    }
                     var ns = xdoc.Root.Name.Namespace;
 
                     newproj = new Proj();
@@ -294,7 +299,14 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                         newproj.guid = guidelement.Value.ToUpper();
                     }
 
-                    XElement xele = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").FirstOrDefault();
+                    var xeleTestNull = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").FirstOrDefault();
+                    if (xeleTestNull == null)
+                    {
+                        Console.WriteLine($"Ignoring invalid project: '{filename}'");
+                        continue;
+                    }
+                    XElement xele = xeleTestNull;
+
                     newproj.assemblyname = xele?.Value ?? string.Empty;
 
                     newproj.name = Path.GetFileNameWithoutExtension(filename);
@@ -302,10 +314,10 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                     try
                     {
                         newproj.targets =
-                            xdoc.Element(ns + "Project").Elements(ns + "PropertyGroup")
+                            xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup")
                                 .Where(el => el.Attribute("Condition") != null)
-                                .OrderBy(el => GetTarget(el.Attribute("Condition").Value))
-                                .Select(el => GetTarget(el.Attribute("Condition").Value))
+                                .OrderBy(el => GetTarget(el.Attribute("Condition")?.Value ?? string.Empty))
+                                .Select(el => GetTarget(el.Attribute("Condition")?.Value ?? string.Empty))
                                 .ToList();
                     }
                     catch (NullReferenceException)

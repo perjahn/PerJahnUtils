@@ -52,7 +52,7 @@ namespace xpath
 
             xdoc.LoadXml(buf);
 
-            XmlNodeList xlist;
+            XmlNodeList? xlist;
 
             try
             {
@@ -60,13 +60,19 @@ namespace xpath
             }
             catch (System.Xml.XPath.XPathException ex)
             {
-                Console.WriteLine("Invalid XPath: " + ex.Message);
+                Console.WriteLine($"Invalid XPath: {ex.Message}");
+                return 0;
+            }
+
+            if (xlist == null)
+            {
+                Console.WriteLine($"Couldn't find any xml nodes in file: {filename}");
                 return 0;
             }
 
             if (printFilenameIfMatch && xlist.Count > 0)
             {
-                Console.WriteLine("-=-=- " + filename + " -=-=-");
+                Console.WriteLine($"-=-=- {filename} -=-=-");
             }
 
             foreach (XmlNode xnode in xlist)

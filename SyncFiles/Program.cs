@@ -29,9 +29,9 @@ namespace SyncFiles
 
         static bool Run(string[] args)
         {
-            args = ParseOptions(args);
+            var parsedArgs = ParseOptions(args);
 
-            if (args == null || args.Length != 4)
+            if (parsedArgs == null || parsedArgs.Length != 4)
             {
                 string usage =
 @"SyncFiles 1.2
@@ -51,12 +51,12 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
 
             Log($"-=-=- Starting: {DateTime.Now.ToString("yyyyMMdd HHmmss")} -=-=-");
 
-            CopyFiles.SyncFiles(args[0], args[1], args[2], args[3]);
+            CopyFiles.SyncFiles(parsedArgs[0], parsedArgs[1], parsedArgs[2], parsedArgs[3]);
 
             return true;
         }
 
-        static string[] ParseOptions(string[] args)
+        static string[]? ParseOptions(string[] args)
         {
             if (args.Contains("-d"))
             {
@@ -145,7 +145,7 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
             }
             else
             {
-                string envWhatIf = Environment.GetEnvironmentVariable("WhatIf");
+                string? envWhatIf = Environment.GetEnvironmentVariable("WhatIf");
                 CopyFiles.Simulate = string.IsNullOrWhiteSpace(envWhatIf) || envWhatIf == "false" ? false : true;
             }
 
@@ -157,7 +157,7 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
             }
             else
             {
-                string envVerbose = Environment.GetEnvironmentVariable("Verbose");
+                string? envVerbose = Environment.GetEnvironmentVariable("Verbose");
                 LogWriter.Verbose = string.IsNullOrWhiteSpace(envVerbose) || envVerbose == "false" ? false : true;
             }
 
