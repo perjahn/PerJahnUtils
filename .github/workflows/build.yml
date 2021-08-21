@@ -20,12 +20,8 @@ jobs:
       with:
         dotnet-version: 6.0.x
         include-prerelease: true
-    - name: Pre Build
-      run: pwsh ./prebuild.ps1
-    - name: Build with dotnet
-      run: dotnet build all.build -c Release
-    - name: Post Build
-      run: pwsh ./postbuild.ps1
+    - name: Build
+      run: ./build.sh
     - uses: actions/upload-artifact@v1
       with:
         name: PerJahnUtils
