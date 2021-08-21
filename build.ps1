@@ -1,8 +1,10 @@
+#!/usr/bin/pwsh
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
-
 function Main() {
     [Diagnostics.Stopwatch] $watch = [Diagnostics.Stopwatch]::StartNew()
+
+    ./buildnative.ps1
 
     ./prebuild.ps1
 

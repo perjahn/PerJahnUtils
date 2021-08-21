@@ -1,3 +1,4 @@
+#!/usr/bin/pwsh
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
 

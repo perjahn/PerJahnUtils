@@ -1,3 +1,4 @@
+#!/usr/bin/pwsh
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
 
@@ -51,7 +52,34 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder) {
         move $source $artifactfolder
     }
 
+    Gather-Native $artifactfolder
+
     Write-Host "Done moving."
+}
+
+function Gather-Native([string] $artifactfolder) {
+    [string[]] $sourcefiles = @()
+
+    [string[]] $cfiles += @(dir -r -file "*.c" | % { $_.FullName })
+    Write-Host "Found $($cfiles.Count) C files." -f Green
+    $sourcefiles += $cfiles
+
+    [string[]] $cppfiles += @(dir -r -file "*.cpp" | % { $_.FullName } | ? { !(grep windows $_) })
+    Write-Host "Found $($cppfiles.Count) C++ files." -f Green
+    $sourcefiles += $cppfiles
+
+    $sourcefiles | % {
+        [string] $sourcefile = $_
+        [string] $folder = Split-Path $sourcefile
+        [string] $outfile = (Join-Path $folder ([IO.Path]::GetFileNameWithoutExtension($sourcefile))).Substring((pwd).Path.Length + 1)
+        if (Test-Path $outfile) {
+            Write-Host "Moving outfile: '$outfile' -> '$artifactfolder'" -f Green
+            move $outfile $artifactfolder
+        }
+        else {
+            Write-Host "Outfile not found: '$outfile'" -f Yellow
+        }
+    }
 }
 
 function Compress-Artifacts([string] $artifactfolder) {
