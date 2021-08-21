@@ -7,10 +7,6 @@
 
 //**********************************************************
 
-#ifdef _DEBUG
-void RemoveEvilVsJunk(char* szText);
-#endif
-
 size_t Expand(char* in, unsigned char* out);
 void ProcessFile(char* szInFile, char* szOutFile,
 	char unsigned* find1, size_t findsize1,
@@ -25,7 +21,7 @@ unsigned char find1[10000], find2[10000];
 int main(int argc, char* argv[])
 {
 	char* usage =
-		(char*)"cutstring 1.3\n"
+		(char*)"cutstring 1.4\n"
 		"\n"
 		"Usage: cutstring [-h] <infile> <outfile> <start search> <end search>\n"
 		"\n"
@@ -62,13 +58,7 @@ int main(int argc, char* argv[])
 
 	if (p1 && p2 && p3 && p4)
 	{
-#ifdef _DEBUG
-		RemoveEvilVsJunk(p3);
-		RemoveEvilVsJunk(p4);
-#endif
-
 		size_t findsize1, findsize2;
-
 
 		if (escape_hex)
 		{
@@ -87,40 +77,11 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		printf(usage);
+		printf("%s", usage);
 	}
 
 	return 0;
 }
-
-//**********************************************************
-// Remove evil Visual Studio junk inserted into debug params
-
-#ifdef _DEBUG
-void RemoveEvilVsJunk(char* text)
-{
-	char* junk = (char*)" xmlns=http://schemas.microsoft.com/developer/msbuild/2003";
-	size_t textsize = strlen(text);
-	size_t junksize = strlen(junk);
-
-	char* p1, * p2;
-	p1 = p2 = text;
-	while (*p1)
-	{
-		if (p1 <= text + textsize - junksize && !memcmp(p1, junk, junksize))
-		{
-			p1 += junksize;
-		}
-		else
-		{
-			*p2 = *p1;
-			p1++;
-			p2++;
-		}
-	}
-	*p2 = 0;
-}
-#endif
 
 //**********************************************************
 
@@ -225,7 +186,7 @@ void ProcessFile(char* szInFile, char* szOutFile,
 			fwrite(p1 + findsize1, p2 - p1 - findsize1, 1, fh);
 			fclose(fh);
 
-			printf("'%s': Wrote %lld bytes: %lld to %lld\n", filename, p2 - p1 - findsize1, p1 - buf + findsize1, p2 - buf);
+			printf("'%s': Wrote %ld bytes: %ld to %ld\n", filename, p2 - p1 - findsize1, p1 - buf + findsize1, p2 - buf);
 
 			i++;
 			p1 = p2 = NULL;
