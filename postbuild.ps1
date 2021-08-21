@@ -32,7 +32,7 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder) {
 
     [string[]] $publishfolders = @(dir -Recurse -Directory publish | % { $_.FullName.Substring((pwd).Path.Length + 1) })
 
-    Write-Host "Found $($publishfolders.Count) publis folders."
+    Write-Host "Found $($publishfolders.Count) publish folders."
 
     [string[]] $binfiles = @($publishfolders | % { dir -File $_ | % { $_.FullName.Substring((pwd).Path.Length + 1) } })
 
@@ -60,6 +60,10 @@ function Compress-Artifacts([string] $artifactfolder) {
         Set-Alias zip $sevenzippath
     }
     else {
+        if (!(Get-Command "7z" -ErrorAction SilentlyContinue)) {
+            apt-get update
+            apt-get -y install p7zip-full
+        }
         Set-Alias zip 7z
     }
 

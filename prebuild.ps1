@@ -10,7 +10,7 @@ function Main() {
 }
 
 function Clean() {
-    [string[]] $filter = "obj", "bin", "Debug", "Release", ".vs", "x64", "packages"
+    [string[]] $filter = "obj", "bin", "Debug", "Release", ".vs", ".vscode", "x64", "packages"
 
     [string[]] $folders = @(dir -Recurse -Force $filter -Directory | % { $_.FullName.Substring((pwd).Path.Length + 1) })
     $folders | % {
@@ -31,7 +31,7 @@ function Generate-BuildFile([string] $buildfile) {
     [string[]] $slnfiles = @(dir -Recurse "*.sln" -File | % { $_.FullName })
 
     if (Test-Path "C:\Windows") {
-        [string[]] $slnfiles = @($slnfiles | ? { Test-Path ([IO.Path]::ChangeExtension($_.FullName, ".vcxproj")) })
+        [string[]] $slnfiles = @($slnfiles | ? { Test-Path ([IO.Path]::ChangeExtension($_, ".vcxproj")) })
     }
     else {
         [string[]] $slnfiles = @($slnfiles | ? {
@@ -61,6 +61,9 @@ function Generate-BuildFile([string] $buildfile) {
     $xml += '    <MSBuild Targets="Restore;Build;Publish" Projects="' + ($slnfiles -join ";") + '" Properties="Configuration=Release;Runtime=win-x64" ContinueOnError="true" BuildInParallel="true" />'
     $xml += '  </Target>'
     $xml += '</Project>'
+
+    Write-Host -n "Dotnet version: "
+    dotnet --version
 
     Write-Host "Saving generated build file: '$buildfile'"
     Set-Content $buildfile $xml

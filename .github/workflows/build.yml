@@ -1,10 +1,12 @@
-name: .NET Core
+name: Build
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -13,10 +15,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core
+    - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.102
+        dotnet-version: 6.0.x
+        include-prerelease: true
     - name: Pre Build
       run: pwsh ./prebuild.ps1
     - name: Build with dotnet
