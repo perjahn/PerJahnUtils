@@ -7,10 +7,10 @@
 
 //**********************************************************
 
-size_t Expand(char* in, unsigned char* out);
-void ProcessFile(char* szInFile, char* szOutFile,
-	char unsigned* find1, size_t findsize1,
-	char unsigned* find2, size_t findsize2);
+size_t Expand(char *in, unsigned char *out);
+void ProcessFile(char *szInFile, char *szOutFile,
+				 char unsigned *find1, size_t findsize1,
+				 char unsigned *find2, size_t findsize2);
 
 //**********************************************************
 
@@ -18,17 +18,17 @@ unsigned char find1[10000], find2[10000];
 
 //**********************************************************
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-	char* usage =
-		(char*)"cutstring 1.4\n"
-		"\n"
-		"Usage: cutstring [-h] <infile> <outfile> <start search> <end search>\n"
-		"\n"
-		"-h: Escape ascii values, hex (\\hh).\n"
-		"    \\0A -> line feed.\n"
-		"    \\0D -> carriage return.\n"
-		"    \\00 -> null.\n";
+	char *usage =
+		(char *)"cutstring 1.4\n"
+				"\n"
+				"Usage: cutstring [-h] <infile> <outfile> <start search> <end search>\n"
+				"\n"
+				"-h: Escape ascii values, hex (\\hh).\n"
+				"    \\0A -> line feed.\n"
+				"    \\0D -> carriage return.\n"
+				"    \\00 -> null.\n";
 
 	bool escape_hex = false;
 
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	char* p1, * p2, * p3, * p4;
+	char *p1, *p2, *p3, *p4;
 	p1 = p2 = p3 = p4 = NULL;
 
 	if (arg == argc - 4)
@@ -68,9 +68,9 @@ int main(int argc, char* argv[])
 		else
 		{
 			findsize1 = strlen(p3);
-			strcpy((char*)find1, p3);
+			strcpy((char *)find1, p3);
 			findsize2 = strlen(p4);
-			strcpy((char*)find2, p4);
+			strcpy((char *)find2, p4);
 		}
 
 		ProcessFile(p1, p2, find1, findsize1, find2, findsize2);
@@ -85,10 +85,10 @@ int main(int argc, char* argv[])
 
 //**********************************************************
 
-size_t Expand(char* in, unsigned char* out)
+size_t Expand(char *in, unsigned char *out)
 {
-	char* p1;
-	unsigned char* p2;
+	char *p1;
+	unsigned char *p2;
 	size_t size;
 	unsigned char buf[3];
 
@@ -100,7 +100,7 @@ size_t Expand(char* in, unsigned char* out)
 		{
 			buf[0] = *(p1 + 1);
 			buf[1] = *(p1 + 2);
-			*p2 = (unsigned char)strtol((char*)buf, NULL, 16);
+			*p2 = (unsigned char)strtol((char *)buf, NULL, 16);
 			p1 += 2;
 		}
 		else
@@ -116,11 +116,11 @@ size_t Expand(char* in, unsigned char* out)
 
 //**********************************************************
 
-void ProcessFile(char* szInFile, char* szOutFile,
-	char unsigned* find1, size_t findsize1,
-	char unsigned* find2, size_t findsize2)
+void ProcessFile(char *szInFile, char *szOutFile,
+				 char unsigned *find1, size_t findsize1,
+				 char unsigned *find2, size_t findsize2)
 {
-	FILE* fh;
+	FILE *fh;
 
 	if (!(fh = fopen(szInFile, "rb")))
 	{
@@ -131,7 +131,7 @@ void ProcessFile(char* szInFile, char* szOutFile,
 	fseek(fh, 0, SEEK_END);
 	int size = ftell(fh);
 
-	unsigned char* buf = new unsigned char[size];
+	unsigned char *buf = new unsigned char[size];
 	if (!buf)
 	{
 		printf("Out of memory (%u bytes).\n", size);
@@ -142,11 +142,11 @@ void ProcessFile(char* szInFile, char* szOutFile,
 	fread(buf, size, 1, fh);
 	fclose(fh);
 
-	unsigned char* p1, * p2;
+	unsigned char *p1, *p2;
 	int i = 0;
 	p1 = p2 = NULL;
 
-	for (unsigned char* p = buf; p < buf + size; p++)
+	for (unsigned char *p = buf; p < buf + size; p++)
 	{
 		if (p1 == NULL && p <= buf + size - findsize1)
 		{
