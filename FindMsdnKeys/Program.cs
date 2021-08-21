@@ -5,7 +5,7 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace AggregateMsdnKeys
+namespace FindMsdnKeys
 {
     class Program
     {
