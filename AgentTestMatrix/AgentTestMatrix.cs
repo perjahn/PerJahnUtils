@@ -5,28 +5,32 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Text.Unicode;
+using System.Threading.Tasks;
 
 class AgentTestMatrix
 {
     class Test
     {
-        public string Agentname { get; set; }
-        public string Buildid { get; set; }
-        public string Testname { get; set; }
-        public string Status { get; set; }
+        public string Agentname { get; set; } = string.Empty;
+        public string Buildid { get; set; } = string.Empty;
+        public string Testname { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public bool? Muted { get; set; }
-        public string Buildstart { get; set; }
+        public string Buildstart { get; set; } = string.Empty;
     }
 
-    static int Main(string[] args)
+    static async Task<int> Main(string[] args)
     {
         int result = 0;
         if (args.Length != 1)
         {
             Console.WriteLine(
-@"AgentTestMatrix 1.0 - For each build agent, retrieves the latest test result, shows all failing tests in matrix.
+@"AgentTestMatrix 1.1 - For each build agent, retrieves the latest test result, shows all failing tests in matrix.
 
 Usage: AgentTestMatrix.exe <outfile>
 
@@ -49,7 +53,7 @@ TestDebug");
         {
             try
             {
-                WriteTests(args[0]);
+                await WriteTests(args[0]);
             }
             catch (ApplicationException ex)
             {
@@ -72,18 +76,18 @@ TestDebug");
         return result;
     }
 
-    static void WriteTests(string outfile)
+    static async Task WriteTests(string outfile)
     {
         string server = GetServer();
         string buildconfig = GetBuildconfig();
         bool excludeMuted = GetExcludeMuted();
-        string[] excludeAgents = GetExcludeAgents();
+        string[]? excludeAgents = GetExcludeAgents();
 
-        GetCredentials(out string username, out string password);
+        GetCredentials(out string? username, out string? password);
 
         GetAgentPrefixes(out string[] prefixFrom, out string[] prefixTo);
 
-        List<Test> tests = GetTests(server, username, password, buildconfig);
+        List<Test> tests = await GetTests(server, username, password, buildconfig);
 
         if (excludeAgents != null)
         {
@@ -124,7 +128,7 @@ TestDebug");
 
     static string GetServer()
     {
-        string server = Environment.GetEnvironmentVariable("TestServer");
+        string? server = Environment.GetEnvironmentVariable("TestServer");
 
         if (server != null)
         {
@@ -159,7 +163,7 @@ TestDebug");
 
     static string GetBuildconfig()
     {
-        string buildconfig = Environment.GetEnvironmentVariable("TestBuildconfig");
+        string? buildconfig = Environment.GetEnvironmentVariable("TestBuildconfig");
 
         if (buildconfig != null)
         {
@@ -187,7 +191,7 @@ TestDebug");
 
     static bool GetExcludeMuted()
     {
-        string excludeMuted = Environment.GetEnvironmentVariable("TestExcludeMuted");
+        string? excludeMuted = Environment.GetEnvironmentVariable("TestExcludeMuted");
 
         if (excludeMuted != null)
         {
@@ -201,9 +205,9 @@ TestDebug");
         return !string.IsNullOrEmpty(excludeMuted);
     }
 
-    static string[] GetExcludeAgents()
+    static string[]? GetExcludeAgents()
     {
-        string excludeAgents = Environment.GetEnvironmentVariable("TestExcludeAgents");
+        string? excludeAgents = Environment.GetEnvironmentVariable("TestExcludeAgents");
 
         if (excludeAgents != null)
         {
@@ -218,7 +222,7 @@ TestDebug");
         return null;
     }
 
-    static void GetCredentials(out string username, out string password)
+    static void GetCredentials(out string? username, out string? password)
     {
         username = Environment.GetEnvironmentVariable("TestUsername");
         password = Environment.GetEnvironmentVariable("TestPassword");
@@ -260,8 +264,8 @@ TestDebug");
 
     static void GetAgentPrefixes(out string[] prefixesFrom, out string[] prefixesTo)
     {
-        string testAgentPrefixFrom = Environment.GetEnvironmentVariable("TestAgentPrefixFrom");
-        string testAgentPrefixTo = Environment.GetEnvironmentVariable("TestAgentPrefixTo");
+        string? testAgentPrefixFrom = Environment.GetEnvironmentVariable("TestAgentPrefixFrom");
+        string? testAgentPrefixTo = Environment.GetEnvironmentVariable("TestAgentPrefixTo");
 
         if (testAgentPrefixFrom == null || testAgentPrefixTo == null)
         {
@@ -285,7 +289,7 @@ TestDebug");
 
     static Dictionary<string, string> GetTeamcityBuildVariables()
     {
-        string buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
+        string? buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
         if (string.IsNullOrEmpty(buildpropfile))
         {
             Log("Couldn't find Teamcity build properties file.");
@@ -312,7 +316,7 @@ TestDebug");
 
     static Dictionary<string, string> GetTeamcityConfigVariables()
     {
-        string buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
+        string? buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
         if (string.IsNullOrEmpty(buildpropfile))
         {
             Log("Couldn't find Teamcity build properties file.");
@@ -377,57 +381,65 @@ TestDebug");
         return dic;
     }
 
-    static List<Test> GetTests(string server, string username, string password, string buildconfig)
+    static async Task<List<Test>> GetTests(string server, string? username, string? password, string buildconfig)
     {
         List<Test> tests = new List<Test>();
 
-        using (WebClient client = new WebClient())
+        using var client = new HttpClient();
+
+        if (username != null && password != null)
         {
-            if (username != null && password != null)
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+        }
+
+        string address = $"{server}/app/rest/builds?locator=buildType:{buildconfig}";
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+        dynamic builds = DownloadJsonContent(client, address, "TestDebug1.txt");
+
+        foreach (JProperty property in builds)
+        {
+            if (property?.First?.Type == JTokenType.Array)
             {
-                string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
-                client.Headers[HttpRequestHeader.Authorization] = $"Basic {credentials}";
-            }
-
-            string address = $"{server}/app/rest/builds?locator=buildType:{buildconfig}";
-            client.Headers["Accept"] = "application/json";
-
-            dynamic builds = DownloadJsonContent(client, address, "TestDebug1.txt");
-
-            foreach (JProperty property in builds)
-            {
-                if (property.First.Type == JTokenType.Array)
+                foreach (dynamic build in property.First)
                 {
-                    foreach (dynamic build in property.First)
+                    string buildhref = build.href;
+
+                    address = $"{server}{buildhref}";
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+                    JObject buildresult = await DownloadJsonContent(client, address, "TestDebug2.txt");
+
+                    var agentname = buildresult["agent"]?["name"]?.Value<string>();
+
+                    if (agentname != null && buildresult != null && buildresult["testOccurrences"] != null && buildresult["testOccurrences"]?["href"] != null)
                     {
-                        string buildhref = build.href;
-
-                        address = $"{server}{buildhref}";
-                        client.Headers["Accept"] = "application/json";
-
-                        dynamic buildresult = DownloadJsonContent(client, address, "TestDebug2.txt");
-
-                        string agentname = buildresult.agent.name;
-
-                        if (buildresult != null && buildresult.testOccurrences != null && buildresult.testOccurrences.href != null)
+                        var testhref = buildresult["testOccurrences"]?["href"];
+                        if (testhref == null)
                         {
-                            string testhref = buildresult.testOccurrences.href;
+                            Log("Invalid href.");
+                            continue;
+                        }
 
-                            address = $"{server}{testhref},count:10000";
-                            client.Headers["Accept"] = "application/json";
+                        address = $"{server}{testhref},count:10000";
+                        client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-                            dynamic testresults = DownloadJsonContent(client, address, "TestDebug3.txt");
+                        JObject testresults = await DownloadJsonContent(client, address, "TestDebug3.txt");
 
-                            foreach (dynamic testOccurrence in testresults.testOccurrence)
+                        var testOccurrences = testresults["testOccurrence"];
+                        if (testOccurrences != null)
+                        {
+                            foreach (JObject testOccurrence in testOccurrences)
                             {
                                 tests.Add(new Test
                                 {
                                     Agentname = agentname,
-                                    Buildid = buildresult.id,
-                                    Testname = testOccurrence.name,
-                                    Status = testOccurrence.status,
-                                    Muted = testOccurrence.muted,
-                                    Buildstart = buildresult.startDate
+                                    Buildid = buildresult["id"]?.Value<string>() ?? string.Empty,
+                                    Testname = testOccurrence["name"]?.Value<string>() ?? string.Empty,
+                                    Status = testOccurrence["status"]?.Value<string>() ?? string.Empty,
+                                    Muted = testOccurrence["muted"]?.Value<bool>(),
+                                    Buildstart = buildresult["startDate"]?.Value<string>() ?? string.Empty
                                 });
                             }
                         }
@@ -441,12 +453,12 @@ TestDebug");
 
     static Dictionary<string, bool> writtenLogs = new Dictionary<string, bool>();
 
-    static JObject DownloadJsonContent(WebClient client, string address, string debugFilename)
+    static async Task<JObject> DownloadJsonContent(HttpClient client, string address, string debugFilename)
     {
         Log($"Address: '{address}'");
         try
         {
-            string content = client.DownloadString(address);
+            var content = await client.GetStringAsync(address);
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
             {
                 if (!writtenLogs.ContainsKey(debugFilename))
@@ -702,5 +714,3 @@ td {
         Console.WriteLine($"{hostname}: {message}");
     }
 }
-
-//return Program.Main(Environment.GetCommandLineArgs().Skip(2).ToArray());

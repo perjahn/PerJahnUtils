@@ -38,7 +38,7 @@ namespace sha512
 
         public static string GetHashString(byte[] buf, bool useBase64)
         {
-            using var crypto = new SHA512Managed();
+            using var crypto = SHA512.Create();
             return useBase64 ?
                 Convert.ToBase64String(crypto.ComputeHash(buf)):
                 string.Concat(crypto.ComputeHash(buf).Select(b => b.ToString("x2")));

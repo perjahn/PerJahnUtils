@@ -3,13 +3,16 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace GetElasticSize
 {
     class Program
     {
-        static int Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
             if (args.Length != 3)
             {
@@ -21,37 +24,35 @@ namespace GetElasticSize
             string username = args[1];
             string password = args[2];
 
-            GetSize(serverurl, username, password);
+            await GetSize(serverurl, username, password);
 
             return 0;
         }
 
-        private static void GetSize(string serverurl, string username, string password)
+        private static async Task GetSize(string serverurl, string username, string password)
         {
-            using (WebClient client = new WebClient())
+            using var client = new HttpClient();
+
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+
+            string address = $"{serverurl}/_cat/indices?pretty";
+
+            Log($"'{address}'");
+
+            string result = await client.GetStringAsync(address);
+
+            JArray indices = JArray.Parse(result);
+
+            int maxlength = indices.Max(i => i["index"]?.Value<string>()?.Length ?? 0);
+
+            foreach (JToken index in indices.OrderBy(i => -GetSizeFromPrefix(i["store.size"]?.Value<string>() ?? string.Empty)))
             {
-                string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
-                client.Headers[HttpRequestHeader.Authorization] = $"Basic {credentials}";
-
-                client.Headers["Accept"] = "application/json";
-                client.Encoding = Encoding.UTF8;
-
-
-                string address = $"{serverurl}/_cat/indices?pretty";
-
-                Log($"'{address}'");
-
-                string result = client.DownloadString(address);
-
-                JArray indices = JArray.Parse(result);
-
-                int maxlength = indices.Max(i => i["index"].ToString().Length);
-
-                foreach (JToken index in indices.OrderBy(i => -GetSizeFromPrefix(i["store.size"].ToString())))
-                {
-                    string separator = $"  {new string(' ', maxlength - index["index"].ToString().Length)}";
-                    Console.WriteLine($"{index["index"]}{separator}{index["store.size"]}");
-                }
+                string separator = $"  {new string(' ', maxlength - index["index"]?.Value<string>()?.Length ?? 0)}";
+                Console.WriteLine($"{index["index"]}{separator}{index["store.size"]}");
             }
         }
 
