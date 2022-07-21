@@ -1,4 +1,4 @@
-#!/usr/bin/pwsh
+#!/usr/bin/env pwsh
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
 
@@ -59,7 +59,7 @@ function Generate-BuildFile([string] $buildfile) {
     [string[]] $xml = @()
     $xml += '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'
     $xml += '  <Target Name="Build">'
-    $xml += '    <MSBuild Targets="Restore;Build;Publish" Projects="' + ($slnfiles -join ";") + '" Properties="Configuration=Release;Runtime=win-x64" ContinueOnError="true" BuildInParallel="true" />'
+    $xml += '    <MSBuild Targets="Restore;Build;Publish" Projects="' + ($slnfiles -join ";") + '" Properties="Configuration=Release;Runtime=linux-x64" ContinueOnError="true" BuildInParallel="true" />'
     $xml += '  </Target>'
     $xml += '</Project>'
 

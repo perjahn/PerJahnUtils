@@ -1,6 +1,7 @@
-#!/usr/bin/pwsh
+#!/usr/bin/env pwsh
 Set-StrictMode -v latest
 $ErrorActionPreference = "Stop"
+
 function Main() {
     [Diagnostics.Stopwatch] $watch = [Diagnostics.Stopwatch]::StartNew()
 
