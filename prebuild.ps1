@@ -47,7 +47,6 @@ function Generate-BuildFile([string] $buildfile) {
                 Write-Host "Excluding old C# project: '$($filename.Substring((pwd).Path.Length + 1))'" -f Yellow
                 return $false
             }
-
             return $true
         })
     }
@@ -68,6 +67,11 @@ function Generate-BuildFile([string] $buildfile) {
 
     Write-Host "Saving generated build file: '$buildfile'"
     Set-Content $buildfile $xml
+
+    $projectfiles = dir -r -file *.csproj
+    foreach ($projectfile in $projectfiles) {
+        sed -i "s/net7.0/net8.0/g" $projectfile
+    }
 }
 
 Main

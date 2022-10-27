@@ -5,16 +5,6 @@ $ErrorActionPreference = "Stop"
 # Build C/C++ applications
 
 function Main() {
-    Setup-Environment
-    Build
-}
-
-function Setup-Environment() {
-    apt-get update
-    apt-get -y install clang
-}
-
-function Build() {
     [string[]] $sourcefiles = @()
 
     [string[]] $cfiles = @(dir -r -file "*.c" | % { $_.FullName })

@@ -46,7 +46,25 @@ namespace mailer
 
                 Console.WriteLine($"Using: to: '{to}' from: '{from}' subject: '{subject}' body: '{body}' smtpserver: '{smtpServer}' filename: '{filename}'");
 
-                SmtpClient smtpClient = new SmtpClient(smtpServer);
+                SmtpClient smtpClient;
+                int separator = smtpServer.IndexOf(':');
+                if (separator < 0)
+                {
+                    smtpClient = new SmtpClient(smtpServer);
+                }
+                else
+                {
+                    var s = smtpServer.Substring(separator + 1);
+                    if (int.TryParse(s, out int port))
+                    {
+                        smtpClient = new SmtpClient(smtpServer.Substring(0, separator), port);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Invalid port: '{s}'");
+                        return;
+                    }
+                }
 
                 if (username != null && password != null)
                 {
@@ -54,6 +72,7 @@ namespace mailer
                 }
 
                 MailMessage message = new MailMessage(from, to, subject, body);
+                smtpClient.EnableSsl = true;
 
                 if (filename != null)
                 {

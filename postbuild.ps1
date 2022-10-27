@@ -10,7 +10,7 @@ function Main() {
         [string] $buildconfig = "Release"
     }
 
-    [string] $artifactfolder = "PerJahnUtils"
+    [string] $artifactfolder = "perjahnutils"
 
     Gather-Artifacts $buildconfig $artifactfolder
 
@@ -88,14 +88,10 @@ function Compress-Artifacts([string] $artifactfolder) {
         Set-Alias zip $sevenzippath
     }
     else {
-        if (!(Get-Command "7z" -ErrorAction SilentlyContinue)) {
-            apt-get update
-            apt-get -y install p7zip-full
-        }
         Set-Alias zip 7z
     }
 
-    [string] $outfile = "PerJahnUtils.7z"
+    [string] $outfile = "perjahnutils.7z"
     if (Test-Path $outfile) {
         Write-Host "Deleting old archive file: '$outfile'"
         del $outfile
