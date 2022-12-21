@@ -13,6 +13,10 @@ RUN releasesurl='https://api.github.com/repos/PowerShell/PowerShell/releases/lat
     architecture=$(dpkg --print-architecture) && \
     if [ $architecture = "amd64" ]; then architecture='x64'; fi && \
     jqpattern='.assets[] | select(.name|test("powershell-[0-9\\.]+-linux-'$architecture'\\.tar\\.gz")) | .browser_download_url' && \
+    echo "Releasesurl: '$releasesurl'" && \
+    echo "Architecture: '$architecture'" && \
+    echo "Jqpattern: '$jqpattern'" && \
+    curl -s "$releasesurl" && \
     asseturl=$(curl -s "$releasesurl" | jq "$jqpattern" -r) && \
     filename='/tmp/powershell.tar.gz' && \
     echo "Downloading: '$asseturl' -> '$filename'" && \
