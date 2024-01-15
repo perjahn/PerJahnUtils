@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 
-namespace ExportDateTable
+namespace ExportDataTable
 {
     class Program
     {

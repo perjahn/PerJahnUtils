@@ -4,7 +4,7 @@ using System.Data;
 using System.Linq;
 using MySql.Data.MySqlClient;
 
-namespace ExportDateTable
+namespace ExportDataTable
 {
     public class Db : IDisposable
     {
