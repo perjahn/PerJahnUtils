@@ -1,10 +1,9 @@
 ﻿// todo: Add namespace support
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Xml;
+using System.Xml.XPath;
 
 namespace xpath
 {
@@ -23,30 +22,21 @@ namespace xpath
                 return 0;
             }
 
-            if (args.Length == 2)
-            {
-                return Parse(args[0], args[1], false);
-            }
-            else
-            {
-                return Parse(args[1], args[2], true);
-            }
+            return args.Length == 2 ? Parse(args[0], args[1], false) : Parse(args[1], args[2], true);
         }
 
         static int Parse(string xpath, string filename, bool printFilenameIfMatch)
         {
-            XmlDocument xdoc = new XmlDocument();
+            XmlDocument xdoc = new();
 
             string buf;
-            using (System.IO.StreamReader sr = new System.IO.StreamReader(filename))
-            {
-                buf = sr.ReadToEnd();
-            }
+            using StreamReader sr = new(filename);
+            buf = sr.ReadToEnd();
 
             if (buf.StartsWith("<!DOCTYPE"))
             {
-                int pos = buf.IndexOf('>');
-                buf = buf.Substring(pos + 1).Trim();
+                var pos = buf.IndexOf('>');
+                buf = buf[(pos + 1)..].Trim();
             }
             buf = buf.Replace("&reg;", "");
 
@@ -58,7 +48,7 @@ namespace xpath
             {
                 xlist = xdoc.SelectNodes(xpath);
             }
-            catch (System.Xml.XPath.XPathException ex)
+            catch (XPathException ex)
             {
                 Console.WriteLine($"Invalid XPath: {ex.Message}");
                 return 0;
@@ -75,7 +65,7 @@ namespace xpath
                 Console.WriteLine($"-=-=- {filename} -=-=-");
             }
 
-            foreach (XmlNode xnode in xlist)
+            foreach (var xnode in xlist)
             {
                 if (xnode is XmlElement xele)
                 {

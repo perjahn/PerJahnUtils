@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace ProjFix
 {
@@ -21,12 +19,16 @@ namespace ProjFix
                 return;
             }
 
-            int pos1 = s.LastIndexOf('\\') + 1;
-            int pos2 = s.LastIndexOf('.');
+            var pos1 = s.LastIndexOf('\\') + 1;
+            var pos2 = s.LastIndexOf('.');
             if (pos1 == -1 || pos2 == -1 || pos1 > pos2)
+            {
                 WriteLineDeferredColor(s, 0, 0, ConsoleColor.Green);
+            }
             else
+            {
                 WriteLineDeferredColor(s, pos1, pos2 - pos1, ConsoleColor.White);
+            }
         }
 
         private static void WriteLineDeferredColor(string s, int coloroffset, int colorlength, ConsoleColor color)
@@ -46,7 +48,7 @@ namespace ProjFix
 
             if (_deferredline != null)
             {
-                ColorWriteDeferred(_deferredcolor, _deferredline, _deferredcoloroffset, _deferredcolorlength);
+                ColorWriteDeferred();
             }
 
             Console.WriteLine(s);
@@ -56,10 +58,10 @@ namespace ProjFix
         {
             if (_deferredline != null)
             {
-                ColorWriteDeferred(_deferredcolor, _deferredline, _deferredcoloroffset, _deferredcolorlength);
+                ColorWriteDeferred();
             }
 
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;
@@ -71,14 +73,14 @@ namespace ProjFix
             }
         }
 
-        private static void ColorWriteDeferred(ConsoleColor color, string s, int coloroffset, int colorlength)
+        private static void ColorWriteDeferred()
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
-                string s1 = _deferredline.Substring(0, _deferredcoloroffset);
-                string s2 = _deferredline.Substring(_deferredcoloroffset, _deferredcolorlength);
-                string s3 = _deferredline.Substring(_deferredcoloroffset + _deferredcolorlength);
+                var s1 = _deferredline[.._deferredcoloroffset];
+                var s2 = _deferredline.Substring(_deferredcoloroffset, _deferredcolorlength);
+                var s3 = _deferredline[(_deferredcoloroffset + _deferredcolorlength)..];
 
                 Console.Write(s1);
                 Console.ForegroundColor = _deferredcolor;

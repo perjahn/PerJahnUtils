@@ -35,7 +35,7 @@ namespace Patcher
         [DllImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool AdjustTokenPrivileges(IntPtr TokenHandle,
-            [MarshalAs(UnmanagedType.Bool)]bool DisableAllPrivileges,
+            [MarshalAs(UnmanagedType.Bool)] bool DisableAllPrivileges,
             ref TOKEN_PRIVILEGES NewState,
             UInt32 BufferLength,
             IntPtr PreviousState,
@@ -78,8 +78,6 @@ namespace Patcher
             while (updates.Count() > 0);
 
             Log("Done!");
-
-            return;
         }
 
         private void Log(string message)
@@ -94,7 +92,7 @@ namespace Patcher
 
             Log($"Found {manager.Services.Count} update services.");
 
-            List<IUpdate5> updates = new List<IUpdate5>();
+            List<IUpdate5> updates = [];
             foreach (IUpdateService2 service in manager.Services)
             {
                 Log($"Retrieving patches from: {service.Name}");
@@ -131,7 +129,7 @@ namespace Patcher
 
         private void PrintStats(List<IUpdate5> updates)
         {
-            string printsize = GetPrintSize(updates.Sum(u => u.MaxDownloadSize));
+            var printsize = GetPrintSize(updates.Sum(u => u.MaxDownloadSize));
 
             Log($"Total unique updates: {updates.Count}: {printsize} MB.");
         }
@@ -156,8 +154,7 @@ namespace Patcher
                     continue;
                 }
 
-
-                UpdateCollection updateCollection = new UpdateCollection();
+                UpdateCollection updateCollection = new();
                 updateCollection.Add(update);
 
                 UpdateDownloader downloader = session.CreateUpdateDownloader();
@@ -195,7 +192,7 @@ namespace Patcher
         {
             Log($"Installing {updates.Count} patches...");
 
-            bool reboot = false;
+            var reboot = false;
 
             foreach (IUpdate5 update in updates.OrderBy(u => u.Title))
             {
@@ -214,7 +211,7 @@ namespace Patcher
                     {
                         Log($"Installing: {update.Title}");
 
-                        UpdateCollection updateCollection = new UpdateCollection();
+                        UpdateCollection updateCollection = new();
                         updateCollection.Add(update);
 
                         IUpdateInstaller installer = session.CreateUpdateInstaller();
@@ -251,7 +248,7 @@ namespace Patcher
                 OpenProcessToken(Process.GetCurrentProcess().Handle, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, out hToken);
                 tkp.PrivilegeCount = 1;
                 tkp.Privileges.Attributes = SE_PRIVILEGE_ENABLED;
-                LookupPrivilegeValue("", SE_SHUTDOWN_NAME, out tkp.Privileges.pLuid);
+                LookupPrivilegeValue(string.Empty, SE_SHUTDOWN_NAME, out tkp.Privileges.pLuid);
                 AdjustTokenPrivileges(hToken, false, ref tkp, 0U, IntPtr.Zero, IntPtr.Zero);
 
                 if (!ExitWindowsEx(6, 0))
@@ -268,10 +265,8 @@ namespace Patcher
 
         private bool CheckIfLocalMachineKeyExists(string regpath)
         {
-            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(regpath))
-            {
-                return key != null;
-            }
+            using var key = Registry.LocalMachine.OpenSubKey(regpath);
+            return key != null;
         }
     }
 }

@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
@@ -13,11 +14,11 @@ namespace CleanDiffJson
         static bool _SortChildren, _WinDiff, _DontDiffIfEqual;
         static bool _VerboseLogging;
 
-        static List<string> _searchPaths = new List<string>();
+        static List<string> _searchPaths = [];
 
         static int Main(string[] args)
         {
-            string usage =
+            var usage =
                 @"CleanDiffJson 0.3 - Compare normalized json files
 
 Usage: CleanDiffJson [flags] <filename1> <filename2>
@@ -28,14 +29,13 @@ Optional flags:
 -DontDiffIfEqual   - Only start WinDiff if different.
 -Log               - Verbose logging.";
 
-
             if (args.Length < 2)
             {
                 Console.WriteLine(usage);
                 return -1;
             }
 
-            for (int arg = 0; arg < args.Length - 2; arg++)
+            for (var arg = 0; arg < args.Length - 2; arg++)
             {
                 if (!CheckArg(args[arg]))
                 {
@@ -44,47 +44,44 @@ Optional flags:
                 }
             }
 
-            string file1 = args[args.Length - 2];
-            string file2 = args[args.Length - 1];
+            var file1 = args[^2];
+            var file2 = args[^1];
             SetFlags(args, args.Length - 1);
 
-            string windiffpath = FindWinDiff();
+            var windiffpath = FindWinDiff();
             if (windiffpath == null)
             {
                 Console.WriteLine("Couldn't find windiff.exe, the following paths was searched:" + Environment.NewLine +
-                    "'" + string.Join("'" + Environment.NewLine + "'", _searchPaths.ToArray()) + "'");
+                    "'" + string.Join("'" + Environment.NewLine + "'", _searchPaths) + "'");
                 return -1;
             }
 
             Console.WriteLine($"Using windiff: '{windiffpath}'");
 
-            bool result = DiffJson(windiffpath, file1, file2);
+            var result = DiffJson(windiffpath, file1, file2);
 
-            if (result)
-                return 1;
-            else
-                return 0;
+            return result ? 1 : 0;
         }
 
         static string FindWinDiff()
         {
             string[] windiffpaths =
-            {
+            [
                 Environment.CurrentDirectory,
                 @"C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin",
                 @"C:\Utils"
-            };
+            ];
 
             _searchPaths.AddRange(windiffpaths);
 
             _searchPaths.AddRange(Environment.GetEnvironmentVariable("path").Split(';'));
 
-            string asspath = Assembly.GetExecutingAssembly().Location;
+            var asspath = Assembly.GetExecutingAssembly().Location;
             _searchPaths.Add(Path.GetDirectoryName(asspath));
 
-            foreach (string path in _searchPaths)
+            foreach (var path in _searchPaths)
             {
-                string windiffpath = Path.Combine(path, "windiff.exe");
+                var windiffpath = Path.Combine(path, "windiff.exe");
                 if (File.Exists(windiffpath))
                 {
                     return windiffpath;
@@ -96,7 +93,9 @@ Optional flags:
 
         static bool CheckArg(string arg)
         {
-            if (arg != "-DontSortChildren" && arg != "-DontWinDiff" && arg != "-DontDiffIfEqual" && arg != "-Log")
+            string[] allowedFlags = ["-DontSortChildren", "-DontWinDiff", "-DontDiffIfEqual", "-Log"];
+
+            if (!allowedFlags.Contains(arg))
             {
                 Console.WriteLine($"Unrecognized argument: '{arg}'");
                 return false;
@@ -110,24 +109,32 @@ Optional flags:
             _SortChildren = _WinDiff = _DontDiffIfEqual = true;
             _VerboseLogging = false;
 
-            for (int i = 0; i < flags; i++)
+            for (var i = 0; i < flags; i++)
             {
                 if (args[i] == "-DontSortChildren")
+                {
                     _SortChildren = false;
+                }
                 if (args[i] == "-DontWinDiff")
+                {
                     _WinDiff = false;
+                }
                 if (args[i] == "-DontDiffIfEqual")
+                {
                     _DontDiffIfEqual = false;
+                }
                 if (args[i] == "-Log")
+                {
                     _VerboseLogging = true;
+                }
             }
         }
 
         static string GetSemiUniqueFileName(string filepath, string ext)
         {
-            for (int i = 1; i <= 10000; i++)
+            for (var i = 1; i <= 10000; i++)
             {
-                string fullfilename = $"{filepath}.CleanDiffJson{i}{ext}";
+                var fullfilename = $"{filepath}.CleanDiffJson{i}{ext}";
                 if (File.GetLastWriteTime(fullfilename) < DateTime.Now.AddMinutes(-5))
                 {
                     return fullfilename;
@@ -139,24 +146,27 @@ Optional flags:
 
         static bool DiffJson(string windiffpath, string file1, string file2)
         {
-            string tempfolder = Path.GetTempPath();
+            var tempfolder = Path.GetTempPath();
 
-            string outfile1 = GetSemiUniqueFileName(Path.Combine(tempfolder, Path.GetFileNameWithoutExtension(file1)), ".json");
+            var outfile1 = GetSemiUniqueFileName(Path.Combine(tempfolder, Path.GetFileNameWithoutExtension(file1)), ".json");
             if (!CleanFile(file1, outfile1))
+            {
                 return false;
+            }
 
-            string outfile2 = GetSemiUniqueFileName(Path.Combine(tempfolder, Path.GetFileNameWithoutExtension(file2)), ".json");
+            var outfile2 = GetSemiUniqueFileName(Path.Combine(tempfolder, Path.GetFileNameWithoutExtension(file2)), ".json");
             if (!CleanFile(file2, outfile2))
+            {
                 return false;
+            }
 
             bool diff;
 
-            byte[] buf1 = File.ReadAllBytes(outfile1);
-            byte[] buf2 = File.ReadAllBytes(outfile2);
+            var buf1 = File.ReadAllBytes(outfile1);
+            var buf2 = File.ReadAllBytes(outfile2);
 
             IStructuralEquatable eqa1 = buf1;
             diff = !eqa1.Equals(buf2, StructuralComparisons.StructuralEqualityComparer);
-
 
             if (_DontDiffIfEqual || diff)
             {
@@ -185,15 +195,14 @@ Optional flags:
                 return false;
             }
 
-            JToken jtoken = null;
-            jtoken = JToken.Parse(content);
+            var jtoken = JToken.Parse(content);
 
             if (_SortChildren)
             {
                 jtoken = GetSortedJson(jtoken);
             }
 
-            string pretty = jtoken.ToString(Newtonsoft.Json.Formatting.Indented);
+            var pretty = jtoken.ToString(Formatting.Indented);
 
             File.WriteAllText(outfile, pretty);
 
@@ -206,10 +215,10 @@ Optional flags:
             {
                 Log($"Adding object: >>{jtoken.Path}<<");
 
-                JObject old = jtoken as JObject;
-                JObject jobject = new JObject();
+                var old = jtoken as JObject;
+                JObject jobject = [];
 
-                foreach (JToken child in old.Children().OrderByDescending(c => c.Path, StringComparer.InvariantCultureIgnoreCase))
+                foreach (var child in old.Children().OrderByDescending(c => c.Path, StringComparer.InvariantCultureIgnoreCase))
                 {
                     Log($"Adding object child: >>{child.Path}<<");
                     jobject.AddFirst(GetSortedJson(child));
@@ -221,10 +230,10 @@ Optional flags:
             {
                 Log($"Adding property: >>{jtoken.Path}<<");
 
-                JProperty old = jtoken as JProperty;
-                JProperty jproperty = new JProperty(old.Name, old.Value);
+                var old = jtoken as JProperty;
+                JProperty jproperty = new(old.Name, old.Value);
 
-                foreach (JToken child in old.Children().OrderByDescending(c => c.Path, StringComparer.InvariantCultureIgnoreCase))
+                foreach (var child in old.Children().OrderByDescending(c => c.Path, StringComparer.InvariantCultureIgnoreCase))
                 {
                     Log($"Adding property child: >>{child.Path}<<");
                     JToken newchild = GetSortedJson(child);
@@ -237,12 +246,12 @@ Optional flags:
             {
                 Log($"Adding array: >>{jtoken.Path}<<");
 
-                JArray old = jtoken as JArray;
-                JArray jarray = new JArray();
+                var old = jtoken as JArray;
+                JArray jarray = [];
 
-                var sortedChildren = old.Select(c => GetSortedJson(c)).OrderBy(c => c.ToString(), StringComparer.InvariantCultureIgnoreCase);
+                var sortedChildren = old.Select(GetSortedJson).OrderBy(c => c.ToString(), StringComparer.InvariantCultureIgnoreCase);
 
-                foreach (JToken child in sortedChildren)
+                foreach (var child in sortedChildren)
                 {
                     Log($"Adding array child: >>{child.Path}<<");
                     jarray.Add(child);

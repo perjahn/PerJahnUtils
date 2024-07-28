@@ -11,7 +11,7 @@ namespace CheckMissingFiles
         {
             ConsoleHelper.HasWritten = false;
 
-            int result = CheckFiles(args);
+            var success = CheckFiles(args);
 
             if (ConsoleHelper.HasWritten &&
                 Environment.UserInteractive &&
@@ -21,12 +21,12 @@ namespace CheckMissingFiles
                 Console.ReadKey();
             }
 
-            return result;
+            return success;
         }
 
         static int CheckFiles(string[] args)
         {
-            string usage = @"CheckMissingFiles 4.0
+            var usage = @"CheckMissingFiles 4.0
 
 Usage: CheckMissingFiles [-b] [-esolution file 1,solution file 2] [-r] [-t] <solution path/pattern>
 
@@ -37,55 +37,52 @@ Usage: CheckMissingFiles [-b] [-esolution file 1,solution file 2] [-r] [-t] <sol
 
 Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
 
+            var parsedArgs = args;
 
-            bool reverseCheck = args.Any(a => a == "-b");
-            args = args.Where(a => a != "-b").ToArray();
+            var reverseCheck = parsedArgs.Any(a => a == "-b");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-b")];
 
-            string[] excludeSolutions = args
-                .Where(a => a.StartsWith("-e"))
-                .SelectMany(a => a.Substring(2).Split(','))
-                .ToArray();
-            args = args.Where(a => !a.StartsWith("-e")).ToArray();
+            string[] excludeSolutions = [.. parsedArgs.Where(a => a.StartsWith("-e")).SelectMany(a => a[2..].Split(','))];
+            parsedArgs = [.. parsedArgs.Where(a => !a.StartsWith("-e"))];
 
-            bool parseSubdirs = args.Any(a => a == "-r");
-            args = args.Where(a => a != "-r").ToArray();
+            var parseSubdirs = parsedArgs.Any(a => a == "-r");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-r")];
 
-            bool teamcityErrorMessage = args.Any(a => a == "-t");
-            args = args.Where(a => a != "-t").ToArray();
+            var teamcityErrorMessage = parsedArgs.Any(a => a == "-t");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-t")];
 
-
-            if (args.Length != 1 || args[0] == string.Empty)
+            if (parsedArgs.Length != 1 || parsedArgs[0] == string.Empty)
             {
                 ConsoleHelper.WriteLine(usage);
                 return 1;
             }
 
-            string path = args[0];
+            var path = parsedArgs[0];
 
-            int result = CheckSolutions(path, excludeSolutions, parseSubdirs, reverseCheck, teamcityErrorMessage);
-            return result;
+            var success = CheckSolutions(path, excludeSolutions, parseSubdirs, reverseCheck, teamcityErrorMessage);
+            return success;
         }
 
         private static int CheckSolutions(string path, string[] excludeSolutions, bool parseSubdirs, bool reverseCheck, bool teamcityErrorMessage)
         {
-            int result = 0;
+            var success = 0;
 
-            List<string> solutionFiles = GetFiles(path, parseSubdirs);
+            var solutionFiles = GetFiles(path, parseSubdirs);
             if (solutionFiles == null)
             {
                 return 1;
             }
 
-            ConsoleHelper.WriteLine($"Found {solutionFiles.Count()} solutions.");
+            ConsoleHelper.WriteLine($"Found {solutionFiles.Count} solutions.");
 
-            List<string> excessiveExcludes = new List<string>();
-            foreach (string excludeFile in excludeSolutions)
+            List<string> excessiveExcludes = [];
+            foreach (var excludeFile in excludeSolutions)
             {
-                List<string> removeFiles = solutionFiles.Where(f => Path.GetFileName(f) == excludeFile).ToList();
+                List<string> removeFiles = [.. solutionFiles.Where(f => Path.GetFileName(f) == excludeFile)];
 
-                if (removeFiles.Count() >= 1)
+                if (removeFiles.Count >= 1)
                 {
-                    ConsoleHelper.WriteLine($"Excluding {removeFiles.Count()} solutions: '{excludeFile}'");
+                    ConsoleHelper.WriteLine($"Excluding {removeFiles.Count} solutions: '{excludeFile}'");
                     solutionFiles.RemoveAll(f => Path.GetFileName(f) == excludeFile);
                 }
                 else
@@ -94,21 +91,21 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 }
             }
 
-            if (excessiveExcludes.Count() > 0)
+            if (excessiveExcludes.Count > 0)
             {
                 ConsoleHelper.WriteLineColor(
                     "Missing files cannot be excluded. Please keep the exclude filter tidy by removing the missing files from the exclude filter. ASAP.",
                     ConsoleColor.Red);
                 ConsoleHelper.WriteLineColor(
-                    $"The following {excessiveExcludes.Count()} files couldn't be excluded: '{string.Join("', '", excessiveExcludes)}'",
+                    $"The following {excessiveExcludes.Count} files couldn't be excluded: '{string.Join("', '", excessiveExcludes)}'",
                     ConsoleColor.Red);
-                result = 1;
+                success = 1;
             }
 
-            ConsoleHelper.WriteLine($"Loading {solutionFiles.Count()} solutions...");
+            ConsoleHelper.WriteLine($"Loading {solutionFiles.Count} solutions...");
 
-            List<Solution> solutions = new List<Solution>();
-            foreach (string solutionFile in solutionFiles)
+            List<Solution> solutions = [];
+            foreach (var solutionFile in solutionFiles)
             {
                 try
                 {
@@ -117,21 +114,19 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 catch (ApplicationException ex)
                 {
                     ConsoleHelper.WriteLineColor(ex.Message, ConsoleColor.Red);
-                    result = 1;
+                    success = 1;
                 }
             }
 
+            var projects = LoadProjects(solutions, teamcityErrorMessage, out bool loadError);
 
-            List<Project> projects = LoadProjects(solutions, teamcityErrorMessage, out bool loadError);
-
-            bool check = CheckProjects(projects, reverseCheck);
+            var check = CheckProjects(projects, reverseCheck);
             if (loadError || !check)
             {
-                result = 1;
+                success = 1;
             }
 
-
-            return result;
+            return success;
         }
 
         private static List<string> GetFiles(string path, bool parseSubdirs)
@@ -155,7 +150,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                     searchPattern = path;
                 }
             }
-            SearchOption searchOption = parseSubdirs ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+            var searchOption = parseSubdirs ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
             ConsoleHelper.WriteLine($"Searching: '{searchPath}' for '{searchPattern}'...");
 
@@ -170,45 +165,43 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 return null;
             }
 
-            List<string> solutionFiles = files
-                .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                .ToList();
+            List<string> solutionFiles = [.. files.Select(f => f.StartsWith(@".\") ? f[2..] : f)];
 
             return solutionFiles;
         }
 
         private static List<Project> LoadProjects(List<Solution> solutions, bool teamcityErrorMessage, out bool loadError)
         {
-            var projectsToLoad = solutions
+            (string projectPath, string[] solutionFiles)[] projectsToLoad = [.. solutions
                 .SelectMany(s =>
                     s.ProjectsPaths, (s, relpath) =>
-                        new
-                        {
-                            solutionFile = s.SolutionFile,
-                            projectPath = CompactPath(Path.Combine(Path.GetDirectoryName(s.SolutionFile), relpath))
-                        })
+                        (
+                            solutionFile: s.SolutionFile,
+                            projectPath: CompactPath(Path.Combine(Path.GetDirectoryName(s.SolutionFile), relpath))
+                        ))
                 .GroupBy(p => p.projectPath, (projectPath, projs) =>
-                    new
-                    {
+                {
+                    (string projectPath, string[] solutionFiles) x =
+                    (
                         projectPath,
-                        solutionFiles = projs.Select(proj => proj.solutionFile).ToArray()
-                    })
-                .OrderBy(p => p.projectPath)
-                .ToArray();
-
+                        solutionFiles: [.. projs.Select(proj => proj.solutionFile)]
+                    );
+                    return x;
+                })
+                .OrderBy(p => p.projectPath)];
 
             ConsoleHelper.WriteLine($"Loading {projectsToLoad.Length} projects...");
 
             loadError = false;
 
-            List<Project> projects = new List<Project>();
+            List<Project> projects = [];
 
-            foreach (var projectToLoad in projectsToLoad)
+            foreach (var (projectPath, solutionFiles) in projectsToLoad)
             {
                 Project project;
                 try
                 {
-                    project = new Project(projectToLoad.projectPath, projectToLoad.solutionFiles, teamcityErrorMessage);
+                    project = new(projectPath, solutionFiles, teamcityErrorMessage);
                 }
                 catch (ApplicationException ex)
                 {
@@ -225,17 +218,17 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
 
         public static string CompactPath(string path)
         {
-            List<string> folders = path.Split(Path.DirectorySeparatorChar).ToList();
+            List<string> folders = [.. path.Split(Path.DirectorySeparatorChar)];
 
-            for (int i = 0; i < folders.Count;)
+            for (var i = 0; i < folders.Count;)
             {
-                if (i > 0 && folders[i] == ".." && folders[i - 1] != ".." && folders[i - 1] != "")
+                if (i > 0 && folders[i] == ".." && folders[i - 1] != ".." && folders[i - 1] != string.Empty)
                 {
                     folders.RemoveAt(i - 1);
                     folders.RemoveAt(i - 1);
                     i--;
                 }
-                else if (i > 0 && folders[i] == "" && folders[i - 1] == "")
+                else if (i > 0 && folders[i] == string.Empty && folders[i - 1] == string.Empty)
                 {
                     folders.RemoveAt(i);
                 }
@@ -245,10 +238,10 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 }
             }
 
-            string path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders.ToArray());
+            var path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders);
 
-            string sep = Path.DirectorySeparatorChar.ToString();
-            if (path2 == "" && (path.StartsWith(sep) || path.EndsWith(sep)))
+            var sep = Path.DirectorySeparatorChar.ToString();
+            if (path2 == string.Empty && (path.StartsWith(sep) || path.EndsWith(sep)))
             {
                 path2 = Path.DirectorySeparatorChar.ToString();
             }
@@ -258,18 +251,18 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
 
         public static bool CheckProjects(List<Project> projects, bool reverseCheck)
         {
-            foreach (Project p in projects.OrderBy(p => p.ProjectFile))
+            foreach (var p in projects.OrderBy(p => p.ProjectFile))
             {
                 p.Check(reverseCheck);
             }
 
-            bool parseError = projects.Any(p => p.ParseError);
+            var parseError = projects.Any(p => p.ParseError);
 
-            int missingfilesError = projects.Select(p => p.MissingfilesError).Sum();
-            int missingfilesWarning = projects.Select(p => p.MissingfilesWarning).Sum();
-            int excessfiles = projects.Select(p => p.Excessfiles).Sum();
+            var missingfilesError = projects.Select(p => p.MissingfilesError).Sum();
+            var missingfilesWarning = projects.Select(p => p.MissingfilesWarning).Sum();
+            var excessfiles = projects.Select(p => p.Excessfiles).Sum();
 
-            string msg = $"Parsed {projects.Count} projects, found";
+            var msg = $"Parsed {projects.Count} projects, found";
 
             if (reverseCheck)
             {
@@ -308,14 +301,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 }
             }
 
-            if (parseError == false && missingfilesError == 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return !parseError && missingfilesError == 0;
         }
     }
 }

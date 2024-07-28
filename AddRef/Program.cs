@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AddRef
 {
@@ -8,7 +6,7 @@ namespace AddRef
     {
         static void Main(string[] args)
         {
-            string usage =
+            var usage =
 @"AddRef 1.0 - Program for adding assembly reference to Visual Studio project file.
 
 Usage: AddRef <ReferenceName> <ProjectFile>
@@ -21,9 +19,8 @@ Example: AddRef System.Something folder\myproject.csproj";
                 return;
             }
 
-            string referencename = args[0];
-            string projectfilepath = args[1];
-
+            var referencename = args[0];
+            var projectfilepath = args[1];
 
             Project.AddRef(projectfilepath, referencename);
         }

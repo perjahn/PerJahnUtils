@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -15,36 +14,28 @@ namespace ProjFix
         public List<string> Projects { get; set; }
         public List<string> Packages { get; set; }
 
-
         public void AddToDoc(XDocument xdoc, XNamespace ns)
         {
             ConsoleHelper.WriteLine($"  Adding proj ref: '{Include}'", true);
 
-            XElement newref = new XElement(ns + "ProjectReference",
+            XElement newref = new(ns + "ProjectReference",
                 new XAttribute("Include", Include),
                 new XElement(ns + "Project", Project),
-                new XElement(ns + "Name", Name)
-                );
+                new XElement(ns + "Name", Name));
 
             // Sort insert
-            var groups = from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup")
-                         where el.Element(ns + "ProjectReference") != null
-                         select el;
+            XElement[] groups = [.. xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Where(el => el.Element(ns + "ProjectReference") != null)];
 
-            if (groups.Count() == 0)
+            if (groups.Length == 0)
             {
-                groups = from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup")
-                         select el;
+                groups = [.. xdoc.Element(ns + "Project").Elements(ns + "ItemGroup")];
 
-                XElement newgroup = new XElement(ns + "ItemGroup", newref);
+                XElement newgroup = new(ns + "ItemGroup", newref);
                 groups.Last().AddAfterSelf(newgroup);
             }
             else
             {
-                var refs = from el in groups.Elements(ns + "ProjectReference")
-                           where el.Attribute("Include") != null
-                           orderby el.Attribute("Include").Value
-                           select el;
+                XElement[] refs = [.. groups.Elements(ns + "ProjectReference").Where(el => el.Attribute("Include") != null).OrderBy(el => el.Attribute("Include").Value)];
 
                 if (Include.CompareTo(refs.First().Attribute("Include").Value) < 0)
                 {
@@ -56,10 +47,10 @@ namespace ProjFix
                 }
                 else
                 {
-                    for (int i = 0; i < refs.Count() - 1; i++)
+                    for (var i = 0; i < refs.Length - 1; i++)
                     {
-                        string inc1 = refs.ElementAt(i).Attribute("Include").Value;
-                        string inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
+                        var inc1 = refs.ElementAt(i).Attribute("Include").Value;
+                        var inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
                         if (Include.CompareTo(inc1) > 0 && Include.CompareTo(inc2) < 0)
                         {
                             refs.ElementAt(i).AddAfterSelf(newref);

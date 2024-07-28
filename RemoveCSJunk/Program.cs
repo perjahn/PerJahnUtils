@@ -11,11 +11,10 @@ namespace RemoveCSJunk
         {
             var watch = Stopwatch.StartNew();
 
-            string path = args.Length == 1 ? args[0] : ".";
+            var path = args.Length == 1 ? args[0] : ".";
 
-            string[] files = Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories)
-                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f.Substring(2) : f)
-                .ToArray();
+            string[] files = [.. Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories)
+                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f[2..] : f)];
 
             Array.Sort(files);
 
@@ -24,16 +23,16 @@ namespace RemoveCSJunk
 
             foreach (var filename in files)
             {
-                string content = File.ReadAllText(filename);
-                int start = 0;
+                var content = File.ReadAllText(filename);
+                var start = 0;
 
-                for (int i = 0; i < content.Length; i++)
+                for (var i = 0; i < content.Length; i++)
                 {
-                    if (content[i] == '\r' || content[i] == '\n')
+                    if (content[i] is '\r' or '\n')
                     {
                         if ((start <= i - 2 && content[start] == '/' && content[start + 1] == '/')
                             ||
-                            (content[start..i].All(c => char.IsWhiteSpace(c))))
+                            content[start..i].All(char.IsWhiteSpace))
                         {
                             start = i + 1;
                         }
@@ -42,7 +41,7 @@ namespace RemoveCSJunk
 
                 if (start > 0 && !content[0..start].Contains("auto-generated"))
                 {
-                    content = content.Substring(start);
+                    content = content[start..];
 
                     Console.WriteLine($"Updating: '{filename}'");
                     File.WriteAllText(filename, content);

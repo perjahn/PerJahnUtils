@@ -44,7 +44,6 @@ namespace SQLUtil
 
             _factory = DbProviderFactories.GetFactory(rows[0]);
 
-
             _cn = _factory.CreateConnection();
             _cn.ConnectionString = connstr;
 
@@ -90,65 +89,55 @@ namespace SQLUtil
 
         private DataTable ExecuteDataTable(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            DataTable dt = new DataTable();
+            DataTable dt = new();
 
-            using (DbCommand cmd = _cn.CreateCommand())
+            using var cmd = _cn.CreateCommand();
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
+
+            using var da = _factory.CreateDataAdapter();
+            da.SelectCommand = cmd;
+
+            if (parameters != null)
             {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
-
-                using (DbDataAdapter da = _factory.CreateDataAdapter())
+                foreach (var pair in parameters)
                 {
-                    da.SelectCommand = cmd;
-
-                    if (parameters != null)
-                    {
-                        foreach (var pair in parameters)
-                        {
-                            DbParameter p = cmd.CreateParameter();
-                            p.ParameterName = pair.Key;
-                            p.Value = pair.Value;
-                            cmd.Parameters.Add(p);
-                        }
-                    }
-
-                    if (FillSchema)
-                    {
-                        da.FillSchema(dt, SchemaType.Source);
-                    }
-                    da.Fill(dt);
+                    DbParameter p = cmd.CreateParameter();
+                    p.ParameterName = pair.Key;
+                    p.Value = pair.Value;
+                    cmd.Parameters.Add(p);
                 }
             }
+
+            if (FillSchema)
+            {
+                da.FillSchema(dt, SchemaType.Source);
+            }
+            da.Fill(dt);
 
             return dt;
         }
 
         public void UpdateDataTable(string sql, DataTable dt)
         {
-            using (DbCommand cmd = _cn.CreateCommand())
-            {
-                cmd.Connection = _cn;
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
+            using var cmd = _cn.CreateCommand();
+            cmd.Connection = _cn;
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
 
-                using (DbDataAdapter da = _factory.CreateDataAdapter())
-                {
-                    da.SelectCommand = cmd;
+            using var da = _factory.CreateDataAdapter();
+            da.SelectCommand = cmd;
 
-                    DbCommandBuilder cb = _factory.CreateCommandBuilder();
-                    cb.DataAdapter = da;
-                    da.InsertCommand = cb.GetInsertCommand();
-                    da.UpdateCommand = cb.GetUpdateCommand();
-                    da.DeleteCommand = cb.GetDeleteCommand();
+            DbCommandBuilder cb = _factory.CreateCommandBuilder();
+            cb.DataAdapter = da;
+            da.InsertCommand = cb.GetInsertCommand();
+            da.UpdateCommand = cb.GetUpdateCommand();
+            da.DeleteCommand = cb.GetDeleteCommand();
 
-                    da.Update(dt);
-                }
-            }
-
-            return;
+            da.Update(dt);
         }
         #endregion DataTable
 
@@ -177,37 +166,33 @@ namespace SQLUtil
 
         private DataSet ExecuteDataSet(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            DataSet ds = new DataSet();
+            DataSet ds = new();
 
-            using (DbCommand cmd = _cn.CreateCommand())
+            using var cmd = _cn.CreateCommand();
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
+
+            using var da = _factory.CreateDataAdapter();
+            da.SelectCommand = cmd;
+
+            if (parameters != null)
             {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
-
-                using (DbDataAdapter da = _factory.CreateDataAdapter())
+                foreach (var pair in parameters)
                 {
-                    da.SelectCommand = cmd;
-
-                    if (parameters != null)
-                    {
-                        foreach (var pair in parameters)
-                        {
-                            DbParameter p = cmd.CreateParameter();
-                            p.ParameterName = pair.Key;
-                            p.Value = pair.Value;
-                            cmd.Parameters.Add(p);
-                        }
-                    }
-
-                    if (FillSchema)
-                    {
-                        da.FillSchema(ds, SchemaType.Source);
-                    }
-                    da.Fill(ds);
+                    DbParameter p = cmd.CreateParameter();
+                    p.ParameterName = pair.Key;
+                    p.Value = pair.Value;
+                    cmd.Parameters.Add(p);
                 }
             }
+
+            if (FillSchema)
+            {
+                da.FillSchema(ds, SchemaType.Source);
+            }
+            da.Fill(ds);
 
             return ds;
         }
@@ -226,17 +211,15 @@ namespace SQLUtil
 
         private int ExecuteNonQuery(string sql, CommandType ct)
         {
-            int iReturnValue = 0;
+            var iReturnValue = 0;
 
-            using (DbCommand cmd = _cn.CreateCommand())
-            {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
+            using var cmd = _cn.CreateCommand();
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
 
-                iReturnValue = cmd.ExecuteNonQuery();
-            }
+            iReturnValue = cmd.ExecuteNonQuery();
 
             return iReturnValue;
         }
@@ -267,26 +250,24 @@ namespace SQLUtil
 
         private object ExecuteScalar(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            using (DbCommand cmd = _cn.CreateCommand())
+            using var cmd = _cn.CreateCommand();
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
+
+            if (parameters != null)
             {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
-
-                if (parameters != null)
+                foreach (var pair in parameters)
                 {
-                    foreach (var pair in parameters)
-                    {
-                        DbParameter p = cmd.CreateParameter();
-                        p.ParameterName = pair.Key;
-                        p.Value = pair.Value;
-                        cmd.Parameters.Add(p);
-                    }
+                    DbParameter p = cmd.CreateParameter();
+                    p.ParameterName = pair.Key;
+                    p.Value = pair.Value;
+                    cmd.Parameters.Add(p);
                 }
-
-                return cmd.ExecuteScalar();
             }
+
+            return cmd.ExecuteScalar();
         }
         #endregion Scalar
 
@@ -315,26 +296,24 @@ namespace SQLUtil
 
         private DbDataReader ExecuteReader(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            using (DbCommand cmd = _cn.CreateCommand())
+            using var cmd = _cn.CreateCommand();
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
+
+            if (parameters != null)
             {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
-
-                if (parameters != null)
+                foreach (var pair in parameters)
                 {
-                    foreach (var pair in parameters)
-                    {
-                        DbParameter p = cmd.CreateParameter();
-                        p.ParameterName = pair.Key;
-                        p.Value = pair.Value;
-                        cmd.Parameters.Add(p);
-                    }
+                    DbParameter p = cmd.CreateParameter();
+                    p.ParameterName = pair.Key;
+                    p.Value = pair.Value;
+                    cmd.Parameters.Add(p);
                 }
-
-                return cmd.ExecuteReader();
             }
+
+            return cmd.ExecuteReader();
         }
         #endregion Reader
     }

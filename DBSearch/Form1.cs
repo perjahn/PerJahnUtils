@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace DBSearch
@@ -19,14 +20,14 @@ namespace DBSearch
         private void Form1_Load(object sender, EventArgs e)
         {
             // Retrieve the installed providers and factories.
-            DataTable dtProviders = System.Data.Common.DbProviderFactories.GetFactoryClasses();
+            DataTable dtProviders = Common.DbProviderFactories.GetFactoryClasses();
 
             cbProvider.DataSource = dtProviders;
 
             cbProvider.Text = "SqlClient Data Provider";
             cbSearchtype.SelectedIndex = 0;
 
-            DateTime now = DateTime.Now;
+            var now = DateTime.Now;
             dtp1.Value = now.AddDays(-1);
             dtp2.Value = now.AddDays(-1);
             dtp3.Value = now;
@@ -67,7 +68,7 @@ namespace DBSearch
 
         private void btSearch_Click(object sender, EventArgs e)
         {
-            Searcher search = new Searcher();
+            Searcher search = new();
 
             try
             {
@@ -89,7 +90,7 @@ namespace DBSearch
 
                 search.provider = cbProvider.SelectedValue.ToString();
 
-                string[] dbs = tbDatabases.Text.Replace("\r", "").Split('\n').Select(db => db.Trim()).Where(db => db != "").ToArray();
+                string[] dbs = [.. tbDatabases.Text.Replace("\r", string.Empty).Split('\n').Select(db => db.Trim()).Where(db => db != string.Empty)];
 
                 switch (cbSearchtype.Text)
                 {
@@ -134,11 +135,11 @@ namespace DBSearch
                     dtResult = search.SearchObjects(tbSearch.Text);
                 }
 
-                foreach (DataRow dr in dtResult.Rows)
+                foreach (var dr in dtResult.Rows)
                 {
-                    System.Windows.Forms.ListViewItem lvi = new System.Windows.Forms.ListViewItem();
+                    ListViewItem lvi = new();
                     lvi.Text = dr[0].ToString();
-                    for (int c = 1; c < dtResult.Columns.Count; c++)
+                    for (var c = 1; c < dtResult.Columns.Count; c++)
                     {
                         lvi.SubItems.Add(dr[c].ToString());
                     }
@@ -148,12 +149,12 @@ namespace DBSearch
 
                 this.Text = search.stats.ToString();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ShowError(ex.ToString());
             }
 
-            string log = search.log.ToString();
+            var log = search.log.ToString();
             if (log != string.Empty)
             {
                 ShowError(log);
@@ -166,7 +167,7 @@ namespace DBSearch
             {
                 GetAllDBs();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ShowError(ex.ToString());
             }
@@ -178,8 +179,7 @@ namespace DBSearch
 
             string connstr;
             string sql;
-            string provider = cbProvider.SelectedValue.ToString();
-
+            var provider = cbProvider.SelectedValue.ToString();
 
             // Get database names
             if (provider == "System.Data.SqlClient")
@@ -204,29 +204,27 @@ namespace DBSearch
                 throw new NotImplementedException("Unsupported database provider: '" + provider + "'.");
             }
 
-            System.Data.DataTable dtDBs;
+            DataTable dtDBs;
 
-            string dbs = string.Empty;
+            var dbs = string.Empty;
 
-            using (db mydb = new db(provider, connstr))
-            {
-                dtDBs = mydb.ExecuteDataTableSQL(sql, null);
-            }
-
+            using db mydb = new(provider, connstr);
+            dtDBs = mydb.ExecuteDataTableSQL(sql, null);
 
             if (cbDBPattern.Checked)
             {
-                searchlist = new List<string>();
-                foreach (string row in tbDatabases.Text.Replace("\r", "").Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                searchlist = [];
+                foreach (var row in tbDatabases.Text.Replace("\r", string.Empty).Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     searchlist.Add(row);
                 }
             }
             else
+            {
                 searchlist = null;
+            }
 
-
-            foreach (DataRow drDB in dtDBs.Rows)
+            foreach (var drDB in dtDBs.Rows)
             {
                 if (searchlist == null)
                 {
@@ -234,12 +232,11 @@ namespace DBSearch
                 }
                 else
                 {
-                    string dbname = drDB["name"].ToString();
+                    var dbname = drDB["name"].ToString();
 
-                    foreach (string search in searchlist)
+                    foreach (var search in searchlist)
                     {
-                        if (System.Text.RegularExpressions.Regex.IsMatch(
-                                        dbname, search, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                        if (Regex.IsMatch(dbname, search, RegexOptions.IgnoreCase))
                         {
                             dbs += dbname + Environment.NewLine;
                             break;
@@ -249,8 +246,6 @@ namespace DBSearch
             }
 
             tbDatabases.Text = dbs.TrimEnd();
-
-            return;
         }
 
         private void cbSQLLogin_CheckedChanged(object sender, EventArgs e)
@@ -273,15 +268,17 @@ namespace DBSearch
 
         private void copyToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            StringBuilder sb = new StringBuilder();
-            int rownum = 0;
-            foreach (System.Windows.Forms.ListViewItem lvi in listView1.Items)
+            StringBuilder sb = new();
+            var rownum = 0;
+            foreach (ListViewItem lvi in listView1.Items)
             {
                 if (lvi.Selected)
                 {
                     if (rownum > 0)
+                    {
                         sb.Append(Environment.NewLine);
-                    foreach (System.Windows.Forms.ListViewItem.ListViewSubItem lvsi in lvi.SubItems)
+                    }
+                    foreach (ListViewItem.ListViewSubItem lvsi in lvi.SubItems)
                     {
                         sb.Append("\t" + lvsi.Text);
                     }
@@ -291,22 +288,24 @@ namespace DBSearch
             // Only insert into clipboard if any rows selected
             if (rownum > 0)
             {
-                string result = sb.ToString();
-                System.Windows.Forms.Clipboard.SetText(result);
+                var result = sb.ToString();
+                Clipboard.SetText(result);
             }
         }
 
         private void copyColumn(int colindex)
         {
-            StringBuilder sb = new StringBuilder();
-            int rownum = 0;
-            foreach (System.Windows.Forms.ListViewItem lvi in listView1.Items)
+            StringBuilder sb = new();
+            var rownum = 0;
+            foreach (ListViewItem lvi in listView1.Items)
             {
                 if (lvi.Selected)
                 {
-                    System.Windows.Forms.ListViewItem.ListViewSubItem lvsi = lvi.SubItems[colindex];
+                    ListViewItem.ListViewSubItem lvsi = lvi.SubItems[colindex];
                     if (rownum > 0)
+                    {
                         sb.Append(Environment.NewLine);
+                    }
                     sb.Append(lvsi.Text);
                     rownum++;
                 }
@@ -314,8 +313,8 @@ namespace DBSearch
             // Only insert into clipboard if any rows selected
             if (rownum > 0)
             {
-                string result = sb.ToString();
-                System.Windows.Forms.Clipboard.SetText(result);
+                var result = sb.ToString();
+                Clipboard.SetText(result);
             }
         }
 
@@ -331,8 +330,8 @@ namespace DBSearch
 
         private void cbServer_Leave(object sender, EventArgs e)
         {
-            bool found = false;
-            foreach (string s in cbServer.Items)
+            var found = false;
+            foreach (var s in cbServer.Items)
             {
                 if (s == cbServer.Text)
                 {
@@ -348,7 +347,7 @@ namespace DBSearch
 
         private void ShowError(string error)
         {
-            Error win = new Error();
+            Error win = new();
             win.textBox1.Text = error;
 
             win.ShowDialog();

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CheckNamespace
 {
@@ -8,7 +6,7 @@ namespace CheckNamespace
     {
         public static void WriteColor(string s, ConsoleColor color)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;
@@ -22,7 +20,7 @@ namespace CheckNamespace
 
         public static void WriteLineColor(string s, ConsoleColor color)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;

@@ -10,10 +10,10 @@ namespace RemoveSolutionConfigs
     {
         static void Main(string[] args)
         {
-            string[] filteredArgs;
+            string[] filteredArgs = args;
 
-            bool verbose = args.Contains("-v");
-            filteredArgs = args.Where(a => a != "-v").ToArray();
+            var verbose = filteredArgs.Contains("-v");
+            filteredArgs = [.. filteredArgs.Where(a => a != "-v")];
 
             if (filteredArgs.Length < 2)
             {
@@ -23,10 +23,9 @@ namespace RemoveSolutionConfigs
 Usage: RemoveSolutionConfigs [-v] <solutionfile> <remove_config_1> <remove_config_2> ...
 
 -v:  Verbose logging.");
-                return;
             }
 
-            string solutionfile = filteredArgs[0];
+            var solutionfile = filteredArgs[0];
 
             if (!File.Exists(solutionfile))
             {
@@ -34,25 +33,25 @@ Usage: RemoveSolutionConfigs [-v] <solutionfile> <remove_config_1> <remove_confi
                 return;
             }
 
-            string[] excludes = filteredArgs.Skip(1).ToArray();
+            string[] excludes = [.. filteredArgs.Skip(1)];
 
-            string[] rows = File.ReadAllLines(solutionfile);
-            List<string> rows2 = new List<string>();
+            var rows = File.ReadAllLines(solutionfile);
+            List<string> rows2 = [];
 
-            foreach (string row in rows)
+            foreach (var row in rows)
             {
                 if (row.StartsWith("\t\t") && excludes.Any(e => row.Length > 3 + e.Length && string.Compare(row.Substring(2, e.Length + 1), e + "|", true) == 0))
                 {
                     if (verbose)
                     {
-                        Console.WriteLine(row.Substring(2));
+                        Console.WriteLine(row[2..]);
                     }
                 }
                 else if (row.StartsWith("\t\t") && excludes.Any(e => row.Length > 42 + e.Length && string.Compare(row.Substring(41, e.Length + 1), e + "|", true) == 0))
                 {
                     if (verbose)
                     {
-                        Console.WriteLine(row.Substring(41));
+                        Console.WriteLine(row[41..]);
                     }
                 }
                 else

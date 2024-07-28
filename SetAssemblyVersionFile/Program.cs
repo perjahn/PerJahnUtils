@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace SetAssemblyVersionFile
@@ -13,7 +13,7 @@ namespace SetAssemblyVersionFile
     {
         static int Main(string[] args)
         {
-            int result = 0;
+            var result = 0;
 
             if (args.Length != 2)
             {
@@ -22,8 +22,8 @@ namespace SetAssemblyVersionFile
             }
             else
             {
-                string rootfolder = args[0];
-                string assemblyinfofile = args[1];
+                var rootfolder = args[0];
+                var assemblyinfofile = args[1];
 
                 try
                 {
@@ -54,18 +54,17 @@ namespace SetAssemblyVersionFile
             string[] projectfiles;
             try
             {
-                projectfiles = Directory.GetFiles(rootfolder, "*.*proj", SearchOption.AllDirectories)
-                    .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                    .ToArray();
+                projectfiles = [.. Directory.GetFiles(rootfolder, "*.*proj", SearchOption.AllDirectories)
+                    .Select(f => f.StartsWith(@".\") ? f[2..] : f)];
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+            catch (DirectoryNotFoundException ex)
             {
                 throw new ApplicationException(ex.Message);
             }
 
             Log($"Project files: {projectfiles.Length}");
 
-            foreach (string projectfile in projectfiles)
+            foreach (var projectfile in projectfiles)
             {
                 UpdateProjectFile(projectfile, assemblyinfofile);
             }
@@ -74,40 +73,36 @@ namespace SetAssemblyVersionFile
         public static void UpdateProjectFile(string projectfile, string assemblyinfofile)
         {
             XDocument xdoc;
-            XNamespace ns;
 
             try
             {
                 xdoc = XDocument.Load(projectfile);
             }
-            catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or XmlException)
             {
                 throw new ApplicationException($"Couldn't load project: {ex.Message}");
             }
 
-            ns = xdoc.Root.Name.Namespace;
+            var ns = xdoc.Root.Name.Namespace;
 
-            XElement[] itemGroups = xdoc
+            XElement[] itemGroups = [.. xdoc
                 .Descendants(ns + "ItemGroup")
-                .Where(el => el.Elements(ns + "Compile").Count() > 0)
-                .Select(el => el)
-                .ToArray();
+                .Where(el => el.Elements(ns + "Compile").Any())
+                .Select(el => el)];
             if (itemGroups.Length == 0)
             {
                 LogColor($"{projectfile}: Ignoring project file. No suitable itemgroup found in project file.", ConsoleColor.Yellow);
                 return;
             }
 
+            var relpath = GetRelativePath(projectfile, assemblyinfofile);
 
-            string relpath = GetRelativePath(projectfile, assemblyinfofile);
+            var modified = false;
 
-            bool modified = false;
-
-            XElement[] links = xdoc
+            XElement[] links = [.. xdoc
                 .Descendants(ns + "Compile")
                 .Where(el => el.Attribute("Include") != null && el.Attribute("Include").Value == relpath)
-                .Select(el => el)
-                .ToArray();
+                .Select(el => el)];
             if (links.Length > 0)
             {
                 LogColor($"{projectfile}: Ignoring project file. Already contains link to specified assembly file.", ConsoleColor.DarkGray);
@@ -121,8 +116,7 @@ namespace SetAssemblyVersionFile
                 LogColorFragment(relpath, ConsoleColor.Green);
                 Console.WriteLine("'");
 
-
-                XElement newlink = new XElement(ns + "Compile",
+                XElement newlink = new(ns + "Compile",
                     new XAttribute("Include", relpath),
                     new XElement(ns + "Link", $"Properties\\{Path.GetFileName(assemblyinfofile)}"));
 
@@ -130,15 +124,13 @@ namespace SetAssemblyVersionFile
                 modified = true;
             }
 
-
-            XElement[] compileelements = xdoc
+            XElement[] compileelements = [.. xdoc
                 .Descendants(ns + "Compile")
                 .Where(el => el.Attribute("Include") != null && el.Attribute("Include").Value != relpath)
-                .Select(el => el)
-                .ToArray();
-            foreach (XElement el in compileelements)
+                .Select(el => el)];
+            foreach (var el in compileelements)
             {
-                string sourcefile = Path.Combine(Path.GetDirectoryName(projectfile), el.Attribute("Include").Value);
+                var sourcefile = Path.Combine(Path.GetDirectoryName(projectfile), el.Attribute("Include").Value);
 
                 if (!File.Exists(sourcefile))
                 {
@@ -146,10 +138,10 @@ namespace SetAssemblyVersionFile
                     continue;
                 }
 
-                string[] rows = File.ReadAllLines(sourcefile);
-                List<string> newrows = new List<string>();
-                bool modifiedsourcefile = false;
-                foreach (string row in rows)
+                var rows = File.ReadAllLines(sourcefile);
+                List<string> newrows = [];
+                var modifiedsourcefile = false;
+                foreach (var row in rows)
                 {
                     if (row.StartsWith("[assembly: AssemblyVersion") || row.StartsWith("[assembly: AssemblyFileVersion"))
                     {
@@ -167,19 +159,16 @@ namespace SetAssemblyVersionFile
                 }
             }
 
-
-            XElement[] emptyelements = xdoc
+            XElement[] emptyelements = [.. xdoc
                 .Descendants()
-                .Where(el => !el.IsEmpty && el.Value == string.Empty && el.Descendants().Count() == 0)
-                .Select(el => el)
-                .ToArray();
-            foreach (XElement el in emptyelements)
+                .Where(el => !el.IsEmpty && el.Value == string.Empty && !el.Descendants().Any())
+                .Select(el => el)];
+            foreach (var el in emptyelements)
             {
                 el.Value = $"{Environment.NewLine}{string.Join(string.Empty, Enumerable.Repeat("  ", el.Ancestors().Count()))}";
                 LogColor($"{projectfile}: Fixing empty element: {el.Name.LocalName}", ConsoleColor.DarkGray);
                 modified = true;
             }
-
 
             if (modified)
             {
@@ -190,32 +179,24 @@ namespace SetAssemblyVersionFile
 
         private static string GetRelativePath(string pathFrom, string pathTo)
         {
-            string s = pathFrom;
+            var s = pathFrom;
 
             int pos = 0, dirs = 0;
             while (!pathTo.StartsWith(s) && s.Length > 0)
             {
                 pos = s.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos == -1)
-                {
-                    s = string.Empty;
-                }
-                else
-                {
-                    s = s.Substring(0, pos);
-                }
-
+                s = pos == -1 ? string.Empty : s[..pos];
                 dirs++;
             }
 
             dirs--;
 
-            return string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs).ToArray()) + pathTo.Substring(pos + 1);
+            return string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs)) + pathTo[(pos + 1)..];
         }
 
         private static void LogColorFragment(string message, ConsoleColor color)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;
@@ -229,7 +210,7 @@ namespace SetAssemblyVersionFile
 
         private static void LogColor(string message, ConsoleColor color)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;
@@ -243,7 +224,7 @@ namespace SetAssemblyVersionFile
 
         private static void Log(string message)
         {
-            string hostname = Dns.GetHostName();
+            var hostname = Dns.GetHostName();
             Console.WriteLine($"{hostname}: {message}");
         }
     }

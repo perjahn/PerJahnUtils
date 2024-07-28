@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -11,7 +10,7 @@ namespace FixSolutionDir
     {
         static void Main(string[] args)
         {
-            string usage =
+            var usage =
 @"FixSolutionDir 0.001 gamma - Replaces $(SolutionDir) in PostBuildEvent with current dir.
 
 Usage: FixSolutionDir <projectfile>";
@@ -33,36 +32,21 @@ Usage: FixSolutionDir <projectfile>";
             {
                 xdoc = XDocument.Load(filename);
             }
-            catch (IOException ex)
-            {
-                Console.Write($"Couldn't load project: '{filename}': {ex.Message}");
-                return;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                Console.Write($"Couldn't load project: '{filename}': {ex.Message}");
-                return;
-            }
-            catch (ArgumentException ex)
-            {
-                Console.Write($"Couldn't load project: '{filename}': {ex.Message}");
-                return;
-            }
-            catch (XmlException ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or XmlException)
             {
                 Console.Write($"Couldn't load project: '{filename}': {ex.Message}");
                 return;
             }
 
-            XNamespace ns = xdoc.Root.Name.Namespace;
+            var ns = xdoc.Root.Name.Namespace;
 
-            IEnumerable<XElement> events = xdoc.Descendants(ns + "PostBuildEvent");
+            XElement[] events = [.. xdoc.Descendants(ns + "PostBuildEvent")];
 
-            bool modified = false;
+            var modified = false;
 
-            foreach (XElement eventnode in events)
+            foreach (var eventnode in events)
             {
-                string innertext = eventnode.Value;
+                var innertext = eventnode.Value;
 
                 eventnode.Value = innertext.Replace("$(SolutionDir)", Environment.CurrentDirectory + Path.DirectorySeparatorChar);
                 if (eventnode.Value != innertext)
@@ -75,7 +59,7 @@ Usage: FixSolutionDir <projectfile>";
             {
                 Console.WriteLine($"Updating: '{filename}'");
 
-                FileAttributes fa = File.GetAttributes(filename);
+                var fa = File.GetAttributes(filename);
                 if ((fa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
                 {
                     File.SetAttributes(filename, fa & ~FileAttributes.ReadOnly);
@@ -83,8 +67,6 @@ Usage: FixSolutionDir <projectfile>";
 
                 xdoc.Save(filename);
             }
-
-            return;
         }
     }
 }

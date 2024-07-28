@@ -8,15 +8,15 @@ namespace base64decode
     {
         static int Main(string[] args)
         {
-            bool usefile = args.Contains("-f");
-            var parsedArgs = args.Where(a => a != "-f").ToArray();
-            if (parsedArgs.Length != 1 && parsedArgs.Length != 2)
+            var usefile = args.Contains("-f");
+            string[] parsedArgs = [.. args.Where(a => a != "-f")];
+            if (parsedArgs.Length is not 1 and not 2)
             {
                 Console.WriteLine("Usage: base64decode [-f] <filename or string> [outfile]");
                 return 1;
             }
 
-            byte[] bytes = usefile ?
+            var bytes = usefile ?
                 File.ReadAllBytes(parsedArgs[0]) :
                 Convert.FromBase64String(parsedArgs[0]);
 
@@ -26,7 +26,7 @@ namespace base64decode
             }
             else
             {
-                foreach (byte b in bytes)
+                foreach (var b in bytes)
                 {
                     char c = (char)b;
                     Console.Write(c);

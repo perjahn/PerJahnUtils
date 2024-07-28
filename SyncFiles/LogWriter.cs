@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace SyncFiles
 {
@@ -12,12 +10,12 @@ namespace SyncFiles
 
         public static void WriteLine(string message, bool verbose = false)
         {
-            if (LogWriter.Verbose || !verbose)
+            if (Verbose || !verbose)
             {
                 Console.WriteLine(message);
                 if (Logfile != string.Empty)
                 {
-                    using var sw = new StreamWriter(Logfile, true);
+                    using StreamWriter sw = new(Logfile, true);
                     sw.WriteLine(message);
                 }
             }
@@ -25,7 +23,7 @@ namespace SyncFiles
 
         public static void WriteConsoleColor(string message, ConsoleColor color)
         {
-            ConsoleColor c = Console.ForegroundColor;
+            var c = Console.ForegroundColor;
             Console.ForegroundColor = color;
             Console.WriteLine(message);
             Console.ForegroundColor = c;

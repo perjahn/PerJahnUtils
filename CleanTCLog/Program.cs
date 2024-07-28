@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace CleanTCLog
 {
@@ -15,23 +13,23 @@ namespace CleanTCLog
                 return;
             }
 
-            string infile = args[0];
-            string outfile = args[1];
+            var infile = args[0];
+            var outfile = args[1];
 
             CleanFile(infile, outfile);
         }
 
         static void CleanFile(string infile, string outfile)
         {
-            string[] rows = File.ReadAllLines(infile);
+            var rows = File.ReadAllLines(infile);
 
-            for (int i = 0; i < rows.Length; i++)
+            for (var i = 0; i < rows.Length; i++)
             {
-                string row = rows[i];
+                var row = rows[i];
 
                 if (row.Length > 9 && row[0] == '[' && row[9] == ']')
                 {
-                    rows[i] = row = row.Substring(10);
+                    rows[i] = row = row[10..];
                 }
 
                 // (1s)
@@ -40,11 +38,11 @@ namespace CleanTCLog
                 // (11m)
                 // (1m:11s)
                 // (11m:11s)
-                int pos1 = row.LastIndexOf('(');
-                int pos2 = row.LastIndexOf(')');
+                var pos1 = row.LastIndexOf('(');
+                var pos2 = row.LastIndexOf(')');
                 if (pos1 > 0 && pos2 == row.Length - 1)
                 {
-                    string time = row.Substring(pos1 + 1, pos2 - pos1 - 1);
+                    var time = row.Substring(pos1 + 1, pos2 - pos1 - 1);
                     if (
                         (time.Length == 2 && char.IsDigit(time[0]) && time[1] == 's')
                         ||
@@ -59,14 +57,7 @@ namespace CleanTCLog
                         (time.Length == 7 && char.IsDigit(time[0]) && char.IsDigit(time[1]) && time[2] == 'm' && time[3] == ':' && char.IsDigit(time[3]) && char.IsDigit(time[4]) && time[5] == 's')
                         )
                     {
-                        if (pos1 > 0 && row[pos1 - 1] == ' ')
-                        {
-                            rows[i] = row.Substring(0, pos1 - 1);
-                        }
-                        else
-                        {
-                            rows[i] = row.Substring(0, pos1);
-                        }
+                        rows[i] = pos1 > 0 && row[pos1 - 1] == ' ' ? row[..(pos1 - 1)] : row[..pos1];
                     }
                     else
                     {
@@ -74,7 +65,6 @@ namespace CleanTCLog
                     }
                 }
             }
-
 
             File.WriteAllLines(outfile, rows);
         }

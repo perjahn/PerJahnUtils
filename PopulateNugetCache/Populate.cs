@@ -17,10 +17,9 @@ namespace PopulateNugetCache
         long statFiles = 0;
         long statFilesSize = 0;
 
-
         public void PopulateNugetCache(string sourceRootFolder)
         {
-            string targetRootFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
+            var targetRootFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
 
             var packagesFolders = GetPackagesFolders(sourceRootFolder);
 
@@ -40,15 +39,15 @@ namespace PopulateNugetCache
 
         string[] GetPackagesFolders(string sourceRootFolder)
         {
-            string[] nugetFolders = Directory.GetDirectories(sourceRootFolder);
+            var nugetFolders = Directory.GetDirectories(sourceRootFolder);
 
-            var packagesFoldersList = new List<string>();
+            List<string> packagesFoldersList = [];
             foreach (var nugetFolder in nugetFolders)
             {
-                string[] folders = Directory.GetDirectories(nugetFolder);
+                var folders = Directory.GetDirectories(nugetFolder);
                 packagesFoldersList.AddRange(folders);
             }
-            string[] packagesFolders = packagesFoldersList.ToArray();
+            string[] packagesFolders = [.. packagesFoldersList];
 
             Log($"Found {packagesFolders.Length} package folders.");
 
@@ -61,17 +60,17 @@ namespace PopulateNugetCache
 
         IGrouping<string, string>[] GetVersionsFolders(string[] packagesFolders)
         {
-            var versionsFoldersList = new List<string>();
+            List<string> versionsFoldersList = [];
             foreach (var packagesFolder in packagesFolders)
             {
-                string[] folders = Directory.GetDirectories(packagesFolder);
+                var folders = Directory.GetDirectories(packagesFolder);
                 versionsFoldersList.AddRange(folders);
             }
-            string[] versionsFolders = versionsFoldersList.ToArray();
+            string[] versionsFolders = [.. versionsFoldersList];
 
             Log($"Found {versionsFolders.Length} version folders.");
 
-            var uniqueVersionsFolders = versionsFolders.GroupBy(v => $"{Path.GetFileName(Path.GetDirectoryName(v))}{Path.DirectorySeparatorChar}{Path.GetFileName(v)}").OrderBy(f => f.Key).ToArray();
+            IGrouping<string, string>[] uniqueVersionsFolders = [.. versionsFolders.GroupBy(v => $"{Path.GetFileName(Path.GetDirectoryName(v))}{Path.DirectorySeparatorChar}{Path.GetFileName(v)}").OrderBy(f => f.Key)];
 
             Log($"Found {uniqueVersionsFolders.Length} unique version folders.");
 
@@ -80,17 +79,17 @@ namespace PopulateNugetCache
 
         IGrouping<string, string>[] CalculateOperations(string targetRootFolder, IGrouping<string, string>[] uniqueVersionsFolders)
         {
-            var copyFoldersList = new List<IGrouping<string, string>>();
+            List<IGrouping<string, string>> copyFoldersList = [];
             foreach (var uniqueVersionsFolder in uniqueVersionsFolders)
             {
-                string targetFolder = Path.Combine(targetRootFolder, uniqueVersionsFolder.Key);
+                var targetFolder = Path.Combine(targetRootFolder, uniqueVersionsFolder.Key);
                 if (!Directory.Exists(targetFolder))
                 {
                     copyFoldersList.Add(uniqueVersionsFolder);
                 }
             }
-            var operationFolders = copyFoldersList.OrderBy(c => c.Key).ToArray();
-            string opname = Operation == OperationMode.move ? "move" : "copy";
+            IGrouping<string, string>[] operationFolders = [.. copyFoldersList.OrderBy(c => c.Key)];
+            var opname = Operation == OperationMode.move ? "move" : "copy";
 
             Log($"Got {operationFolders.Length} {opname} operations ({uniqueVersionsFolders.Length - operationFolders.Length} version folders already exists).");
 
@@ -106,8 +105,8 @@ namespace PopulateNugetCache
 
             foreach (var operationFolder in operationFolders)
             {
-                string sourceFolder = operationFolder.OrderBy(p => p).First();
-                string targetFolder = Path.Combine(targetRootFolder, operationFolder.Key);
+                var sourceFolder = operationFolder.OrderBy(p => p).First();
+                var targetFolder = Path.Combine(targetRootFolder, operationFolder.Key);
 
                 var parentFolder = Path.GetDirectoryName(targetFolder);
                 if (!Directory.Exists(parentFolder))
@@ -119,7 +118,7 @@ namespace PopulateNugetCache
             }
 
             Log($"Folders: {statFolders}");
-            string opname = Operation == OperationMode.move ? "move" : "copy";
+            var opname = Operation == OperationMode.move ? "move" : "copy";
             Log($"Files {opname}: {statFiles}");
             double kb = ((long)(statFilesSize / 10.24)) / 100.0;
             double mb = ((long)(statFilesSize / 10.24 / 1024)) / 100.0;
@@ -129,7 +128,7 @@ namespace PopulateNugetCache
 
         void CalculateStats(string sourceDirName, string destDirName)
         {
-            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+            DirectoryInfo dir = new(sourceDirName);
 
             if (!Directory.Exists(destDirName))
             {
@@ -154,8 +153,8 @@ namespace PopulateNugetCache
 
             foreach (var operationFolder in operationFolders)
             {
-                string sourceFolder = operationFolder.OrderBy(p => p).First();
-                string targetFolder = Path.Combine(targetRootFolder, operationFolder.Key);
+                var sourceFolder = operationFolder.OrderBy(p => p).First();
+                var targetFolder = Path.Combine(targetRootFolder, operationFolder.Key);
 
                 var parentFolder = Path.GetDirectoryName(targetFolder) ?? string.Empty;
                 if (!Directory.Exists(parentFolder))
@@ -187,7 +186,7 @@ namespace PopulateNugetCache
         {
             if (!Directory.Exists(targetRootFolder))
             {
-                Log($"Creating folder: '{targetRootFolder }'", verbose: true);
+                Log($"Creating folder: '{targetRootFolder}'", verbose: true);
                 if (!Dryrun)
                 {
                     Directory.CreateDirectory(targetRootFolder);
@@ -197,7 +196,7 @@ namespace PopulateNugetCache
 
         void CopyDirectory(string sourceDirName, string destDirName)
         {
-            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+            DirectoryInfo dir = new(sourceDirName);
 
             if (!Directory.Exists(destDirName))
             {
@@ -210,7 +209,7 @@ namespace PopulateNugetCache
 
             foreach (var file in dir.GetFiles())
             {
-                string temppath = Path.Combine(destDirName, file.Name);
+                var temppath = Path.Combine(destDirName, file.Name);
                 Log($"Copying file: '{file.FullName}' -> '{temppath}'", verbose: true);
                 if (!Dryrun)
                 {
@@ -220,7 +219,7 @@ namespace PopulateNugetCache
 
             foreach (var subdir in dir.GetDirectories())
             {
-                string temppath = Path.Combine(destDirName, subdir.Name);
+                var temppath = Path.Combine(destDirName, subdir.Name);
                 CopyDirectory(subdir.FullName, temppath);
             }
         }

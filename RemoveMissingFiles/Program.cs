@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace RemoveMissingFiles
@@ -10,7 +9,7 @@ namespace RemoveMissingFiles
         {
             ConsoleHelper.HasWritten = false;
 
-            int result = RemoveFiles(args);
+            var result = RemoveFiles(args);
 
             if (ConsoleHelper.HasWritten &&
                 Environment.UserInteractive &&
@@ -25,7 +24,7 @@ namespace RemoveMissingFiles
 
         static int RemoveFiles(string[] args)
         {
-            string usage = @"RemoveMissingFiles 1.1
+            var usage = @"RemoveMissingFiles 1.1
 
 Usage: RemoveMissingFiles [-s] <solution file>
 
@@ -33,21 +32,21 @@ Example: RemoveMissingFiles hello.sln
 
 -s:  Perform a simulated removal without any side effects.";
 
+            var parsedArgs = args;
 
-            bool simulate = args.Any(a => a == "-s");
+            var simulate = parsedArgs.Any(a => a == "-s");
 
-            args = args.Except(new string[] { "-s" }).ToArray();
+            parsedArgs = [.. parsedArgs.Except(["-s"])];
 
-            if (args.Length != 1)
+            if (parsedArgs.Length != 1)
             {
                 ConsoleHelper.WriteLine(usage);
                 return 1;
             }
 
-            string solutionfile = args[0];
+            var solutionfile = parsedArgs[0];
 
-
-            Solution s = new Solution(solutionfile);
+            Solution s = new(solutionfile);
 
             try
             {
@@ -59,10 +58,9 @@ Example: RemoveMissingFiles hello.sln
                 return 2;
             }
 
-            int removedfiles = s.FixProjects();
+            var removedfiles = s.FixProjects();
 
             s.WriteProjects(simulate);
-
 
             return 0;
         }

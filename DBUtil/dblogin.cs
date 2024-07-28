@@ -1,17 +1,23 @@
-﻿namespace DBUtil
+﻿using System;
+using System.Data;
+using System.Data.Common;
+
+namespace DBUtil
 {
     class dblogin
     {
-        static System.Data.Common.DbProviderFactory _factory = null;
+        static DbProviderFactory _factory = null;
         static string _server = null;
         static string _database = null;
         static string _username = null;
         static string _password = null;
 
-        System.Data.Common.DbProviderFactory factory()
+        DbProviderFactory factory()
         {
             if (_factory == null)
+            {
                 login();
+            }
 
             return _factory;
         }
@@ -40,10 +46,8 @@
         {
             //DBLogin win;
 
-            System.Data.DataTable dtDataProviders;
-
             // Get all providers (table with 4 columns).
-            dtDataProviders = System.Data.Common.DbProviderFactories.GetFactoryClasses();
+            var dtDataProviders = DbProviderFactories.GetFactoryClasses();
             /*
             // Show all providers.
             win.cbDBProvider.DisplayMember = "NAME";
@@ -54,11 +58,10 @@
             win.tbUsername.Text = _username;
             win.tbPassword.Text = _password;
 
-
-            if(win.ShowDialog() = Windows.Forms.DialogResult.OK)
+            if(win.ShowDialog() = DialogResult.OK)
             {
                 // Create the DbProviderFactory.
-                _factory = System.Data.Common.DbProviderFactories.GetFactory(dtDataProviders.Rows[win.cbDBProvider.SelectedIndex]);
+                _factory = DbProviderFactories.GetFactory(dtDataProviders.Rows[win.cbDBProvider.SelectedIndex]);
             }*/
         }
 
@@ -71,7 +74,7 @@
              Subsequently, My.User will return identity information encapsulated in the CustomPrincipal object
              such as the username, display name, etc.
         */
-        void OK_Click(System.Object sender, System.EventArgs e)
+        void OK_Click(object sender, EventArgs e)
         {
             /*_server = tbServer.Text;
             _database = tbDatabase.Text;
@@ -81,7 +84,7 @@
             //this.Close();
         }
 
-        void Cancel_Click(System.Object sender, System.EventArgs e)
+        void Cancel_Click(object sender, EventArgs e)
         {
             //this.Close();
         }

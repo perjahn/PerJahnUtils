@@ -19,21 +19,21 @@ namespace CheckMissingFiles
             {
                 rows = File.ReadAllLines(SolutionFile);
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
             {
-                string message =
+                var message =
                     teamcityErrorMessage ?
-                        $"##teamcity[message text='Could not load solution: {SolutionFile} --> { ex.Message.Replace("\'", "")}' status='ERROR']" :
+                        $"##teamcity[message text='Could not load solution: {SolutionFile} --> {ex.Message.Replace("\'", "")}' status='ERROR']" :
                         $"Couldn't load solution: '{SolutionFile}' --> '{ex.Message}'";
 
                 throw new ApplicationException(message);
             }
 
-            ProjectsPaths = new List<string>();
+            ProjectsPaths = [];
 
-            foreach (string row in rows)
+            foreach (var row in rows)
             {
-                string[] projtypeguids = {
+                string[] projtypeguids = [
                     "{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}",  // deploy
                     "{20D4826A-C6FA-45DB-90F4-C717570B9F32}",  // cds
                     "{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}",  // aspnet5
@@ -44,11 +44,11 @@ namespace CheckMissingFiles
                     "{F2A71F9B-5D33-465A-A702-920D77279786}",  // f#
                     "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}",  // vb
                     "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"  // c#
-                };
-                string[] ignoreguids = {
+                ];
+                string[] ignoreguids = [
                     "{2150E333-8FDC-42A3-9474-1A3956D46DE8}",  // solution folder
                     "{E24C65DC-7377-472B-9ABA-BC803B73C61A}"  // website
-                };
+                ];
 
                 if (row.StartsWith("Project(\""))
                 {
@@ -57,14 +57,14 @@ namespace CheckMissingFiles
                     }
                     else if (projtypeguids.Any(g => row.StartsWith($"Project(\"{g}\") =")))
                     {
-                        string[] values = row.Substring(row.IndexOf('=') + 1).Split(',');
+                        string[] values = row[(row.IndexOf('=') + 1)..].Split(',');
                         if (values.Length != 3)
                         {
                             ConsoleHelper.WriteLineColor($"{SolutionFile}: Corrupt solution file: '{row}'", ConsoleColor.Yellow);
                             continue;
                         }
 
-                        string path = values[1].Trim().Trim('"');
+                        var path = values[1].Trim().Trim('"');
 
                         ProjectsPaths.Add(path);
                     }

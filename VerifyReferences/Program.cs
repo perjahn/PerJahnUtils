@@ -9,7 +9,7 @@ namespace VerifyReferences
     {
         static int Main(string[] args)
         {
-            int result = CheckFiles(args);
+            var result = CheckFiles(args);
 
             if (Environment.UserInteractive &&
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
@@ -23,7 +23,7 @@ namespace VerifyReferences
 
         static int CheckFiles(string[] args)
         {
-            string usage =
+            var usage =
 @"VerifyReferences 0.2 - Verifies that refereces in projects are to same assemblies.
 
 Usage: VerifyReferences [-r] [-t] <path>
@@ -33,92 +33,87 @@ Usage: VerifyReferences [-r] [-t] <path>
 
 Example: VerifyReferences -r .";
 
-            bool parseSubdirs = args.Any(a => a == "-r");
-            args = args.Where(a => a != "-r").ToArray();
+            var parsedArgs = args;
 
-            bool teamcityErrorMessage = args.Any(a => a == "-t");
-            args = args.Where(a => a != "-t").ToArray();
+            var parseSubdirs = parsedArgs.Any(a => a == "-r");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-r")];
 
-            if (args.Length != 1)
+            var teamcityErrorMessage = parsedArgs.Any(a => a == "-t");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-t")];
+
+            if (parsedArgs.Length != 1)
             {
                 Console.WriteLine(usage);
                 return 1;
             }
 
-            string path = args[0];
+            var path = parsedArgs[0];
 
-            string[] projectpaths = Directory.GetFiles(path, "*.*proj",
-                    parseSubdirs ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
-                .Select(p => p.StartsWith(@".\") ? p.Substring(2) : p)
-                .ToArray();
+            string[] projectpaths = [.. Directory.GetFiles(path, "*.*proj", parseSubdirs ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                .Select(p => p.StartsWith(@".\") ? p[2..] : p)];
 
             Console.WriteLine("Loading " + projectpaths.Length + " projects...");
 
-            List<Project> projects = new List<Project>();
+            List<Project> projects = [];
 
-            foreach (string projectpath in projectpaths)
+            foreach (var projectpath in projectpaths)
             {
                 projects.Add(new Project(projectpath, teamcityErrorMessage));
             }
-
 
             return Validate(projects) ? 0 : 1;
         }
 
         static bool Validate(List<Project> projects)
         {
-            var refs = projects
-                 .SelectMany(p => p.References, (p, r) =>
-                    new
-                    {
-                        project = p,
-                        reference = r
-                    })
+            (string shortinclude, (string path, string[] projectfiles)[] paths)[] refs = [.. projects
+                .SelectMany(p => p.References, (p, r) =>
+                    (
+                        project: p,
+                        reference: r
+                    ))
                 .GroupBy(r => r.reference.Shortinclude, (shortinclude, references) =>
-                    new
-                    {
+                {
+                    (string shortinclude, (string path, string[] projectfiles)[] paths) y =
+                    (
                         shortinclude,
-                        paths = references
+                        paths: [.. references
                             .Select(rr =>
-                                new
-                                {
+                                (
                                     rr.reference.Path,
-                                    projectfiles = references
+                                    projectfiles: references
                                         .Select(p => p.project.ProjectFile)
-                                })
+                                ))
                                 .GroupBy(r => r.Path, (path, projects2) =>
-                                     new
-                                     {
-                                         path,
-                                         projectfiles = projects2
+                                {
+                                    (string path, string[] projectfiles) x =
+                                    (
+                                        path,
+                                        projectfiles: [.. projects2
                                             .SelectMany(p => p.projectfiles)
                                             .Distinct()
-                                            .OrderBy(f => f)
-                                            .ToArray()
-                                     })
-                                .OrderBy(r => r.path)
-                                .ToArray()
-                    })
-                .OrderBy(r => r.shortinclude)
-                .ToList();
+                                            .OrderBy(f => f)]
+                                    );
+                                    return x;
+                                })
+                                .OrderBy(r => r.path)]
+                    );
+                    return y;
+                })
+                .OrderBy(r => r.shortinclude)];
 
+            (string shortinclude, (string path, string[] projectfiles)[] paths)[] failrefs = [.. refs.Where(r => r.paths.Length > 1)];
 
-            var failrefs = refs
-                .Where(r => r.paths.Count() > 1)
-                .ToArray();
+            Console.WriteLine("Found " + refs.Length + " references, " + failrefs.Length + " inconsistent.");
 
-            // .projects.Any(p => p..path != r.projects.First()..path)
-
-            Console.WriteLine("Found " + refs.Count() + " references, " + failrefs.Count() + " inconsistent.");
-
-            foreach (var failref in failrefs)
+            foreach (var (shortinclude, paths) in failrefs)
             {
-                int count1 = failref.paths.Count();
-                int count2 = failref.paths.Count();
+                var count1 = paths.Length;
+                var count2 = paths.Length;
 
-                ConsoleHelper.WriteLineColor(failref.shortinclude + " (" + count1 + "/" + count2 + ")", ConsoleColor.Cyan);
+                ConsoleHelper.WriteLineColor(shortinclude + " (" + count1 + "/" + count2 + ")", ConsoleColor.Cyan);
 
-                foreach (var path in failref.paths)
+                foreach (var path in paths)
                 {
                     Console.WriteLine("  " + path.path);
                     foreach (var projectfile in path.projectfiles)
@@ -126,21 +121,16 @@ Example: VerifyReferences -r .";
                         Console.WriteLine("    " + projectfile);
                     }
                 }
-
-                //Console.WriteLine("Non-unique hint path: '" + string.Join("', '", failref.Select(r => r.path)) + "'");
             }
 
-
-            if (failrefs.Count() > 0)
+            if (failrefs.Length > 0)
             {
-                ConsoleHelper.WriteLineColor("Inconsistencies found in " + failrefs.Count() + " projects.", ConsoleColor.Red);
+                ConsoleHelper.WriteLineColor("Inconsistencies found in " + failrefs.Length + " projects.", ConsoleColor.Red);
                 return false;
             }
 
             ConsoleHelper.WriteLineColor("All good!", ConsoleColor.Green);
             return true;
         }
-
-
     }
 }

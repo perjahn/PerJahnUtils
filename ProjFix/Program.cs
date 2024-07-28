@@ -3,7 +3,8 @@
 // multiple referenced to same ass seems to be compacted. print warning?
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
+using System.Threading;
 
 namespace ProjFix
 {
@@ -15,24 +16,25 @@ namespace ProjFix
         {
             // Make all string comparisons (and sort/order) invariant of current culture
             // Thus, project output files is written in a consistent manner
-            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            string usage =  // Todo
-@"Usage: ProjFix [-b] [-c] [-hPaths] [-oPath] [-r] [-s] [-v] <solutionfile>
+            /*
+            @"Usage: ProjFix [-b] [-c] [-hPaths] [-oPath] [-r] [-s] [-v] <solutionfile>
 
-NOT: -c:   Force copy local true (NOT IMPLEMENTED YET). Why is this useful? GAC dlls should usually not be copied to output folder.
-NOT: -c:   If copy local is true, don't remove hint path. (copy local means that VS copies the referenced dll to the output folder,
-           *even when the file is in GAC*). This should be done automatically, I see no reason for not doing it. Option is unnecessary.
-           Private without Hintpath is useless, probably invalid.
- -d:   On all dll references: (Force specific version=False and) remove all version info.
- -o:   Set common output path for all projects (NOT IMPLEMENTED YET).
+            NOT: -c:   Force copy local true (NOT IMPLEMENTED YET). Why is this useful? GAC dlls should usually not be copied to output folder.
+            NOT: -c:   If copy local is true, don't remove hint path. (copy local means that VS copies the referenced dll to the output folder,
+                       *even when the file is in GAC*). This should be done automatically, I see no reason for not doing it. Option is unnecessary.
+                       Private without Hintpath is useless, probably invalid.
+             -d:   On all dll references: (Force specific version=False and) remove all version info.
+             -o:   Set common output path for all projects (NOT IMPLEMENTED YET).
 
-Example: ProjFix -h..\Dir1,Dir2 -obin mysol.sln
+            Example: ProjFix -h..\Dir1,Dir2 -obin mysol.sln
 
-Rootpath will be search recursively for matching .targets files, must be uniquely named.";
+            Rootpath will be search recursively for matching .targets files, must be uniquely named.";
+            */
 
-            usage =
-@"ProjFix 2.7 - Program for patching Visual Studio project files.
+            var usage =
+                @"ProjFix 2.7 - Program for patching Visual Studio project files.
 
 Usage: ProjFix [-b] [-hPaths] [-r] [-s] [-v] <solutionfile>
 
@@ -47,11 +49,11 @@ Example: ProjFix -h..\Dir1,Dir2 -obin mysol.sln
 
 Hintpaths are relative from current directory.";
 
-            bool nobackup = false;
-            bool copylocal = false;
-            bool removeversion = false;
-            bool restore = false;
-            bool simulate = false;
+            var nobackup = false;
+            var copylocal = false;
+            var removeversion = false;
+            var restore = false;
+            var simulate = false;
             List<string> hintpaths = null;
             string outputpath = null;
             string solutionfile;
@@ -76,11 +78,11 @@ Hintpaths are relative from current directory.";
                 }
                 else if (args[arg].StartsWith("-h") && args[arg].Length >= 3)
                 {
-                    hintpaths = args[arg].Substring(2).Split(',').ToList();
+                    hintpaths = [.. args[arg][2..].Split(',')];
                 }
                 else if (args[arg].StartsWith("-o") && args[arg].Length >= 3)
                 {
-                    outputpath = args[arg].Substring(2);
+                    outputpath = args[arg][2..];
                 }
                 else if (args[arg].StartsWith("-r") && args[arg].Length == 2)
                 {
@@ -118,7 +120,7 @@ Hintpaths are relative from current directory.";
                 return 99;
             }
 
-            solutionfile = args[args.Length - 1];
+            solutionfile = args[^1];
 
             ConsoleHelper.WriteLine(
                 $"solutionfile:   {(solutionfile == null ? "<null>" : $"'{solutionfile}'")}{eol}" +
@@ -132,24 +134,27 @@ Hintpaths are relative from current directory.";
                 $"verboselogging: {ConsoleHelper.Verboselogging}",
                 true);
 
+            Solution s = new(solutionfile);
+
             if (restore)
             {
-                Solution s = new Solution(solutionfile);
                 s.RestoreProjects();
             }
             else
             {
-                Solution s = new Solution(solutionfile);
-
-                List<Project> projects = s.LoadProjects();
+                var projects = s.LoadProjects();
                 if (projects == null)
+                {
                     return 2;
+                }
 
-                bool success = s.FixProjects(projects, hintpaths, outputpath, copylocal, removeversion);
-                if (success == false)
+                var success = s.FixProjects(projects, hintpaths, removeversion);
+                if (!success)
+                {
                     return 3;
+                }
 
-                s.WriteProjects(projects, hintpaths, outputpath, simulate, nobackup);
+                s.WriteProjects(projects, simulate, nobackup);
             }
 
             return 0;

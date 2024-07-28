@@ -12,22 +12,26 @@ namespace ProjFix
         {
             ConsoleHelper.WriteLine("Testing GetRelativePath():", false);
             string[] paths =
-            {
+            [
                 @"Folder1\Folder2\File1.csproj",
                 @"Folder3\Folder4\File2.csproj",
                 @"..\..\Folder3\Folder4\File2.csproj",
 
                 @"dir1\file1", @"dir2\file2", @"..\dir2\file2",
                 @"dir1\", @"dir2\file2", @"..\dir2\file2"
-            };
+            ];
 
-            for (int i = 0; i < paths.Length; i += 3)
+            for (var i = 0; i < paths.Length; i += 3)
             {
-                string s = FileHelper.GetRelativePath(paths[i], paths[i + 1]);
+                var s = GetRelativePath(paths[i], paths[i + 1]);
                 if (s == paths[i + 2])
+                {
                     ConsoleHelper.ColorWrite(ConsoleColor.Green, $"'{paths[i]}' -> '{paths[i + 1]}' = '{s}'");
+                }
                 else
+                {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{paths[i]}' -> '{paths[i + 1]}' = '{s}' ({paths[i + 2]})");
+                }
             }
         }
 
@@ -35,38 +39,30 @@ namespace ProjFix
         // Sorry, code is not 100% robust.
         public static string GetRelativePath(string pathFrom, string pathTo)
         {
-            string s = pathFrom;
+            var s = pathFrom;
 
             int pos = 0, dirs = 0;
             while (!pathTo.StartsWith(s + Path.DirectorySeparatorChar, StringComparison.InvariantCultureIgnoreCase) && s.Length > 0)
             {
                 pos = s.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos == -1)
-                {
-                    s = string.Empty;
-                }
-                else
-                {
-                    s = s.Substring(0, pos);
-                }
-
+                s = pos == -1 ? string.Empty : s[..pos];
                 dirs++;
             }
 
             dirs--;
 
-            string s2 = GetDirs(dirs);
-            string s3 = pathTo.Substring(pos + 1);
-            string s4 = s2 + s3;
+            var s2 = GetDirs(dirs);
+            var s3 = pathTo[(pos + 1)..];
+            var s4 = s2 + s3;
 
             return s4;
         }
 
         private static string GetDirs(int count)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 sb.Append($"..{Path.DirectorySeparatorChar}");
             }
@@ -78,7 +74,7 @@ namespace ProjFix
         {
             ConsoleHelper.WriteLine("Testing CompactPath():", false);
             string[] paths =
-            {
+            [
                 @"", @"",
                 @"\", @"\",
                 @"..", @"..",
@@ -128,15 +124,19 @@ namespace ProjFix
                 @"..\\", @"..\",
 
                 @"\\\\", @"\"
-            };
+            ];
 
-            for (int i = 0; i < paths.Length; i += 2)
+            for (var i = 0; i < paths.Length; i += 2)
             {
-                string s = FileHelper.CompactPath(paths[i]);
+                var s = CompactPath(paths[i]);
                 if (s == paths[i + 1])
+                {
                     ConsoleHelper.ColorWrite(ConsoleColor.Green, $"'{paths[i]}' -> '{s}'");
+                }
                 else
+                {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red, $"'{paths[i]}' -> '{s}' ({paths[i + 1]})");
+                }
             }
         }
 
@@ -145,18 +145,18 @@ namespace ProjFix
         // This code is 100% robust!
         public static string CompactPath(string path)
         {
-            List<string> folders = path.Split(Path.DirectorySeparatorChar).ToList();
+            List<string> folders = [.. path.Split(Path.DirectorySeparatorChar)];
 
             // Remove redundant folders
-            for (int i = 0; i < folders.Count;)
+            for (var i = 0; i < folders.Count;)
             {
-                if (i > 0 && folders[i] == ".." && folders[i - 1] != ".." && folders[i - 1] != "")
+                if (i > 0 && folders[i] == ".." && folders[i - 1] != ".." && folders[i - 1] != string.Empty)
                 {
                     folders.RemoveAt(i - 1);
                     folders.RemoveAt(i - 1);
                     i--;
                 }
-                else if (i > 0 && folders[i] == "" && folders[i - 1] == "")
+                else if (i > 0 && folders[i] == string.Empty && folders[i - 1] == string.Empty)
                 {
                     folders.RemoveAt(i);
                 }
@@ -167,11 +167,11 @@ namespace ProjFix
             }
 
             // Combine folders into path2
-            string path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders.ToArray());
+            var path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders);
 
             // If path had a starting/ending \, keep it
-            string sep = Path.DirectorySeparatorChar.ToString();
-            if (path2 == "" && (path.StartsWith(sep) || path.EndsWith(sep)))
+            var sep = Path.DirectorySeparatorChar.ToString();
+            if (path2 == string.Empty && (path.StartsWith(sep) || path.EndsWith(sep)))
             {
                 path2 = Path.DirectorySeparatorChar.ToString();
             }
@@ -181,7 +181,7 @@ namespace ProjFix
 
         public static void RemoveRO(string filename)
         {
-            FileAttributes fa = File.GetAttributes(filename);
+            var fa = File.GetAttributes(filename);
             if ((fa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
             {
                 File.SetAttributes(filename, fa & ~FileAttributes.ReadOnly);

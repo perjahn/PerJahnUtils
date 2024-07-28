@@ -16,7 +16,7 @@ namespace CreateSolution
         public string name = string.Empty;
         public string guid = string.Empty;
         public string assemblyname = string.Empty;
-        public List<string> targets = new List<string>();
+        public List<string> targets = [];
     };
 
     class Program
@@ -39,7 +39,7 @@ namespace CreateSolution
             // Thus, solution output file is written in a consistent manner
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            string usage =
+            var usage =
 @"CreateSolution 2.4 - Creates VS solution file.
 
 Usage: CreateSolution [-g] [-vX] [-wWebSiteFolder] <path> <solutionfile> [excludeprojs...]
@@ -56,10 +56,10 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             bool generateGlobalSection = false;
             VSVersion vsVersion = VSVersion.VS2019;
-            List<string> websiteFolders = new List<string>();
+            List<string> websiteFolders = [];
 
-            List<string> argsWithoutFlags = new List<string>();
-            foreach (string arg in args)
+            List<string> argsWithoutFlags = [];
+            foreach (var arg in args)
             {
                 switch (arg)
                 {
@@ -87,7 +87,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                     default:
                         if (arg.StartsWith("-w"))
                         {
-                            websiteFolders.Add(arg.Substring(2));
+                            websiteFolders.Add(arg[2..]);
                         }
                         else
                         {
@@ -103,10 +103,9 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 return;
             }
 
-
-            string path = argsWithoutFlags[0];
-            string solutionfile = argsWithoutFlags[1];
-            var excludeProjects = argsWithoutFlags.Skip(2).ToList();
+            var path = argsWithoutFlags[0];
+            var solutionfile = argsWithoutFlags[1];
+            List<string> excludeProjects = [.. argsWithoutFlags.Skip(2)];
 
             CreateSolution(path, solutionfile, generateGlobalSection, vsVersion, excludeProjects, websiteFolders);
         }
@@ -115,19 +114,18 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
         {
             List<string> files;
 
-            string[] exts = { ".csproj", ".vbproj", ".vcxproj", ".sqlproj", ".modelproj" };
-            string[] typeguids = {
+            string[] exts = [".csproj", ".vbproj", ".vcxproj", ".sqlproj", ".modelproj"];
+            string[] typeguids = [
                 "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC",  // maybe optional 9A19103F-16F7-4668-BE54-9A1E7A4F7556
                 "F184B08F-C81C-45F6-A57F-5ABD9991F28F",
                 "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942",
                 "00D1A9C2-B5F0-4AF3-8072-F6C62B433612",
-                "F088123C-0E9E-452A-89E6-6BA2F21D5CAC" };
+                "F088123C-0E9E-452A-89E6-6BA2F21D5CAC" ];
 
             try
             {
-                files = Directory.GetFiles(path, "*.*proj", SearchOption.AllDirectories)
-                    .Where(filename => exts.Any(ext => Path.GetExtension(filename) == ext))
-                    .ToList();
+                files = [.. Directory.GetFiles(path, "*.*proj", SearchOption.AllDirectories)
+                    .Where(filename => exts.Any(ext => Path.GetExtension(filename) == ext))];
             }
             catch (DirectoryNotFoundException ex)
             {
@@ -135,7 +133,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 return;
             }
 
-            foreach (string websiteFolder in websiteFolders)
+            foreach (var websiteFolder in websiteFolders)
             {
                 if (!Directory.Exists(websiteFolder))
                 {
@@ -144,12 +142,12 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 }
             }
 
-            Console.WriteLine($"Generating solution for: {vsVersion.ToString()}");
+            Console.WriteLine($"Generating solution for: {vsVersion}");
 
             files.Sort();
 
-            bool first = true;
-            foreach (string filename in files.ToList())  // Create tmp list
+            var first = true;
+            foreach (var filename in files.ToList())  // Create tmp list
             {
                 if (excludeProjects.Any(p => exts.Any(ext => filename.EndsWith($"\\{p}{ext}"))))
                 {
@@ -163,20 +161,17 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 }
             }
 
-
-            List<Proj> projs = GetProjects(files, solutionfile);
-
+            var projs = GetProjects(files, solutionfile);
 
             projs = RemoveDups(projs);
 
+            var projcount = 0;
 
-            int projcount = 0;
-
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
 
             foreach (var p in projs.OrderBy(p => p.name))
             {
-                for (int i = 0; i < exts.Length; i++)
+                for (var i = 0; i < exts.Length; i++)
                 {
                     if (Path.GetExtension(p.path) == exts[i])
                     {
@@ -186,11 +181,10 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 projcount++;
             }
 
-
-            foreach (string websiteFolder in websiteFolders)
+            foreach (var websiteFolder in websiteFolders)
             {
-                Random r = new Random();
-                int port = r.Next(1024, 65535);
+                Random r = new();
+                var port = r.Next(1024, 65535);
 
                 sb.AppendLine(
                     "Project(\"{E24C65DC-7377-472B-9ABA-BC803B73C61A}\") = \"" + $"{Path.GetFileName(websiteFolder)}\", \"http://localhost:{port}\", \"" + "{" + Guid.NewGuid().ToString().ToUpper() + "}" + $"\"{Environment.NewLine}" +
@@ -200,60 +194,38 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                     $"EndProject");
             }
 
-
-
             if (projcount == 0)
             {
                 Console.WriteLine($"Couldn't find any projects in: '{path}'");
                 return;
             }
 
-
             if (generateGlobalSection)
             {
                 sb.Append(GenerateGlobalSection(projs));
             }
 
-
-            string s = sb.ToString();
-
-            switch (vsVersion)
+            var s = vsVersion switch
             {
-                case VSVersion.VS2010:
-                    s = $"Microsoft Visual Studio Solution File, Format Version 11.00{Environment.NewLine}# Visual Studio 2010{Environment.NewLine}{s}";
-                    break;
-                case VSVersion.VS2012:
-                    s = $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 2012{Environment.NewLine}{s}";
-                    break;
-                case VSVersion.VS2013:
-                    s = $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 2013{Environment.NewLine}{s}";
-                    break;
-                case VSVersion.VS2015:
-                    s = $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 14{Environment.NewLine}{s}";
-                    break;
-                case VSVersion.VS2017:
-                    s = $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 15{Environment.NewLine}{s}";
-                    break;
-                case VSVersion.VS2019:
-                    s = $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio Version 16{Environment.NewLine}{s}";
-                    break;
-            }
+                VSVersion.VS2010 => $"Microsoft Visual Studio Solution File, Format Version 11.00{Environment.NewLine}# Visual Studio 2010{Environment.NewLine}{sb}",
+                VSVersion.VS2012 => $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 2012{Environment.NewLine}{sb}",
+                VSVersion.VS2013 => $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 2013{Environment.NewLine}{sb}",
+                VSVersion.VS2015 => $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 14{Environment.NewLine}{sb}",
+                VSVersion.VS2017 => $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio 15{Environment.NewLine}{sb}",
+                VSVersion.VS2019 => $"Microsoft Visual Studio Solution File, Format Version 12.00{Environment.NewLine}# Visual Studio Version 16{Environment.NewLine}{sb}",
+                _ => throw new NotImplementedException()
+            };
 
             Console.WriteLine($"Writing {projcount} projects to {solutionfile}.");
-            using (var sw = new StreamWriter(solutionfile))
-            {
-                sw.Write(s);
-            }
-
-
-            return;
+            using StreamWriter sw = new(solutionfile);
+            sw.Write(s);
         }
 
         static List<Proj> GetProjects(List<string> files, string solutionfile)
         {
-            var projects = new List<Proj>();
+            List<Proj> projects = [];
 
-            foreach (string filename in files)
+            foreach (var filename in files)
             {
                 Proj newproj;
 
@@ -269,28 +241,24 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
                     newproj = new Proj();
 
-                    string file1 = Path.GetFullPath(solutionfile);
-                    string file2 = Path.GetFullPath(filename);
+                    var file1 = Path.GetFullPath(solutionfile);
+                    var file2 = Path.GetFullPath(filename);
 
-                    string relpath = GetRelativePath(file1, file2);
+                    var relpath = GetRelativePath(file1, file2);
 
                     newproj.path = relpath;
 
                     var guidelement = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectGuid").FirstOrDefault();
                     if (guidelement == null)
                     {
-                        byte[] pathbuf = Encoding.UTF8.GetBytes(relpath);
-                        byte[] filebuf = File.ReadAllBytes(filename);
+                        var pathbuf = Encoding.UTF8.GetBytes(relpath);
+                        var filebuf = File.ReadAllBytes(filename);
 
-                        byte[] bytes = new byte[pathbuf.Length + filebuf.Length];
+                        var bytes = new byte[pathbuf.Length + filebuf.Length];
                         Buffer.BlockCopy(pathbuf, 0, bytes, 0, pathbuf.Length);
                         Buffer.BlockCopy(filebuf, 0, bytes, pathbuf.Length, filebuf.Length);
 
-                        byte[] hash;
-                        using (MD5 md5 = MD5.Create())
-                        {
-                            hash = md5.ComputeHash(bytes);
-                        }
+                        var hash = MD5.HashData(bytes);
                         var guid = new Guid(hash);
                         newproj.guid = guid.ToString().ToUpper();
                     }
@@ -299,26 +267,22 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                         newproj.guid = guidelement.Value.ToUpper();
                     }
 
-                    var xeleTestNull = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").FirstOrDefault();
-                    if (xeleTestNull == null)
+                    var xele = xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "AssemblyName").FirstOrDefault();
+                    if (xele == null)
                     {
                         Console.WriteLine($"Ignoring invalid project: '{filename}'");
                         continue;
                     }
-                    XElement xele = xeleTestNull;
-
-                    newproj.assemblyname = xele?.Value ?? string.Empty;
-
+                    newproj.assemblyname = xele.Value ?? string.Empty;
                     newproj.name = Path.GetFileNameWithoutExtension(filename);
 
                     try
                     {
-                        newproj.targets =
-                            xdoc.Elements(ns + "Project").Elements(ns + "PropertyGroup")
-                                .Where(el => el.Attribute("Condition") != null)
-                                .OrderBy(el => GetTarget(el.Attribute("Condition")?.Value ?? string.Empty))
-                                .Select(el => GetTarget(el.Attribute("Condition")?.Value ?? string.Empty))
-                                .ToList();
+                        newproj.targets = [.. xdoc
+                            .Elements(ns + "Project").Elements(ns + "PropertyGroup")
+                            .Where(el => el.Attribute("Condition") != null)
+                            .OrderBy(el => GetTarget(el.Attribute("Condition")?.Value ?? string.Empty))
+                            .Select(el => GetTarget(el.Attribute("Condition")?.Value ?? string.Empty))];
                     }
                     catch (NullReferenceException)
                     {
@@ -327,7 +291,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Couldn't load project: '{filename}': {ex.ToString()}");
+                    Console.WriteLine($"Couldn't load project: '{filename}': {ex}");
                     continue;
                 }
 
@@ -339,11 +303,9 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         private List<Proj> GetDuplicates(List<Proj> projects)
         {
-            var dups = new List<Proj>();
+            List<Proj> dups = [];
 
-            var results = projects
-                .GroupBy(a => a.guid)
-                .Where(g => g.Count() > 1);
+            var results = projects.GroupBy(a => a.guid).Where(g => g.Count() > 1);
 
             foreach (var group in results)
             {
@@ -358,57 +320,51 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         static List<string> GetAllTargets(List<Proj> projs)
         {
-            var targets = projs
-                .SelectMany(t => t.targets)
-                .Distinct()
-                .ToList();
+            string[] targets = [.. projs.SelectMany(t => t.targets).Distinct()];
 
             // Remove lowercase dups (keep most uppercased)
-            return targets
-                .Where(t => !targets
-                    .Any(tt => string.Compare(t, tt, StringComparison.InvariantCultureIgnoreCase) == 0 && string.Compare(t, tt) < 0))
-                .ToList();
+            return [.. targets.Where(t => !targets.Any(tt => string.Compare(t, tt, StringComparison.OrdinalIgnoreCase) == 0 && string.Compare(t, tt) < 0))];
         }
 
         // " '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "
         // Debug
         static string GetTarget(string s)
         {
-            int pos = s.IndexOf("==");
+            var pos = s.IndexOf("==");
             if (pos < 0)
+            {
                 throw new NullReferenceException();
+            }
 
-            int pos2 = s.IndexOf("'", pos);
+            var pos2 = s.IndexOf('\'', pos);
             if (pos2 < 0)
+            {
                 throw new NullReferenceException();
+            }
 
-            int pos3 = s.IndexOf("|", pos2);
-            if (pos3 < 0)
-                throw new NullReferenceException();
+            var pos3 = s.IndexOf('|', pos2);
 
-            return s.Substring(pos2 + 1, pos3 - pos2 - 1);
+            return pos3 < 0 ? throw new NullReferenceException() : s.Substring(pos2 + 1, pos3 - pos2 - 1);
         }
 
         static List<Proj> RemoveDups(List<Proj> projs)
         {
-            var projs2 = projs.ToList();
+            var projs2 = projs.ToList();  // Create tmp list
 
             RemoveByGuid(projs2);
             RemoveByAssemblyName(projs2);
             RemoveByFileName(projs2);
 
-            return projs2
-                .Where(p => p != null)
-                .ToList();
+            return [.. projs2.Where(p => p != null)];
         }
 
         private static void RemoveByGuid(List<Proj> projs2)
         {
-            var projs3 = projs2.OrderBy(p => p.guid).ThenBy(p => p.path).ToList();  // Create tmp list
-            bool first = true;
+            List<Proj> projs3 = [.. projs2.OrderBy(p => p.guid).ThenBy(p => p.path)];  // Create tmp list
+            var first = true;
             foreach (var proj1 in projs3)
             {
-                int count = 0;
+                var count = 0;
                 foreach (var proj2 in projs2)
                 {
                     if (proj1.guid == proj2.guid)
@@ -439,11 +395,11 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         private static void RemoveByAssemblyName(List<Proj> projs2)
         {
-            var projs3 = projs2.OrderBy(p => p.assemblyname).ThenBy(p => p.path).ToList();  // Create tmp list
-            bool first = true;
+            List<Proj> projs3 = [.. projs2.OrderBy(p => p.assemblyname).ThenBy(p => p.path)];  // Create tmp list
+            var first = true;
             foreach (var proj1 in projs3)
             {
-                int count = 0;
+                var count = 0;
                 foreach (var proj2 in projs2)
                 {
                     if (proj1.assemblyname != string.Empty && proj2.assemblyname != string.Empty && string.CompareOrdinal(proj1.assemblyname, proj2.assemblyname) == 0)
@@ -474,11 +430,11 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         private static void RemoveByFileName(List<Proj> projs2)
         {
-            var projs3 = projs2.OrderBy(p => p.name).ThenBy(p => p.path).ToList();  // Create tmp list
-            bool first = true;
+            List<Proj> projs3 = [.. projs2.OrderBy(p => p.name).ThenBy(p => p.path)];  // Create tmp list
+            var first = true;
             foreach (var proj1 in projs3)
             {
-                int count = 0;
+                var count = 0;
                 foreach (var proj2 in projs2)
                 {
                     if (string.CompareOrdinal(proj1.name, proj2.name) == 0)
@@ -509,29 +465,21 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
         static string GetRelativePath(string pathFrom, string pathTo)
         {
-            string s = pathFrom;
+            var s = pathFrom;
 
             int pos = 0, dirs = 0;
             while (!pathTo.StartsWith(s) && s.Length > 0)
             {
                 pos = s.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos == -1)
-                {
-                    s = string.Empty;
-                }
-                else
-                {
-                    s = s.Substring(0, pos);
-                }
-
+                s = pos == -1 ? string.Empty : s[..pos];
                 dirs++;
             }
 
             dirs--;
 
-            string s2 = string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs).ToArray());
-            string s3 = pathTo.Substring(pos + 1);
-            string s4 = s2 + s3;
+            var s2 = string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs));
+            var s3 = pathTo[(pos + 1)..];
+            var s4 = s2 + s3;
 
             return s4;
         }
@@ -547,14 +495,14 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
             var sb = new StringBuilder();
 
             sb.AppendLine(
-                    $"Global{Environment.NewLine}" +
-                    $"\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
+                $"Global{Environment.NewLine}" +
+                $"\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
 
-            var targets = GetAllTargets(projs)
+            string[] targets = [.. GetAllTargets(projs)
                 .OrderBy(t => t)
-                .Distinct();
+                .Distinct()];
 
-            foreach (string target in targets)
+            foreach (var target in targets)
             {
                 sb.AppendLine(
                     $"\t\t{target}|Any CPU = {target}|Any CPU{Environment.NewLine}" +
@@ -568,7 +516,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             foreach (var p in projs.OrderBy(p => p.name))
             {
-                foreach (string target in p.targets)
+                foreach (var target in p.targets)
                 {
                     sb.AppendLine(
                         $"\t\t{p.guid}.{target}|Any CPU.ActiveCfg = {target}|Any CPU{Environment.NewLine}" +

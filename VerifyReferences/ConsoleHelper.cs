@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace VerifyReferences
 {
@@ -8,7 +6,7 @@ namespace VerifyReferences
     {
         public static void WriteLineColor(string message, ConsoleColor color)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;
@@ -22,7 +20,7 @@ namespace VerifyReferences
 
         public static void WriteColor(string message, ConsoleColor color)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;

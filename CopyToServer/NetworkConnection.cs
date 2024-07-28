@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 
@@ -72,6 +70,7 @@ namespace CopyToServer
 
     public enum ResourceScope : int
     {
+        None = 0,
         Connected = 1,
         GlobalNetwork,
         Remembered,
@@ -79,12 +78,13 @@ namespace CopyToServer
         Context
     };
 
+    [Flags]
     public enum ResourceType : int
     {
-        Any = 0,
+        None = 0,
         Disk = 1,
         Print = 2,
-        Reserved = 8,
+        Reserved2 = 8
     }
 
     public enum ResourceDisplaytype : int

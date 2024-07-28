@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Mail;
-using System.Text;
+using System.Threading;
 
 namespace mailer
 {
@@ -16,10 +15,10 @@ namespace mailer
                 return;
             }
 
-            SmtpClient smtpClient = new SmtpClient(args[4]);
-            MailMessage message = new MailMessage(args[1], args[0], args[2], args[3].Replace(@"\n", "\n"));
+            using SmtpClient smtpClient = new(args[4]);
+            using MailMessage message = new(args[1], args[0], args[2], args[3].Replace(@"\n", "\n"));
             smtpClient.Send(message);
-            System.Threading.Thread.Sleep(5000);
+            Thread.Sleep(5000);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace DBExport
 
             var sql = "select name from sys.tables order by name";
 
-            var connection = new SqlConnection(connstr);
+            SqlConnection connection = new(connstr);
             connection.Open();
 
             using var cmd = connection.CreateCommand();
@@ -56,7 +56,7 @@ namespace DBExport
 
             Console.WriteLine($"Exporting: '{tablename}' -> '{filename}'");
 
-            var connection = new SqlConnection(connstr);
+            SqlConnection connection = new(connstr);
             connection.Open();
 
             var sql = $"select * from [{tablename}]";
@@ -67,7 +67,7 @@ namespace DBExport
             cmd.CommandText = sql;
 
             using var reader = await cmd.ExecuteReaderAsync();
-            using var writer = new StreamWriter(filename);
+            using StreamWriter writer = new(filename);
 
             long row = 0;
 

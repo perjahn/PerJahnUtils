@@ -16,5 +16,6 @@ ipch
 bin
 obj
 packages
+perjahnutils.7z
 .vs
 .vscode

@@ -6,16 +6,10 @@ using System.Runtime.InteropServices;
 
 namespace copysync
 {
-    class CopyOperation
+    class CopyOperation(string SourcePath, string DestinationPath)
     {
-        public string SourcePath { get; set; }
-        public string DestinationPath { get; set; }
-
-        public CopyOperation(string SourcePath, string DestinationPath)
-        {
-            this.SourcePath = SourcePath;
-            this.DestinationPath = DestinationPath;
-        }
+        public string SourcePath { get; set; } = SourcePath;
+        public string DestinationPath { get; set; } = DestinationPath;
     }
 
     class Program
@@ -27,7 +21,7 @@ namespace copysync
 
         static int Main(string[] args)
         {
-            int result = CopyNonInteractive(args);
+            var result = CopyNonInteractive(args);
 
             if (Environment.UserInteractive)
             {
@@ -40,7 +34,7 @@ namespace copysync
 
         static int CopyNonInteractive(string[] args)
         {
-            string usage = @"CopySync 1.3
+            var usage = @"CopySync 1.3
 
 Usage: copysync [-n] [-s] [-v] -[t] <source folder> <target folder> <exclude files>
 
@@ -51,27 +45,28 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
 -t:  Generate TFS checkout script
 -v:  Verbose logging";
 
+            var parsedArgs = args;
 
-            if (args.Any(a => a == "-n"))
+            if (parsedArgs.Any(a => a == "-n"))
             {
                 _onlynewer = true;
             }
-            if (args.Any(a => a == "-s"))
+            if (parsedArgs.Any(a => a == "-s"))
             {
                 _simulate = true;
             }
-            if (args.Any(a => a == "-t"))
+            if (parsedArgs.Any(a => a == "-t"))
             {
                 _tfs = true;
             }
-            if (args.Any(a => a == "-v"))
+            if (parsedArgs.Any(a => a == "-v"))
             {
                 _verbose = true;
             }
 
-            args = args.Except(new string[] { "-n", "-s", "-t", "-v" }).ToArray();
+            parsedArgs = [.. parsedArgs.Except(["-n", "-s", "-t", "-v"])];
 
-            if (args.Length < 2)
+            if (parsedArgs.Length < 2)
             {
                 Console.WriteLine(usage);
                 return 0;
@@ -79,21 +74,21 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
 
             List<CopyOperation> copyOperations;
 
-            List<string> ExcludeFilePatterns = new List<string>();
-            for (int i = 2; i < args.Length; i++)
+            List<string> ExcludeFilePatterns = [];
+            for (var i = 2; i < parsedArgs.Length; i++)
             {
-                if (!args[i].StartsWith("-"))
+                if (!parsedArgs[i].StartsWith('-'))
                 {
                     Console.WriteLine(usage);
                     return 0;
                 }
 
-                ExcludeFilePatterns.Add(args[i].Substring(1));
+                ExcludeFilePatterns.Add(parsedArgs[i][1..]);
             }
 
             try
             {
-                copyOperations = GetCopyOperations(args[0], args[1], ExcludeFilePatterns);
+                copyOperations = GetCopyOperations(parsedArgs[0], parsedArgs[1], ExcludeFilePatterns);
             }
             catch (IOException ex)
             {
@@ -106,7 +101,7 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
                 return 2;
             }
 
-            PerformCopy(copyOperations, args[0], args[1]);
+            PerformCopy(copyOperations, parsedArgs[0], parsedArgs[1]);
 
             GenerateCheckoutScript(copyOperations);
 
@@ -172,108 +167,57 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
             Console.WriteLine($"Path: '{folder}', Pattern: '{pattern}'");
 
             string[] files;
-            List<Exception> errors = new List<Exception>();
+            List<Exception> errors = [];
             files = Directory.GetFiles(folder, pattern, SearchOption.AllDirectories);
-            //files = GetFiles2(new DirectoryInfo(folder), pattern, out errors).ToArray();
 
             excludedFiles = 0;
-            foreach (string ExcludeFilePattern in ExcludeFilePatterns)
+            foreach (var ExcludeFilePattern in ExcludeFilePatterns)
             {
                 Log($"Excluding pattern: '{ExcludeFilePattern}'");
 
-                string[] ExcludeFiles =
-                        Directory.GetFiles(folder, ExcludeFilePattern, SearchOption.AllDirectories)
-                        .Select(f => Path.GetFileName(f))
-                        .Distinct()
-                        .ToArray();
+                string[] ExcludeFiles = [.. Directory.GetFiles(folder, ExcludeFilePattern, SearchOption.AllDirectories)
+                    .Select(Path.GetFileName)
+                    .Distinct()];
 
-                /*List<string> ExcludeFiles = Directory.GetFiles(folder, ExcludeFilePattern, SearchOption.AllDirectories).ToList();
-                GetFiles2(new DirectoryInfo(folder), pattern, out errors)
-                .Select(f => Path.GetFileName(f))
-                .Distinct()
-                .ToList();*/
-
-                int oldcount = files.Length;
-                files = files.Where(f => !ExcludeFiles.Contains(Path.GetFileName(f))).ToArray();
+                var oldcount = files.Length;
+                files = [.. files.Where(f => !ExcludeFiles.Contains(Path.GetFileName(f)))];
                 excludedFiles += oldcount - files.Length;
             }
 
-
-            foreach (Exception ex in errors)
+            foreach (var ex in errors)
             {
                 Console.WriteLine(ex.Message);
             }
 
-
             return files;
         }
 
-        /*
-                // A working version of GetFiles, not the sucky one in .net framework.
-                // The .net version can throw exceptions which cannot be handled in any nice way.
-                static List<string> GetFiles2(DirectoryInfo folder, string pattern, out List<Exception> errors)
-                {
-                    List<string> files = new List<string>();
-                    errors = new List<Exception>();
-
-                    try
-                    {
-                        files = folder.GetFiles(pattern).Select(f => f.FullName).ToList();
-                    }
-                    catch (UnauthorizedAccessException ex)
-                    {
-                        errors.Add(ex);
-                    }
-
-
-                    try
-                    {
-                        DirectoryInfo[] subdirs = folder.GetDirectories(pattern);
-
-                        foreach (DirectoryInfo di in subdirs)
-                        {
-                            List<Exception> subdirErrors;
-                            files.AddRange(GetFiles2(di, pattern, out subdirErrors));
-                            errors.AddRange(subdirErrors);
-                        }
-                    }
-                    catch (UnauthorizedAccessException ex)
-                    {
-                        errors.Add(ex);
-                    }
-
-                    return files;
-                }
-        */
-
         static List<CopyOperation> GetCopyOperations(string sourcePath, string destinationPath, List<string> ExcludeFilePatterns)
         {
-            List<string> errors = new List<string>();
+            List<string> errors = [];
 
-            string[] sourcePaths = GetFiles(sourcePath, ExcludeFilePatterns, out int excludedFiles);
+            var sourcePaths = GetFiles(sourcePath, ExcludeFilePatterns, out int excludedFiles);
             Console.WriteLine($"Total source files: {sourcePaths.Length} (excluded {excludedFiles}){Environment.NewLine}");
 
-            string[] targetPaths = GetFiles(destinationPath, ExcludeFilePatterns, out excludedFiles);
+            var targetPaths = GetFiles(destinationPath, ExcludeFilePatterns, out excludedFiles);
             Console.WriteLine($"Total destination files: {targetPaths.Length} (excluded {excludedFiles}){Environment.NewLine}");
 
-            List<CopyOperation> copyOperations = new List<CopyOperation>();
+            List<CopyOperation> copyOperations = [];
 
-
-            var sourceFiles = sourcePaths.GroupBy(f => Path.GetFileName(f).ToLower()).ToList();
-            Console.WriteLine($"Source: Unique file names: {sourceFiles.Count}");
+            IGrouping<string, string>[] sourceFiles = [.. sourcePaths.GroupBy(f => Path.GetFileName(f).ToLower())];
+            Console.WriteLine($"Source: Unique file names: {sourceFiles.Length}");
 
             var destinationFiles = targetPaths.ToLookup(f => Path.GetFileName(f).ToLower(), f => f);
             Console.WriteLine($"Destination: Unique file names: {destinationFiles.Count}{Environment.NewLine}");
 
-
             foreach (var fileNameGroup in sourceFiles)
             {
-                string filename = fileNameGroup.Key;
-                if (destinationFiles.Contains(filename) && AreFilesNewer(fileNameGroup.ToList(), destinationFiles[filename].ToList()))
+                var filename = fileNameGroup.Key;
+                if (destinationFiles.Contains(filename) && AreFilesNewer([.. fileNameGroup], [.. destinationFiles[filename]]))
                 {
-                    if (AreFilesIdentical(fileNameGroup.ToList(), ref errors))
+                    if (AreFilesIdentical([.. fileNameGroup], ref errors))
                     {
-                        foreach (string destination in destinationFiles[filename])
+                        foreach (var destination in destinationFiles[filename])
                         {
                             copyOperations.Add(new CopyOperation(fileNameGroup.First(), destination));
                         }
@@ -283,13 +227,12 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
 
             if (errors.Count > 0)
             {
-                foreach (string error in errors)
+                foreach (var error in errors)
                 {
                     WriteError(error);
                 }
                 return null;
             }
-
 
             return copyOperations;
         }
@@ -298,15 +241,15 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
         {
             if (_onlynewer)
             {
-                DateTime oldestSource = SourceFileNames
-                        .Select(f => File.GetLastWriteTime(f))
-                        .OrderBy(f => f)
-                        .First();
+                var oldestSource = SourceFileNames
+                    .Select(File.GetLastWriteTime)
+                    .OrderBy(f => f)
+                    .First();
 
-                DateTime newestDestination = DestinationFileNames
-                        .Select(f => File.GetLastWriteTime(f))
-                        .OrderBy(f => f)
-                        .Last();
+                var newestDestination = DestinationFileNames
+                    .Select(File.GetLastWriteTime)
+                    .OrderBy(f => f)
+                    .Last();
 
                 if (oldestSource < newestDestination)
                 {
@@ -318,9 +261,7 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
         }
 
         [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
-#pragma warning disable IDE1006 // Naming Styles
         static extern int memcmp(byte[] b1, byte[] b2, long count);
-#pragma warning restore IDE1006 // Naming Styles
 
         static bool AreFilesIdentical(List<string> FileNames, ref List<string> errors)
         {
@@ -331,7 +272,7 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
 
             byte[] content1 = null;
 
-            for (int i = 0; i < FileNames.Count; i++)
+            for (var i = 0; i < FileNames.Count; i++)
             {
                 Log($"Reading: '{FileNames[i]}'");
 
@@ -341,7 +282,7 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
                 }
                 else
                 {
-                    byte[] content2 = File.ReadAllBytes(FileNames[i]);
+                    var content2 = File.ReadAllBytes(FileNames[i]);
 
                     if (content1.Length != content2.Length || memcmp(content1, content1, content1.Length) != 0)
                     {
@@ -355,13 +296,12 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
 
         static void PerformCopy(List<CopyOperation> copyOperations, string sourcePath, string destinationPath)
         {
-            ConsoleColor oldcolor = Console.ForegroundColor;
+            var oldcolor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine($"Copying {copyOperations.Count} files: '{sourcePath}' -> '{destinationPath}'");
             Console.ForegroundColor = oldcolor;
 
-
-            foreach (CopyOperation op in copyOperations)
+            foreach (var op in copyOperations)
             {
                 Log($"Copying: '{op.SourcePath}' -> '{op.DestinationPath}'");
 
@@ -383,14 +323,12 @@ Example: copysync C:\Projects\PlatformCode\*.dll C:\Projects\CustomerApp -*.reso
                 return;
             }
 
-            string batfile = "checkout.bat";
-            using (StreamWriter sw = new StreamWriter(batfile))
+            var batfile = "checkout.bat";
+            using StreamWriter sw = new(batfile);
+            foreach (var op in copyOperations)
             {
-                foreach (CopyOperation op in copyOperations)
-                {
-                    string command = $"tf checkout \"{op.DestinationPath}\"";
-                    sw.WriteLine(command);
-                }
+                var command = $"tf checkout \"{op.DestinationPath}\"";
+                sw.WriteLine(command);
             }
 
             Console.WriteLine($"Wrote tfs commands to: {batfile}");

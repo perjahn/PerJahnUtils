@@ -1,11 +1,4 @@
-﻿//-------------------------------------------------------------
-// GACWrap.cs
-//
-// This implements managed wrappers to GAC API Interfaces
-//-------------------------------------------------------------
-
-using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
 
 namespace System.GACManagedAccess
@@ -146,8 +139,9 @@ namespace System.GACManagedAccess
         IntPtr pvReserced);
     }
 
-    public enum AssemblyCommitFlags
+    public enum AssemblyCommit
     {
+        None = 0,
         Default = 1,
         Force = 2
     }
@@ -192,43 +186,21 @@ namespace System.GACManagedAccess
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public class InstallReference
+    public class InstallReference(Guid guid, string id, string data)
     {
-        public InstallReference(Guid guid, string id, string data)
-        {
-            cbSize = (int)(2 * IntPtr.Size + 16 + (id.Length + data.Length) * 2);
-            flags = 0;
-            // quiet compiler warning
-            if (flags == 0) { }
-            guidScheme = guid;
-            identifier = id;
-            description = data;
-        }
+        public Guid GuidScheme => guidScheme;
+        public string Identifier => identifier;
+        public string Description => description;
 
-        public Guid GuidScheme
-        {
-            get { return guidScheme; }
-        }
-
-        public string Identifier
-        {
-            get { return identifier; }
-        }
-
-        public string Description
-        {
-            get { return description; }
-        }
-
-        readonly int cbSize;
-        readonly int flags;
-        Guid guidScheme;
+        readonly int cbSize = 2 * IntPtr.Size + 16 + (id.Length + data.Length) * 2;
+        readonly int flags = 0;
+        readonly Guid guidScheme = guid;
 
         [MarshalAs(UnmanagedType.LPWStr)]
-        readonly string identifier;
+        readonly string identifier = id;
 
         [MarshalAs(UnmanagedType.LPWStr)]
-        readonly string description;
+        readonly string description = data;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -247,39 +219,35 @@ namespace System.GACManagedAccess
     {
         public static bool IsValidGuidScheme(Guid guid)
         {
-            return (guid.Equals(UninstallSubkeyGuid) ||
-            guid.Equals(FilePathGuid) ||
-            guid.Equals(OpaqueGuid) ||
-            guid.Equals(Guid.Empty));
+            return guid.Equals(UninstallSubkeyGuid) || guid.Equals(FilePathGuid) || guid.Equals(OpaqueGuid) || guid.Equals(Guid.Empty);
         }
 
-        public readonly static Guid UninstallSubkeyGuid = new Guid("8cedc215-ac4b-488b-93c0-a50a49cb2fb8");
-        public readonly static Guid FilePathGuid = new Guid("b02f9d65-fb77-4f7a-afa5-b391309f11c9");
-        public readonly static Guid OpaqueGuid = new Guid("2ec93463-b0c3-45e1-8364-327e96aea856");
+        public readonly static Guid UninstallSubkeyGuid = new("8cedc215-ac4b-488b-93c0-a50a49cb2fb8");
+        public readonly static Guid FilePathGuid = new("b02f9d65-fb77-4f7a-afa5-b391309f11c9");
+        public readonly static Guid OpaqueGuid = new("2ec93463-b0c3-45e1-8364-327e96aea856");
         // these GUID cannot be used for installing into GAC.
-        public readonly static Guid MsiGuid = new Guid("25df0fc1-7f97-4070-add7-4b13bbfd7cb8");
-        public readonly static Guid OsInstallGuid = new Guid("d16d444c-56d8-11d5-882d-0080c847b195");
+        public readonly static Guid MsiGuid = new("25df0fc1-7f97-4070-add7-4b13bbfd7cb8");
+        public readonly static Guid OsInstallGuid = new("d16d444c-56d8-11d5-882d-0080c847b195");
     }
 
     [ComVisible(false)]
     public static class AssemblyCache
     {
-        public static void InstallAssembly(string assemblyPath, InstallReference reference, AssemblyCommitFlags flags)
+        public static void InstallAssembly(string assemblyPath, InstallReference reference, AssemblyCommit flags)
         {
             if (reference != null)
             {
                 if (!InstallReferenceGuid.IsValidGuidScheme(reference.GuidScheme))
+                {
                     throw new ArgumentException("Invalid reference guid.", "guid");
+                }
             }
 
-            int hr = 0;
-
-            hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
+            var hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
             if (hr >= 0)
             {
                 hr = ac.InstallAssembly((int)flags, assemblyPath, reference);
             }
-
             if (hr < 0)
             {
                 Marshal.ThrowExceptionForHR(hr);
@@ -296,16 +264,16 @@ namespace System.GACManagedAccess
             if (reference != null)
             {
                 if (!InstallReferenceGuid.IsValidGuidScheme(reference.GuidScheme))
+                {
                     throw new ArgumentException("Invalid reference guid.", "guid");
+                }
             }
 
-
-            int hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
+            var hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
             if (hr >= 0)
             {
                 hr = ac.UninstallAssembly(0, assemblyName, reference, out dispResult);
             }
-
             if (hr < 0)
             {
                 Marshal.ThrowExceptionForHR(hr);
@@ -322,14 +290,14 @@ namespace System.GACManagedAccess
                 throw new ArgumentException("Invalid name", "assemblyName");
             }
 
-            AssemblyInfo aInfo = new AssemblyInfo
+            AssemblyInfo aInfo = new()
             {
                 cchBuf = 1024
             };
             // Get a string with the desired length
             aInfo.currentAssemblyPath = new string('\0', aInfo.cchBuf);
 
-            int hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
+            var hr = Utils.CreateAssemblyCache(out IAssemblyCache ac, 0);
             if (hr >= 0)
             {
                 hr = ac.QueryAssemblyInfo(0, assemblyName, ref aInfo);
@@ -350,7 +318,7 @@ namespace System.GACManagedAccess
         public AssemblyCacheEnum(string assemblyName)
         {
             IAssemblyName fusionName = null;
-            int hr = 0;
+            var hr = 0;
 
             if (assemblyName != null)
             {
@@ -370,7 +338,6 @@ namespace System.GACManagedAccess
                     AssemblyCacheFlags.GAC,
                     IntPtr.Zero);
             }
-
             if (hr < 0)
             {
                 Marshal.ThrowExceptionForHR(hr);
@@ -379,16 +346,13 @@ namespace System.GACManagedAccess
 
         public string GetNextAssembly()
         {
-            int hr = 0;
-
             if (done)
             {
                 return null;
             }
 
             // Now get next IAssemblyName from m_AssemblyEnum
-            hr = m_AssemblyEnum.GetNextAssembly((IntPtr)0, out IAssemblyName fusionName, 0);
-
+            var hr = m_AssemblyEnum.GetNextAssembly(0, out IAssemblyName fusionName, 0);
             if (hr < 0)
             {
                 Marshal.ThrowExceptionForHR(hr);
@@ -407,10 +371,10 @@ namespace System.GACManagedAccess
 
         private string GetFullName(IAssemblyName fusionAsmName)
         {
-            StringBuilder sDisplayName = new StringBuilder(1024);
-            int iLen = 1024;
+            StringBuilder sDisplayName = new(1024);
+            var iLen = 1024;
 
-            int hr = fusionAsmName.GetDisplayName(sDisplayName, ref iLen, (int)AssemblyNameDisplayFlags.ALL);
+            var hr = fusionAsmName.GetDisplayName(sDisplayName, ref iLen, (int)AssemblyNameDisplayFlags.ALL);
             if (hr < 0)
             {
                 Marshal.ThrowExceptionForHR(hr);
@@ -427,7 +391,7 @@ namespace System.GACManagedAccess
     {
         public AssemblyCacheInstallReferenceEnum(string assemblyName)
         {
-            int hr = Utils.CreateAssemblyNameObject(
+            var hr = Utils.CreateAssemblyNameObject(
                 out IAssemblyName fusionName,
                 assemblyName,
                 CreateAssemblyNameObjectFlags.CANOF_PARSE_DISPLAY_NAME,
@@ -437,7 +401,6 @@ namespace System.GACManagedAccess
             {
                 hr = Utils.CreateInstallReferenceEnum(out refEnum, fusionName, 0, IntPtr.Zero);
             }
-
             if (hr < 0)
             {
                 Marshal.ThrowExceptionForHR(hr);
@@ -446,7 +409,7 @@ namespace System.GACManagedAccess
 
         public InstallReference GetNextReference()
         {
-            int hr = refEnum.GetNextInstallReferenceItem(out IInstallReferenceItem item, 0, IntPtr.Zero);
+            var hr = refEnum.GetNextInstallReferenceItem(out IInstallReferenceItem item, 0, IntPtr.Zero);
             if ((uint)hr == 0x80070103)
             {
                 // ERROR_NO_MORE_ITEMS
@@ -458,7 +421,7 @@ namespace System.GACManagedAccess
                 Marshal.ThrowExceptionForHR(hr);
             }
 
-            InstallReference instRef = new InstallReference(Guid.Empty, string.Empty, string.Empty);
+            InstallReference instRef = new(Guid.Empty, string.Empty, string.Empty);
 
             hr = item.GetReference(out IntPtr refData, 0, IntPtr.Zero);
             if (hr < 0)

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.GACManagedAccess;
 
@@ -11,22 +10,22 @@ namespace ProjFix
 
         private static void InitIsSystemAssembly()
         {
-            SystemAssemblies = new List<string>();
+            SystemAssemblies = [];
 
-            AssemblyCacheEnum asmEnum = new AssemblyCacheEnum(null);
+            AssemblyCacheEnum asmEnum = new(null);
             string nextAsm;
             while ((nextAsm = asmEnum.GetNextAssembly()) != null)
             {
                 SystemAssemblies.Add(nextAsm.Split(',')[0]);
             }
 
-            int count1 = SystemAssemblies.Count();
-            SystemAssemblies = SystemAssemblies.Distinct().OrderBy(a => a).ToList();
-            int count2 = SystemAssemblies.Count();
+            var count1 = SystemAssemblies.Count;
+            SystemAssemblies = [.. SystemAssemblies.Distinct().OrderBy(a => a)];
+            var count2 = SystemAssemblies.Count;
 
             ConsoleHelper.WriteLine($"Found {count1} GAC assemblies, {count2} unique names.", true);
 
-            foreach (string gacass in SystemAssemblies)
+            foreach (var gacass in SystemAssemblies)
             {
                 ConsoleHelper.WriteLine($"'{gacass}'", true);
             }
@@ -35,7 +34,9 @@ namespace ProjFix
         public static bool IsSystemAssembly(string assemblyname, out string firstMatchedValue, bool ignoreCase)
         {
             if (SystemAssemblies == null)
+            {
                 InitIsSystemAssembly();
+            }
 
             if (SystemAssemblies.Any(a => string.Compare(assemblyname, a, ignoreCase) == 0))
             {

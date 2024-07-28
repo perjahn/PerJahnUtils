@@ -19,28 +19,27 @@ namespace FindMsdnKeys
             {
                 drives = DriveInfo.GetDrives();
             }
-            catch (Exception ex) when (ex is IOException)
+            catch (IOException ex)
             {
                 Console.WriteLine($"Couldn't get drives: {ex.Message}");
                 return;
             }
 
-            List<string> files = new List<string>();
+            List<string> files = [];
 
-            foreach (DriveInfo drive in drives)
+            foreach (var drive in drives)
             {
                 if (drive.DriveType == DriveType.Fixed)
                 {
                     RecurseDirectory(drive.RootDirectory.FullName, files);
-                    //RecurseDirectory(@"D:\c\msdn", files);
                 }
             }
 
             Console.WriteLine($"Found {files.Count} files.");
 
-            Dictionary<string, List<string>> allkeys = new Dictionary<string, List<string>>();
+            Dictionary<string, List<string>> allkeys = [];
 
-            foreach (string filename in files)
+            foreach (var filename in files)
             {
                 Console.WriteLine($"Reading: '{filename}'");
                 XDocument xdoc;
@@ -54,26 +53,23 @@ namespace FindMsdnKeys
                     continue;
                 }
 
-                var keys = xdoc
+                (string name, string key)[] keys = [.. xdoc
                     .Descendants("Key")
-                    .Select(el => new { name = el.Parent.Attribute("Name").Value, key = el.FirstNode.NodeType == XmlNodeType.Text ? el.Value.Trim() : null })
-                    .Where(k => k.key != null);
+                    .Select(el => (name: el.Parent.Attribute("Name").Value, key: el.FirstNode.NodeType == XmlNodeType.Text ? el.Value.Trim() : null))
+                    .Where(k => k.key != null)];
 
                 foreach (var key in keys)
                 {
-                    if (allkeys.ContainsKey(key.name))
+                    if (allkeys.TryGetValue(key.name, out List<string> value))
                     {
-                        if (!allkeys[key.name].Contains(key.key))
+                        if (!value.Contains(key.key))
                         {
-                            allkeys[key.name].Add(key.key);
+                            value.Add(key.key);
                         }
                     }
                     else
                     {
-                        allkeys[key.name] = new List<string>
-                        {
-                            key.key
-                        };
+                        allkeys[key.name] = [key.key];
                     }
                 }
             }
@@ -81,7 +77,7 @@ namespace FindMsdnKeys
             Console.WriteLine($"Found {allkeys.Count} products.");
             Console.WriteLine($"Found {allkeys.Sum(p => p.Value.Count)} keys.");
 
-            List<string> rows = new List<string>();
+            List<string> rows = [];
 
             foreach (var product in allkeys.Keys.OrderBy(p => p))
             {
@@ -94,7 +90,7 @@ namespace FindMsdnKeys
 
             if (args.Length == 1)
             {
-                string filename = args[0];
+                var filename = args[0];
                 File.WriteAllLines(filename, rows);
             }
         }
@@ -103,8 +99,8 @@ namespace FindMsdnKeys
         {
             try
             {
-                string[] localfiles = Directory.GetFiles(path, "*.xml");
-                foreach (string filename in localfiles)
+                var localfiles = Directory.GetFiles(path, "*.xml");
+                foreach (var filename in localfiles)
                 {
                     _progressFiles++;
                     if (_progressFiles % 10000 == 0)
@@ -114,15 +110,15 @@ namespace FindMsdnKeys
 
                     if (new FileInfo(filename).Length < 1024 * 1024)
                     {
-                        string[] rows = File.ReadAllLines(filename);
+                        var rows = File.ReadAllLines(filename);
                         if (rows.Length > 0 && rows[0] == "<YourKey>")
                         {
                             files.Add(filename);
                         }
                     }
                 }
-                string[] folders = Directory.GetDirectories(path, "*");
-                foreach (string folder in folders)
+                var folders = Directory.GetDirectories(path, "*");
+                foreach (var folder in folders)
                 {
                     _progressDirectories++;
                     if (_progressDirectories % 10000 == 0)
@@ -133,7 +129,7 @@ namespace FindMsdnKeys
                     RecurseDirectory(folder, files);
                 }
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 Console.WriteLine(ex.Message);
             }

@@ -24,15 +24,8 @@ namespace xmlviewer
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                string[] files = (string[])(e.Data.GetData(DataFormats.FileDrop));
-                if (files.Length == 1 && File.Exists(files[0]))
-                {
-                    e.Effect = DragDropEffects.Copy;
-                }
-                else
-                {
-                    e.Effect = DragDropEffects.None;
-                }
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                e.Effect = files.Length == 1 && File.Exists(files[0]) ? DragDropEffects.Copy : DragDropEffects.None;
             }
             else
             {
@@ -44,7 +37,7 @@ namespace xmlviewer
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                string[] files = (string[])(e.Data.GetData(DataFormats.FileDrop));
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length == 1 && File.Exists(files[0]))
                 {
                     XDocument xdoc;
@@ -52,7 +45,7 @@ namespace xmlviewer
                     {
                         xdoc = XDocument.Load(files[0]);
                     }
-                    catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is XmlException)
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or XmlException)
                     {
                         this.Text = files[0] + ": " + ex.Message;
                         return;
@@ -69,25 +62,24 @@ namespace xmlviewer
 
         private void AddNode(TreeNodeCollection parentTreeNodes, XElement element)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            string attrstring = string.Join(" ", element.Attributes().Select(a => a.Name + "=\"" + a.Value + "\""));
+            var attrstring = string.Join(" ", element.Attributes().Select(a => a.Name + "=\"" + a.Value + "\""));
             if (attrstring != string.Empty)
             {
                 sb.Append(" " + attrstring);
             }
 
-            string innertext = element.Value;
+            var innertext = element.Value;
             if (innertext != string.Empty)
             {
                 sb.Append(" Value=\"" + innertext + "\"");
             }
 
-            TreeNode treenode = new TreeNode();
-            treenode.Text = element.Name.LocalName + sb.ToString();
+            TreeNode treenode = new() { Text = element.Name.LocalName + sb.ToString() };
             parentTreeNodes.Add(treenode);
 
-            foreach (XElement child in element.Descendants())
+            foreach (var child in element.Descendants())
             {
                 AddNode(treenode.Nodes, child);
             }

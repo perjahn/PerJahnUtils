@@ -5,14 +5,9 @@ using System.Linq;
 
 namespace ProjFix
 {
-    class Solution
+    class Solution(string solutionfile)
     {
-        private readonly string _solutionfile;
-
-        public Solution(string solutionfile)
-        {
-            _solutionfile = solutionfile;
-        }
+        private readonly string _solutionfile = solutionfile;
 
         public void RestoreProjects()
         {
@@ -22,12 +17,10 @@ namespace ProjFix
                 return;
             }
 
-            foreach (Project p in projects)
+            foreach (var p in projects)
             {
                 p.Restore(_solutionfile);
             }
-
-            return;
         }
 
         public List<Project> LoadProjects()
@@ -37,47 +30,37 @@ namespace ProjFix
             {
                 rows = File.ReadAllLines(_solutionfile);
             }
-            catch (IOException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
-                return null;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
-                return null;
-            }
-            catch (ArgumentException ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
                 return null;
             }
 
-            List<Project> projects = new List<Project>();
+            List<Project> projects = [];
 
-            foreach (string row in rows)
+            foreach (var row in rows)
             {
                 // Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCsProject", "Folder\Folder\MyCsProject.csproj", "{01010101-0101-0101-0101-010101010101}"
                 // Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "MyVbProject", "Folder\Folder\MyVbProject.vbproj", "{02020202-0202-0202-0202-020202020202}"
 
-                string[] projtypeguids = { "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}", "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}" };
+                string[] projtypeguids = ["{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}", "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}"];
 
-                foreach (string projtypeguid in projtypeguids)
+                foreach (var projtypeguid in projtypeguids)
                 {
-                    string projtypeline = $"Project(\"{projtypeguid}\") =";
+                    var projtypeline = $"Project(\"{projtypeguid}\") =";
 
                     if (row.StartsWith(projtypeline))
                     {
-                        string[] values = row.Substring(projtypeline.Length).Split(',');
+                        var values = row[projtypeline.Length..].Split(',');
                         if (values.Length != 3)
                         {
                             continue;
                         }
 
-                        string package = row.Substring(9, projtypeline.Length - 13);
-                        string shortfilename = values[0].Trim().Trim('"');
-                        string path = values[1].Trim().Trim('"');
-                        string guid = values[2].Trim().Trim('"');
+                        var package = row.Substring(9, projtypeline.Length - 13);
+                        var shortfilename = values[0].Trim().Trim('"');
+                        var path = values[1].Trim().Trim('"');
+                        var guid = values[2].Trim().Trim('"');
 
                         projects.Add(new Project()
                         {
@@ -91,12 +74,11 @@ namespace ProjFix
                 }
             }
 
+            var error = false;
 
-            bool error = false;
-
-            foreach (Project p in projects)
+            foreach (var p in projects)
             {
-                Project p2 = Project.LoadProject(_solutionfile, p._sln_path);
+                var p2 = Project.LoadProject(_solutionfile, p._sln_path);
                 if (p2 == null)
                 {
                     error = true;
@@ -104,14 +86,14 @@ namespace ProjFix
                 }
 
                 ConsoleHelper.WriteLine(
-                        $"sln_package: '{p._sln_package}" +
-                        $"', sln_guid: '{p._sln_guid}" +
-                        $"', sln_shortfilename: '{p._sln_shortfilename}" +
-                        $"', sln_path: '{p._sln_path}" +
-                        $"', proj_assemblynames: {p2._proj_assemblynames.Count}" +
-                        $", proj_guids: {p2._proj_guids.Count}" +
-                        $", proj_outputtypes: {p2._proj_outputtypes.Count}.",
-                        true);
+                    $"sln_package: '{p._sln_package}" +
+                    $"', sln_guid: '{p._sln_guid}" +
+                    $"', sln_shortfilename: '{p._sln_shortfilename}" +
+                    $"', sln_path: '{p._sln_path}" +
+                    $"', proj_assemblynames: {p2._proj_assemblynames.Count}" +
+                    $", proj_guids: {p2._proj_guids.Count}" +
+                    $", proj_outputtypes: {p2._proj_outputtypes.Count}.",
+                    true);
 
                 p._proj_assemblynames = p2._proj_assemblynames;
                 p._proj_guids = p2._proj_guids;
@@ -131,22 +113,22 @@ namespace ProjFix
             return projects;
         }
 
-        public bool FixProjects(List<Project> projects, List<string> hintpaths, string outputpath, bool copylocal, bool removeversion)
+        public bool FixProjects(List<Project> projects, List<string> hintpaths, bool removeversion)
         {
-            bool valid = true;
+            var valid = true;
 
-            foreach (Project p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p._sln_path))
             {
                 p.Compact();
             }
 
-            foreach (Project p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p._sln_path))
             {
                 p.CompactRefs();
             }
 
             ConsoleHelper.WriteLineDeferred("-=-=- Validating -=-=-");
-            foreach (Project p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p._sln_path))
             {
                 if (!p.Validate(_solutionfile, projects))
                 {
@@ -161,20 +143,20 @@ namespace ProjFix
                 return false;
             }
 
-            foreach (Project p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p._sln_path))
             {
-                p.Fix(_solutionfile, projects, hintpaths, outputpath, copylocal, removeversion);
+                p.Fix(_solutionfile, projects, hintpaths, removeversion);
             }
 
             return true;  // Success
         }
 
-        public void WriteProjects(List<Project> projects, List<string> hintpaths, string outputpath, bool simulate, bool nobackup)
+        public void WriteProjects(List<Project> projects, bool simulate, bool nobackup)
         {
             int count1, count2;
 
             count1 = count2 = 0;
-            foreach (Project p in projects.OrderBy(pp => pp._sln_path))
+            foreach (var p in projects.OrderBy(pp => pp._sln_path))
             {
                 count1++;
                 if (p._modified)
@@ -185,8 +167,6 @@ namespace ProjFix
             }
 
             ConsoleHelper.WriteLine($"Fixed {count2} of {count1} projects.", false);
-
-            return;
         }
     }
 }

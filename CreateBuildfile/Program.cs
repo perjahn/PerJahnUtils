@@ -26,7 +26,7 @@ namespace CreateBuildfile
             // Thus, build output file is written in a consistent manner
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            string usage =
+            var usage =
 @"CreateBuildfile 1.0 - Creates MSBuild file.
 
 Usage: CreateBuildfile <path> <buildfile> [excludesolution...]
@@ -39,23 +39,21 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
                 return;
             }
 
-
-            string path = args[0];
-            string solutionfile = args[1];
-            List<string> excludeSolutions = args.Skip(2).ToList();
+            var path = args[0];
+            var solutionfile = args[1];
+            string[] excludeSolutions = [.. args.Skip(2)];
 
             CreateBuildfile(path, solutionfile, excludeSolutions);
         }
 
-        static void CreateBuildfile(string path, string buildfile, List<string> excludeSolutions)
+        static void CreateBuildfile(string path, string buildfile, string[] excludeSolutions)
         {
             List<string> files;
 
             try
             {
-                files = Directory.GetFiles(path, "*.sln", SearchOption.AllDirectories)
-                    .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                    .ToList();
+                files = [.. Directory.GetFiles(path, "*.sln", SearchOption.AllDirectories)
+                    .Select(f => f.StartsWith(@".\") ? f[2..] : f)];
             }
             catch (DirectoryNotFoundException ex)
             {
@@ -65,12 +63,12 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
 
             files.Sort();
 
-            bool first = true;
-            foreach (string filename in files.ToList())  // Create tmp list
+            var first = true;
+            foreach (var filename in files.ToList())  // Create tmp list
             {
-                foreach (string excludePattern in excludeSolutions)
+                foreach (var excludePattern in excludeSolutions)
                 {
-                    List<string> excludeFiles = Directory.GetFiles(Path.GetDirectoryName(filename), excludePattern, SearchOption.TopDirectoryOnly).ToList();
+                    List<string> excludeFiles = [.. Directory.GetFiles(Path.GetDirectoryName(filename), excludePattern, SearchOption.TopDirectoryOnly)];
 
                     if (excludeFiles.Any(f => Path.GetFileName(f) == Path.GetFileName(filename)))
                     {
@@ -85,57 +83,44 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
                 }
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            foreach (string solutionfile in files)
+            foreach (var solutionfile in files)
             {
                 sb.AppendLine($"    <MSBuild BuildInParallel=\"true\" Properties=\"Configuration=Release\" ContinueOnError=\"true\" Projects=\"{GetRelativePath(buildfile, solutionfile)}\" />");
             }
 
-            string s = sb.ToString();
+            var s = sb.ToString();
 
-            Console.WriteLine($"Writing {files.Count()} solutions to {buildfile}.");
-            using (var sw = new StreamWriter(buildfile))
-            {
-                s =
-                    $"<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">{Environment.NewLine}" +
-                    $"  <Target Name=\"Build\">{Environment.NewLine}" +
-                    s +
-                    $"  </Target>{Environment.NewLine}" +
-                    $"</Project>{Environment.NewLine}";
+            Console.WriteLine($"Writing {files.Count} solutions to {buildfile}.");
+            using StreamWriter sw = new(buildfile);
+            s =
+                $"<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">{Environment.NewLine}" +
+                $"  <Target Name=\"Build\">{Environment.NewLine}" +
+                s +
+                $"  </Target>{Environment.NewLine}" +
+                $"</Project>{Environment.NewLine}";
 
-                sw.Write(s);
-            }
-
-
-            return;
+            sw.Write(s);
         }
 
         static string GetRelativePath(string pathFrom, string pathTo)
         {
-            string s = pathFrom;
+            var s = pathFrom;
 
             int pos = 0, dirs = 0;
             while (!pathTo.StartsWith(s) && s.Length > 0)
             {
                 pos = s.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos == -1)
-                {
-                    s = string.Empty;
-                }
-                else
-                {
-                    s = s.Substring(0, pos);
-                }
-
+                s = pos == -1 ? string.Empty : s[..pos];
                 dirs++;
             }
 
             dirs--;
 
-            string s2 = string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs).ToArray());
-            string s3 = pathTo.Substring(pos + 1);
-            string s4 = s2 + s3;
+            var s2 = string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs));
+            var s3 = pathTo[(pos + 1)..];
+            var s4 = s2 + s3;
 
             return s4;
         }

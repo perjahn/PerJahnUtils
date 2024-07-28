@@ -16,7 +16,6 @@ namespace SyncFiles
 
         static void Log(string message, bool verbose = false, ConsoleColor? color = null)
         {
-            ConsoleColor oldcolor = Console.ForegroundColor;
             if (color.HasValue)
             {
                 Console.ForegroundColor = color.Value;
@@ -30,16 +29,14 @@ namespace SyncFiles
 
         public static void SyncFiles(string sourcefile, string targetfile, string sourcepath, string targetpath)
         {
-            string[]? sourcefiles = GetLines(sourcefile);
-            string[]? targetfiles = GetLines(targetfile);
+            var sourcefiles = GetLines(sourcefile);
+            var targetfiles = GetLines(targetfile);
 
             if (sourcefiles == null || targetfiles == null)
             {
                 return;
             }
 
-            //string source = sourcepath.StartsWith(@"\\") ? sourcepath.TrimStart('\\').Split('\\')[0].Split('.')[0] : sourcepath;
-            //string target = sourcepath.StartsWith(@"\\") ? targetpath.TrimStart('\\').Split('\\')[0].Split('.')[0] : targetpath;
             Log($"Syncing: {sourcepath} -> {targetpath}", false, ConsoleColor.Magenta);
 
             Log($"Source files: {sourcefiles.Length}");
@@ -62,15 +59,13 @@ namespace SyncFiles
                 Log("Running in simulation mode.");
             }
 
-
             Log("Calculating files to copy...");
             string[] filestocopy = ExcludeFiles(sourcefiles, targetfiles);
             Log($"Files to copy: {filestocopy.Length}");
 
             ShowFastStatistics(targetfiles, filestocopy);
 
-
-            string[] missingfolders = filestocopy.Select(f => Path.GetDirectoryName(f.Split('\t')[2]) ?? string.Empty).Distinct().ToArray();
+            string[] missingfolders = [.. filestocopy.Select(f => Path.GetDirectoryName(f.Split('\t')[2]) ?? string.Empty).Distinct()];
             Log($"Potentially missing target folders: {missingfolders.Length}");
 
             //ShowSlowStatistics(targetpath, filestocopy);
@@ -90,9 +85,9 @@ namespace SyncFiles
         {
             try
             {
-                return File.ReadAllLines(filename).Where(l => l != string.Empty).ToArray();
+                return [.. File.ReadAllLines(filename).Where(l => l != string.Empty)];
             }
-            catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException || ex is IOException)
+            catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or UnauthorizedAccessException or IOException)
             {
                 LogWriter.WriteConsoleColor(ex.Message, ConsoleColor.Red);
                 return null;
@@ -101,118 +96,109 @@ namespace SyncFiles
 
         static string[] ExcludeFiles(string[] filerows, string[] targetfiles)
         {
-            int count1 = filerows.Length;
-            string[] filestocopy = filerows.Except(targetfiles).ToArray();
-            int count2 = filestocopy.Length;
+            var count1 = filerows.Length;
+            string[] filestocopy = [.. filerows.Except(targetfiles)];
+            var count2 = filestocopy.Length;
             Log($"Excluded files (exists in target): {count1 - count2}");
 
+            count1 = filestocopy.Length;
+            filestocopy = [.. filestocopy.Where(f => !Regex.IsMatch(Path.GetFileName(f.Split('\t')[2]), ".*DS_Store", RegexOptions.IgnoreCase))];
+            count2 = filestocopy.Length;
+            Log($"Excluded files (DS_Store): {count1 - count2}");
 
-            if (true)
-            {
-                count1 = filestocopy.Length;
-                filestocopy = filestocopy.Where(f => !Regex.IsMatch(Path.GetFileName(f.Split('\t')[2]), ".*DS_Store", RegexOptions.IgnoreCase)).ToArray();
-                count2 = filestocopy.Length;
-                Log($"Excluded files (DS_Store): {count1 - count2}");
-
-                count1 = filestocopy.Length;
-                filestocopy = filestocopy.Where(f => !Regex.IsMatch(Path.GetFileName(f.Split('\t')[2]), "thumbs.db", RegexOptions.IgnoreCase)).ToArray();
-                count2 = filestocopy.Length;
-                Log($"Excluded files (thumbs.db): {count1 - count2}");
-            }
-
+            count1 = filestocopy.Length;
+            filestocopy = [.. filestocopy.Where(f => !Regex.IsMatch(Path.GetFileName(f.Split('\t')[2]), "thumbs.db", RegexOptions.IgnoreCase))];
+            count2 = filestocopy.Length;
+            Log($"Excluded files (thumbs.db): {count1 - count2}");
 
             if (Excludes != null && Excludes.Length > 0)
             {
-                foreach (string exclude in Excludes)
+                foreach (var exclude in Excludes)
                 {
                     if (LogWriter.Verbose)
                     {
-                        string[] junk = filestocopy.Where(f => Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase)).ToArray();
+                        string[] junk = [.. filestocopy.Where(f => Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase))];
                         Log($"Excluded files (file pattern: '{exclude}'): {junk.Length}", true);
-                        foreach (string filerow in junk)
+                        foreach (var filerow in junk)
                         {
                             Log($"Exclude file: '{filerow}'", true);
                         }
                     }
 
                     count1 = filestocopy.Length;
-                    filestocopy = filestocopy.Where(f => !Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase)).ToArray();
+                    filestocopy = [.. filestocopy.Where(f => !Regex.IsMatch(f.Split('\t')[2], exclude, RegexOptions.IgnoreCase))];
                     count2 = filestocopy.Length;
                     Log($"Excluded files (file pattern: '{exclude}'): {count1 - count2}");
                 }
             }
 
-
             if (Identifiers != null)
             {
                 if (LogWriter.Verbose)
                 {
-                    string[] junk = filestocopy.Where(f => f.Split('\t')[2].StartsWith("ProductContent") && !Identifiers.Any(i => f.Split('\t')[2].StartsWith($"ProductContent\\{i}"))).ToArray();
+                    string[] junk = [.. filestocopy.Where(f => f.Split('\t')[2].StartsWith("ProductContent") && !Identifiers.Any(i => f.Split('\t')[2].StartsWith($"ProductContent\\{i}")))];
                     Log($"Excluded files (identifiers): {junk.Length}", true);
-                    foreach (string filerow in junk)
+                    foreach (var filerow in junk)
                     {
                         Log($"Exclude file: '{filerow}'", true);
                     }
                 }
 
                 count1 = filestocopy.Length;
-                DateTime t1 = DateTime.Now;
-                filestocopy = filestocopy.Where(f => !f.Split('\t')[2].StartsWith("ProductContent") || Identifiers.Any(i => f.Split('\t')[2].StartsWith($"ProductContent\\{i}"))).ToArray();
-                DateTime t2 = DateTime.Now;
+                var t1 = DateTime.Now;
+                filestocopy = [.. filestocopy.Where(f => !f.Split('\t')[2].StartsWith("ProductContent") || Identifiers.Any(i => f.Split('\t')[2].StartsWith($"ProductContent\\{i}")))];
+                var t2 = DateTime.Now;
                 count2 = filestocopy.Length;
                 Log($"Excluded files (identifiers): {count1 - count2} (Calc time: {t2 - t1})");
             }
-
 
             if (Maxsize > 0)
             {
                 if (LogWriter.Verbose)
                 {
-                    string[] junk = filestocopy.Where(f => long.Parse(f.Split('\t')[1]) > Maxsize).ToArray();
+                    string[] junk = [.. filestocopy.Where(f => long.Parse(f.Split('\t')[1]) > Maxsize)];
                     Log($"Excluded files (max file size): {junk.Length}", true);
-                    foreach (string filerow in junk)
+                    foreach (var filerow in junk)
                     {
                         Log($"Exclude file: '{filerow}'", true);
                     }
                 }
 
                 count1 = filestocopy.Length;
-                filestocopy = filestocopy.Where(f => long.Parse(f.Split('\t')[1]) <= Maxsize).ToArray();
+                filestocopy = [.. filestocopy.Where(f => long.Parse(f.Split('\t')[1]) <= Maxsize)];
                 count2 = filestocopy.Length;
                 Log($"Excluded files (max file size): {count1 - count2}");
             }
-
 
             return filestocopy;
         }
 
         static void ShowFastStatistics(string[] targetfiles, string[] filestocopy)
         {
-            long copysize = filestocopy.Sum(s => long.Parse(s.Split('\t')[1]));
+            var copysize = filestocopy.Sum(s => long.Parse(s.Split('\t')[1]));
             Log($"Files to copy size: {copysize / 1024 / 1024} mb");
 
-
-            int overwritecount = 0;
-            int newcopycount = 0;
+            var overwritecount = 0;
+            var newcopycount = 0;
             long additionalsize = 0;
 
-            Dictionary<string, long> dic = new Dictionary<string, long>();
+            Dictionary<string, long> dic = [];
 
-            foreach (string filerow in targetfiles)
+            foreach (var filerow in targetfiles)
             {
-                string[] tokens = filerow.Split('\t');
+                var tokens = filerow.Split('\t');
                 dic.Add(tokens[2], long.Parse(tokens[1]));
             }
 
-            foreach (string filerow in filestocopy)
+            foreach (var filerow in filestocopy)
             {
-                string[] tokens = filerow.Split('\t');
-                string path = tokens[2];
-                long size = long.Parse(tokens[1]);
-                if (dic.ContainsKey(path))
+                var tokens = filerow.Split('\t');
+                var path = tokens[2];
+                var size = long.Parse(tokens[1]);
+                if (dic.TryGetValue(path, out long value))
                 {
                     overwritecount++;
-                    additionalsize += size - dic[path];
+                    additionalsize += size - value;
                 }
                 else
                 {
@@ -231,13 +217,13 @@ namespace SyncFiles
 
         static void ShowSlowStatistics(string targetpath, string[] missingfiles)
         {
-            int existcopycount = 0;
-            int copycount = 0;
+            var existcopycount = 0;
+            var copycount = 0;
 
-            foreach (string row in missingfiles)
+            foreach (var row in missingfiles)
             {
-                string filename = row.Split('\t')[2];
-                string targetpath2 = Path.Combine(targetpath, filename);
+                var filename = row.Split('\t')[2];
+                var targetpath2 = Path.Combine(targetpath, filename);
 
                 if (File.Exists(targetpath2))
                 {
@@ -257,9 +243,9 @@ namespace SyncFiles
 
         static void CreateFolders(string targetpath, string[] targetfolders)
         {
-            foreach (string targetfolder in targetfolders)
+            foreach (var targetfolder in targetfolders)
             {
-                string targetfolderfullpath = Path.Combine(targetpath, targetfolder);
+                var targetfolderfullpath = Path.Combine(targetpath, targetfolder);
 
                 if (!Directory.Exists(targetfolderfullpath))
                 {
@@ -274,18 +260,18 @@ namespace SyncFiles
 
         static void Copy(string sourcepath, string targetpath, string[] filestocopy)
         {
-            DateTime t1 = DateTime.Now;
-            int copiedfiles = 0;
+            var t1 = DateTime.Now;
+            var copiedfiles = 0;
             long copiedsize = 0;
-            int errors = 0;
-            int equalfilecount = 0;
+            var errors = 0;
+            var equalfilecount = 0;
 
-            foreach (string row in filestocopy)
+            foreach (var row in filestocopy)
             {
-                long filesize = long.Parse(row.Split('\t')[1]);
-                string filename = row.Split('\t')[2];
-                string sourcepath2 = Path.Combine(sourcepath, filename);
-                string targetpath2 = Path.Combine(targetpath, filename);
+                var filesize = long.Parse(row.Split('\t')[1]);
+                var filename = row.Split('\t')[2];
+                var sourcepath2 = Path.Combine(sourcepath, filename);
+                var targetpath2 = Path.Combine(targetpath, filename);
 
                 FileInfo? fiSource = null;
                 FileInfo? fiTarget = null;
@@ -294,11 +280,11 @@ namespace SyncFiles
                 {
                     if (CompareMetadata && File.Exists(targetpath2))
                     {
-                        fiSource = new FileInfo(sourcepath2);
-                        fiTarget = new FileInfo(targetpath2);
+                        fiSource = new(sourcepath2);
+                        fiTarget = new(targetpath2);
                     }
                 }
-                catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException || ex is IOException)
+                catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or UnauthorizedAccessException or IOException)
                 {
                     Log($"Copying: '{sourcepath2}' -> '{targetpath2}'");
                     Log(ex.Message);
@@ -335,16 +321,16 @@ namespace SyncFiles
                     copiedfiles++;
                     copiedsize += filesize;
                 }
-                catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException || ex is IOException)
+                catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException or UnauthorizedAccessException or IOException)
                 {
                     Log(ex.Message);
                     errors++;
                 }
             }
 
-            TimeSpan ts = DateTime.Now - t1;
+            var ts = DateTime.Now - t1;
 
-            long copysize = filestocopy.Sum(s => long.Parse(s.Split('\t')[1]));
+            var copysize = filestocopy.Sum(s => long.Parse(s.Split('\t')[1]));
 
             Log($"Copied files: {copiedfiles} (of {filestocopy.Length})");
             Log($"Copied size: {copiedsize / 1024 / 1024} mb (of {copysize / 1024 / 1024} mb)");
@@ -356,7 +342,7 @@ namespace SyncFiles
 
         static void RemoveRO(string filename)
         {
-            FileAttributes fa = File.GetAttributes(filename);
+            var fa = File.GetAttributes(filename);
             if ((fa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
             {
                 if (!Simulate)

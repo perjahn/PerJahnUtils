@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 
 // Some tags, like AppDesigner, needs existing *folders*. Ignore such tags.
@@ -22,10 +23,10 @@ namespace CheckMissingFiles
 
         private bool _teamcityErrorMessage { get; set; }
 
-        private static string[] excludedelements = {
+        private static string[] excludedelements = [
             "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "DnxInvisibleContent",
             "DotNetCliToolReference", "Folder", "Import", "None", "PackageReference", "ProjectConfiguration", "Reference",
-            "Service", "WCFMetadata", "WCFMetadataStorage", "WebReferences", "WebReferenceUrl" };
+            "Service", "WCFMetadata", "WCFMetadataStorage", "WebReferences", "WebReferenceUrl" ];
 
         public Project(string projectfile, string[] solutionfiles, bool teamcityErrorMessage)
         {
@@ -35,15 +36,14 @@ namespace CheckMissingFiles
             _teamcityErrorMessage = teamcityErrorMessage;
 
             XDocument xdoc;
-            XNamespace ns;
 
             try
             {
                 xdoc = XDocument.Load(ProjectFile);
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or XmlException)
             {
-                string message =
+                var message =
                     teamcityErrorMessage ?
                         $"##teamcity[message text='Could not load project: {string.Join(", ", solutionfiles)} --> {ex.Message.Replace("\'", "")}' status='ERROR']" :
                         $"Couldn't load project: '{string.Join("', '", solutionfiles)}' --> '{ex.Message}'";
@@ -51,18 +51,16 @@ namespace CheckMissingFiles
                 throw new ApplicationException(message);
             }
 
-            ns = xdoc.Root.Name.Namespace;
+            var ns = xdoc.Root.Name.Namespace;
 
             try
             {
-                _allfiles =
-                xdoc
+                _allfiles = [.. xdoc
                     .Elements(ns + "Project")
                     .Elements(ns + "ItemGroup")
                     .Elements()
                     .Where(el => el.Attribute("Include") != null)
-                    .OrderBy(el => el.Attribute("Include").Value)
-                    .ToList();
+                    .OrderBy(el => el.Attribute("Include").Value)];
             }
             catch (Exception ex)
             {
@@ -70,11 +68,7 @@ namespace CheckMissingFiles
             }
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
-            _allfiles
-                .ForEach(el => el.Attribute("Include").Value = Uri.UnescapeDataString(el.Attribute("Include").Value));
-
-
-            return;
+            _allfiles.ForEach(el => el.Attribute("Include").Value = Uri.UnescapeDataString(el.Attribute("Include").Value));
         }
 
         public void Check(bool reverseCheck)
@@ -93,13 +87,12 @@ namespace CheckMissingFiles
                 formatStringWarning = "File not found: '{0}' --> '{1}'";
             }
 
-
             ParseError = false;
             MissingfilesError = 0;
             MissingfilesWarning = 0;
             Excessfiles = 0;
 
-            if (_allfiles.Count() == 0)
+            if (_allfiles.Count == 0)
             {
                 ConsoleHelper.WriteLine($"No files found in project: '{string.Join("', '", SolutionFiles)}': '{ProjectFile}'");
             }
@@ -108,32 +101,30 @@ namespace CheckMissingFiles
             {
                 // Files should exist in project file.
 
-                string projectfolder = Path.GetDirectoryName(ProjectFile);
+                var projectfolder = Path.GetDirectoryName(ProjectFile);
 
-                string[] files = Directory.GetFiles(projectfolder, "*", SearchOption.AllDirectories)
-                    .Where(f => !string.Equals(f, ProjectFile, StringComparison.OrdinalIgnoreCase)).ToArray();
+                string[] files = [.. Directory.GetFiles(projectfolder, "*", SearchOption.AllDirectories)
+                    .Where(f => !string.Equals(f, ProjectFile, StringComparison.OrdinalIgnoreCase))];
 
-                string[] allfiles = _allfiles.Select(el =>
+                string[] allfiles = [.. _allfiles.Select(el =>
                 {
                     try
                     {
-                        return Path.Combine(
-                            Path.GetDirectoryName(ProjectFile),
-                            el.Attribute("Include").Value);
+                        return Path.Combine(Path.GetDirectoryName(ProjectFile), el.Attribute("Include").Value);
                     }
                     catch (ArgumentException)
                     {
                         return null;
                     }
-                }).Where(f => f != null).ToArray();
+                }).Where(f => f != null)];
 
-                foreach (string filename in files)
+                foreach (var filename in files)
                 {
                     if (!allfiles.Any(f => string.Equals(f, filename, StringComparison.OrdinalIgnoreCase)))
                     {
-                        string filenameRelativeFromProject = filename.Substring(projectfolder.Length).TrimStart('\\');
+                        var filenameRelativeFromProject = filename[projectfolder.Length..].TrimStart('\\');
 
-                        string message = string.Format(formatStringWarning, ProjectFile, filenameRelativeFromProject);
+                        var message = string.Format(formatStringWarning, ProjectFile, filenameRelativeFromProject);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
                         Excessfiles++;
                     }
@@ -141,17 +132,14 @@ namespace CheckMissingFiles
             }
             else
             {
-                List<string> _allfilesError = _allfiles
+                List<string> _allfilesError = [.. _allfiles
                     .Where(el => !excludedelements.Contains(el.Name.LocalName))
-                    .Select(el => el.Attribute("Include").Value)
-                    .ToList();
-                List<string> _allfilesWarning = _allfiles
+                    .Select(el => el.Attribute("Include").Value)];
+                List<string> _allfilesWarning = [.. _allfiles
                     .Where(el => el.Name.LocalName == "None")
-                    .Select(el => el.Attribute("Include").Value)
-                    .ToList();
+                    .Select(el => el.Attribute("Include").Value)];
 
-
-                foreach (string include in _allfilesError)
+                foreach (var include in _allfilesError)
                 {
                     // Files must exist in file system.
                     string[] files;
@@ -162,9 +150,9 @@ namespace CheckMissingFiles
                     catch (DirectoryNotFoundException)
                     {
                         // Suppress exception message
-                        files = new string[] { };
+                        files = [];
                     }
-                    catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
+                    catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
                     {
                         ConsoleHelper.WriteLineColor(
                             $"Couldn't get files: '{string.Join("', '", SolutionFiles)}': '{ProjectFile}' + '{include}': {ex.Message}",
@@ -175,13 +163,13 @@ namespace CheckMissingFiles
 
                     if (files.Length == 0)
                     {
-                        string message = string.Format(formatStringError, ProjectFile, include);
+                        var message = string.Format(formatStringError, ProjectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Red);
                         MissingfilesError++;
                     }
                 }
 
-                foreach (string include in _allfilesWarning)
+                foreach (var include in _allfilesWarning)
                 {
                     // Files should exist in file system.
                     string[] files;
@@ -192,9 +180,9 @@ namespace CheckMissingFiles
                     catch (DirectoryNotFoundException)
                     {
                         // Suppress exception message
-                        files = new string[] { };
+                        files = [];
                     }
-                    catch (Exception ex) when (ex is ArgumentException || ex is IOException || ex is UnauthorizedAccessException)
+                    catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
                     {
                         ConsoleHelper.WriteLineColor(
                             $"Couldn't get files: '{string.Join("', '", SolutionFiles)}': '{ProjectFile}' + '{include}': {ex.Message}",
@@ -204,7 +192,7 @@ namespace CheckMissingFiles
                     }
                     if (files.Length == 0)
                     {
-                        string message = string.Format(formatStringWarning, ProjectFile, include);
+                        var message = string.Format(formatStringWarning, ProjectFile, include);
                         ConsoleHelper.WriteLineColor(message, ConsoleColor.Yellow);
                         MissingfilesWarning++;
                     }

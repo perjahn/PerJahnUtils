@@ -4,6 +4,7 @@ Todo: Support for other schemas than dbo
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Text;
 
 namespace DBSearch
@@ -24,7 +25,6 @@ namespace DBSearch
 
         public StringBuilder stats { get; set; }
         public StringBuilder log { get; set; }
-
 
         private int c_d, c_t, c_c;
 
@@ -50,7 +50,7 @@ namespace DBSearch
             {
                 return _db.ExecuteDataTableSQL(sql, null);
             }
-            catch (System.Data.SqlClient.SqlException ex)
+            catch (SqlException ex)
             {
                 if (_errors.ContainsKey(ex.Number))
                 {
@@ -58,7 +58,7 @@ namespace DBSearch
                 }
                 else
                 {
-                    sqlerror error = new sqlerror();
+                    sqlerror error = new();
                     error.count = 1;
                     error.sql = sql;
                     error.Message = ex.Message;
@@ -75,22 +75,20 @@ namespace DBSearch
 
             c_d = c_t = c_c = 0;
 
-            _errors = new Dictionary<int, sqlerror>();
+            _errors = [];
 
-            dtResult = new DataTable();
+            dtResult = new();
             dtResult.Columns.Add("database");
             dtResult.Columns.Add("table");
             dtResult.Columns.Add("column");
             dtResult.Columns.Add("value");
 
             t1 = DateTime.Now;
-            foreach (string database in databases)
+            foreach (var database in databases)
             {
-                using (_db = new db(provider, GetConnStr()))
-                {
-                    _dbname = database;
-                    SearchInternal(searchtext, dt1, dt2, database);
-                }
+                using _db = new(provider, GetConnStr();
+                _dbname = database;
+                SearchInternal(searchtext, dt1, dt2, database);
 
                 c_d++;
             }
@@ -117,10 +115,10 @@ namespace DBSearch
             int hits;  // Count of displayed hits per table
             string sql;
             bool dummy;
-            bool IsSearchTextBoolParsable = bool.TryParse(searchtext, out dummy);
+            var IsSearchTextBoolParsable = bool.TryParse(searchtext, out dummy);
 
-            stats = new StringBuilder();
-            log = new StringBuilder();
+            stats = new();
+            log = new();
             DataTable dtTables, dtCols, dt;
 
             // Get table names
@@ -143,15 +141,16 @@ namespace DBSearch
 
             dtTables = SafeSelect(sql);
 
-            foreach (DataRow drTable in dtTables.Rows)
+            foreach (var drTable in dtTables.Rows)
             {
-                string tablename = GetTableName(database, drTable["name"].ToString());
+                var tablename = GetTableName(database, drTable["name"].ToString());
 
                 // Databasdiagram sparas i dtproperties.
                 // Temporära tabeller brukar tydligen vara döpta med inledande #
                 if (drTable["name"].ToString() == "dtproperties" || drTable["name"].ToString().StartsWith("#"))
+                {
                     continue;
-
+                }
 
                 hits = 0;
 
@@ -162,7 +161,7 @@ namespace DBSearch
                 {
                     dtCols = SafeSelect(sql);
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     log.AppendLine(
                         "DB: " + _dbname + Environment.NewLine +
@@ -173,11 +172,13 @@ namespace DBSearch
                     continue;
                 }
 
-                foreach (DataColumn dc in dtCols.Columns)
+                foreach (var dc in dtCols.Columns)
                 {
-                    string colname = GetColumnName(database, dc.ColumnName);
+                    var colname = GetColumnName(database, dc.ColumnName);
                     if (hits == maxhits)
+                    {
                         break;
+                    }
 
                     string where;
 
@@ -239,24 +240,29 @@ namespace DBSearch
                         sql = "select " + colname + " from " + tablename + " " + where;
                     }
 
-
                     _coltype = dc.DataType.ToString();
 
                     if (_coltype == "System.Byte[]" || _coltype == "System.Decimal" || _coltype == "System.Object")
+                    {
                         continue;
+                    }
 
                     dt = SafeSelect(sql);
                     if (dt == null)
+                    {
                         continue;
+                    }
 
-                    foreach (DataRow dr in dt.Rows)
+                    foreach (var dr in dt.Rows)
                     {
                         if (hits == maxhits)
+                        {
                             break;
+                        }
 
                         hits++;
 
-                        DataRow drNew = dtResult.NewRow();
+                        var drNew = dtResult.NewRow();
                         drNew["database"] = database;
                         drNew["table"] = drTable["name"].ToString();
                         drNew["column"] = dc.ColumnName;
@@ -268,8 +274,6 @@ namespace DBSearch
                 }
                 c_t++;
             }
-
-            return;
         }
 
         public DataTable SearchObjects(string searchtext)
@@ -287,13 +291,11 @@ namespace DBSearch
             dtResult.Columns.Add("value");
 
             t1 = DateTime.Now;
-            foreach (string database in databases)
+            foreach (var database in databases)
             {
-                using (_db = new db(provider, GetConnStr()))
-                {
-                    _dbname = database;
-                    SearchObjectsInternal(searchtext, database);
-                }
+                using _db = new(provider, GetConnStr());
+                _dbname = database;
+                SearchObjectsInternal(searchtext, database);
 
                 c_d++;
             }
@@ -310,29 +312,34 @@ namespace DBSearch
 
             DataTable dtTables, dtCols, dt;
 
-
             // Search generic DB objects (except columns)
             if (searchtype == SearchType.exact)
+            {
                 sql =
                     "select *" +
                     " from [" + database + "].dbo.sysobjects" +
                     " where name like '" + searchtext + "' " +
                     " order by name,type";
+            }
             else if (searchtype == SearchType.sqllike)
+            {
                 sql =
                     "select *" +
                     " from [" + database + "].dbo.sysobjects" +
                     " where name like '%" + searchtext + "%'" +
                     " order by name,type";
+            }
             else
+            {
                 return;
+            }
 
             dt = SafeSelect(sql);
             if (dt != null)
             {
-                foreach (DataRow dr in dt.Rows)
+                foreach (var dr in dt.Rows)
                 {
-                    string type = dr["type"].ToString();
+                    var type = dr["type"].ToString();
                     switch (type.TrimEnd())
                     {
                         case "F":
@@ -352,7 +359,7 @@ namespace DBSearch
                             break;
                     }
 
-                    DataRow drNew = dtResult.NewRow();
+                    var drNew = dtResult.NewRow();
                     drNew["database"] = database;
                     drNew["name"] = dr["name"].ToString();
                     drNew["value"] = dr[0].ToString();
@@ -360,35 +367,38 @@ namespace DBSearch
                 }
             }
 
-
             // Search columns
             sql = "select name from [" + database + "].dbo.sysobjects where type='U' order by name";
 
             dtTables = SafeSelect(sql);
             if (dtTables != null)
             {
-                foreach (DataRow drTable in dtTables.Rows)
+                foreach (var drTable in dtTables.Rows)
                 {
                     if (drTable["name"].ToString() == "dtproperties")
+                    {
                         continue;
+                    }
 
                     // Get column names
                     sql = "select * from [" + database + "].dbo.[" + drTable["name"] + "] where 1=0";
 
                     dtCols = SafeSelect(sql);
 
-                    foreach (DataColumn dc in dtCols.Columns)
+                    foreach (var dc in dtCols.Columns)
                     {
-                        string colname = dc.ColumnName;
+                        var colname = dc.ColumnName;
                         _coltype = dc.DataType.ToString();
 
-                        if (((searchtype == SearchType.exact) && colname.ToLower() == searchtext.ToLower()) ||
-                            ((searchtype == SearchType.sqllike) && colname.ToLower().Contains(searchtext.ToLower())))
+                        if (((searchtype == SearchType.exact) && string.Compare(colname, searchtext, true) == 0) ||
+                            ((searchtype == SearchType.sqllike) && colname.Contains(searchtext, StringComparison.Ordinal)))
                         {
                             if (_coltype.StartsWith("System."))
+                            {
                                 _coltype = _coltype.Substring(7);
+                            }
 
-                            DataRow drNew = dtResult.NewRow();
+                            var drNew = dtResult.NewRow();
                             drNew["database"] = database;
                             drNew["name"] = drTable["name"] + "." + dc.ColumnName;
                             drNew["value"] = "Column: " + _coltype;
@@ -400,7 +410,6 @@ namespace DBSearch
                     c_t++;
                 }
             }
-
 
             // Search content of SPs
 
@@ -423,24 +432,20 @@ namespace DBSearch
                 " order by so.name";
             _coltype = string.Empty;
 
-
             dtTables = SafeSelect(sql);
             if (dtTables != null)
             {
-                foreach (DataRow dr in dtTables.Rows)
+                foreach (var dr in dtTables.Rows)
                 {
-                    string sptext = dr["text"].ToString();
+                    var sptext = dr["text"].ToString();
 
-                    DataRow drNew = dtResult.NewRow();
+                    var drNew = dtResult.NewRow();
                     drNew["database"] = database;
                     drNew["name"] = dr["name"].ToString();
                     drNew["value"] = sptext;
                     dtResult.Rows.Add(drNew);
                 }
             }
-
-
-            return;
         }
 
         private string GetConnStr()
@@ -462,8 +467,6 @@ namespace DBSearch
                     connstr = "Server=" + server + "; Database=master; Trusted_Connection=True;";
                 }
             }
-
-            //connstr = "DSN=admin2;Uid=;Pwd=;";
 
             return connstr;
         }

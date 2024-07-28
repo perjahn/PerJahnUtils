@@ -9,7 +9,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Text.Unicode;
 using System.Threading.Tasks;
 
 class AgentTestMatrix
@@ -26,7 +25,7 @@ class AgentTestMatrix
 
     static async Task<int> Main(string[] args)
     {
-        int result = 0;
+        var result = 0;
         if (args.Length != 1)
         {
             Console.WriteLine(
@@ -78,10 +77,10 @@ TestDebug");
 
     static async Task WriteTests(string outfile)
     {
-        string server = GetServer();
-        string buildconfig = GetBuildconfig();
-        bool excludeMuted = GetExcludeMuted();
-        string[]? excludeAgents = GetExcludeAgents();
+        var server = GetServer();
+        var buildconfig = GetBuildconfig();
+        var excludeMuted = GetExcludeMuted();
+        var excludeAgents = GetExcludeAgents();
 
         GetCredentials(out string? username, out string? password);
 
@@ -91,44 +90,43 @@ TestDebug");
 
         if (excludeAgents != null)
         {
-            tests = tests.Where(t => !excludeAgents.Contains(t.Agentname)).ToList();
+            tests = [.. tests.Where(t => !excludeAgents.Contains(t.Agentname))];
         }
 
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TestDebug")))
         {
-            string[] header = { "buildid\tagentname\ttestname\tstatus\tmuted\tbuildstart" };
+            string[] header = ["buildid\tagentname\ttestname\tstatus\tmuted\tbuildstart"];
 
             File.WriteAllLines("TestDebug4.txt", Enumerable.Concat(header, tests.Select(t => $"{t.Buildid}\t{t.Agentname}\t{t.Testname}\t{t.Status}\t{t.Muted}\t{t.Buildstart}")));
         }
 
-        string[] builds = tests.GroupBy(t => t.Buildid).Select(t => t.Key).ToArray();
-        string[] agents = tests.GroupBy(t => t.Agentname).Select(a => a.Key).ToArray();
+        string[] builds = [.. tests.GroupBy(t => t.Buildid).Select(t => t.Key)];
+        string[] agents = [.. tests.GroupBy(t => t.Agentname).Select(a => a.Key)];
 
-        tests = tests.Where(t => !excludeMuted || !t.Muted.HasValue || !t.Muted.Value).ToList();
+        tests = [.. tests.Where(t => !excludeMuted || !t.Muted.HasValue || !t.Muted.Value)];
 
         Log($"Found {tests.Count} tests, of which {tests.Count(t => t.Status == "FAILURE")} failed, in {builds.Length} builds containing tests, on {agents.Length} build agents.");
 
+        Dictionary<string, List<Test>> agentTests = [];
 
-        Dictionary<string, List<Test>> agentTests = new Dictionary<string, List<Test>>();
-
-        foreach (string build in builds)
+        foreach (var build in builds)
         {
-            string agent = tests.Where(t => t.Buildid == build).First().Agentname;
+            var agent = tests.First(t => t.Buildid == build).Agentname;
 
             if (!agentTests.ContainsKey(agent))
             {
-                agentTests[agent] = tests.Where(t => t.Buildid == build).ToList();
+                agentTests[agent] = [.. tests.Where(t => t.Buildid == build)];
             }
         }
 
-        string testmatrix = PrintFailMatrix(agents, agentTests, prefixFrom, prefixTo);
+        var testmatrix = PrintFailMatrix(agents, agentTests, prefixFrom, prefixTo);
 
         WriteHtml(testmatrix, outfile);
     }
 
     static string GetServer()
     {
-        string? server = Environment.GetEnvironmentVariable("TestServer");
+        var server = Environment.GetEnvironmentVariable("TestServer");
 
         if (server != null)
         {
@@ -139,9 +137,9 @@ TestDebug");
         {
             Dictionary<string, string> tcvariables = GetTeamcityConfigVariables();
 
-            if (server == null && tcvariables.ContainsKey("teamcity.serverUrl"))
+            if (tcvariables.TryGetValue("teamcity.serverUrl", out string? value))
             {
-                server = tcvariables["teamcity.serverUrl"];
+                server = value;
                 Log($"Got server from Teamcity: '{server}'");
             }
         }
@@ -163,7 +161,7 @@ TestDebug");
 
     static string GetBuildconfig()
     {
-        string? buildconfig = Environment.GetEnvironmentVariable("TestBuildconfig");
+        var buildconfig = Environment.GetEnvironmentVariable("TestBuildconfig");
 
         if (buildconfig != null)
         {
@@ -174,24 +172,19 @@ TestDebug");
         {
             Dictionary<string, string> tcvariables = GetTeamcityBuildVariables();
 
-            if (tcvariables.ContainsKey("teamcity.buildType.id"))
+            if (tcvariables.TryGetValue("teamcity.buildType.id", out string? value))
             {
-                buildconfig = tcvariables["teamcity.buildType.id"];
+                buildconfig = value;
                 Log($"Got buildconfig from Teamcity: '{buildconfig}'");
             }
         }
 
-        if (buildconfig == null)
-        {
-            throw new ApplicationException("No buildconfig specified.");
-        }
-
-        return buildconfig;
+        return buildconfig ?? throw new ApplicationException("No buildconfig specified.");
     }
 
     static bool GetExcludeMuted()
     {
-        string? excludeMuted = Environment.GetEnvironmentVariable("TestExcludeMuted");
+        var excludeMuted = Environment.GetEnvironmentVariable("TestExcludeMuted");
 
         if (excludeMuted != null)
         {
@@ -207,7 +200,7 @@ TestDebug");
 
     static string[]? GetExcludeAgents()
     {
-        string? excludeAgents = Environment.GetEnvironmentVariable("TestExcludeAgents");
+        var excludeAgents = Environment.GetEnvironmentVariable("TestExcludeAgents");
 
         if (excludeAgents != null)
         {
@@ -240,14 +233,14 @@ TestDebug");
         {
             Dictionary<string, string> tcvariables = GetTeamcityBuildVariables();
 
-            if (username == null && tcvariables.ContainsKey("teamcity.auth.userId"))
+            if (username == null && tcvariables.TryGetValue("teamcity.auth.userId", out string? valueUserId))
             {
-                username = tcvariables["teamcity.auth.userId"];
+                username = valueUserId;
                 Log("Got username from Teamcity.");
             }
-            if (password == null && tcvariables.ContainsKey("teamcity.auth.password"))
+            if (password == null && tcvariables.TryGetValue("teamcity.auth.password", out string? valuePassword))
             {
-                password = tcvariables["teamcity.auth.password"];
+                password = valuePassword;
                 Log("Got password from Teamcity.");
             }
         }
@@ -264,14 +257,14 @@ TestDebug");
 
     static void GetAgentPrefixes(out string[] prefixesFrom, out string[] prefixesTo)
     {
-        string? testAgentPrefixFrom = Environment.GetEnvironmentVariable("TestAgentPrefixFrom");
-        string? testAgentPrefixTo = Environment.GetEnvironmentVariable("TestAgentPrefixTo");
+        var testAgentPrefixFrom = Environment.GetEnvironmentVariable("TestAgentPrefixFrom");
+        var testAgentPrefixTo = Environment.GetEnvironmentVariable("TestAgentPrefixTo");
 
         if (testAgentPrefixFrom == null || testAgentPrefixTo == null)
         {
             Log("No valid agent prefixes specified.");
-            prefixesFrom = new string[] { };
-            prefixesTo = new string[] { };
+            prefixesFrom = [];
+            prefixesTo = [];
         }
         else
         {
@@ -289,20 +282,20 @@ TestDebug");
 
     static Dictionary<string, string> GetTeamcityBuildVariables()
     {
-        string? buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
+        var buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
         if (string.IsNullOrEmpty(buildpropfile))
         {
             Log("Couldn't find Teamcity build properties file.");
-            return new Dictionary<string, string>();
+            return [];
         }
         if (!File.Exists(buildpropfile))
         {
             Log($"Couldn't find Teamcity build properties file: '{buildpropfile}'");
-            return new Dictionary<string, string>();
+            return [];
         }
 
         Log($"Reading Teamcity build properties file: '{buildpropfile}'");
-        string[] rows = File.ReadAllLines(buildpropfile);
+        var rows = File.ReadAllLines(buildpropfile);
 
         var valuesBuild = GetPropValues(rows);
 
@@ -316,20 +309,20 @@ TestDebug");
 
     static Dictionary<string, string> GetTeamcityConfigVariables()
     {
-        string? buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
+        var buildpropfile = Environment.GetEnvironmentVariable("TEAMCITY_BUILD_PROPERTIES_FILE");
         if (string.IsNullOrEmpty(buildpropfile))
         {
             Log("Couldn't find Teamcity build properties file.");
-            return new Dictionary<string, string>();
+            return [];
         }
         if (!File.Exists(buildpropfile))
         {
             Log($"Couldn't find Teamcity build properties file: '{buildpropfile}'");
-            return new Dictionary<string, string>();
+            return [];
         }
 
         Log($"Reading Teamcity build properties file: '{buildpropfile}'");
-        string[] rows = File.ReadAllLines(buildpropfile);
+        var rows = File.ReadAllLines(buildpropfile);
 
         var valuesBuild = GetPropValues(rows);
 
@@ -338,16 +331,16 @@ TestDebug");
             LogTCSection("Teamcity Properties", valuesBuild.Select(p => $"Build: {p.Key}={p.Value}"));
         }
 
-        string configpropfile = valuesBuild["teamcity.configuration.properties.file"];
+        var configpropfile = valuesBuild["teamcity.configuration.properties.file"];
         if (string.IsNullOrEmpty(configpropfile))
         {
             Log("Couldn't find Teamcity config properties file.");
-            return new Dictionary<string, string>();
+            return [];
         }
         if (!File.Exists(configpropfile))
         {
             Log($"Couldn't find Teamcity config properties file: '{configpropfile}'");
-            return new Dictionary<string, string>();
+            return [];
         }
 
         Log($"Reading Teamcity config properties file: '{configpropfile}'");
@@ -365,15 +358,15 @@ TestDebug");
 
     static Dictionary<string, string> GetPropValues(string[] rows)
     {
-        Dictionary<string, string> dic = new Dictionary<string, string>();
+        Dictionary<string, string> dic = [];
 
-        foreach (string row in rows)
+        foreach (var row in rows)
         {
-            int index = row.IndexOf('=');
+            var index = row.IndexOf('=');
             if (index != -1)
             {
-                string key = row.Substring(0, index);
-                string value = Regex.Unescape(row.Substring(index + 1));
+                var key = row[..index];
+                var value = Regex.Unescape(row[(index + 1)..]);
                 dic[key] = value;
             }
         }
@@ -383,9 +376,9 @@ TestDebug");
 
     static async Task<List<Test>> GetTests(string server, string? username, string? password, string buildconfig)
     {
-        List<Test> tests = new List<Test>();
+        List<Test> tests = [];
 
-        using var client = new HttpClient();
+        using HttpClient client = new();
 
         if (username != null && password != null)
         {
@@ -393,7 +386,7 @@ TestDebug");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         }
 
-        string address = $"{server}/app/rest/builds?locator=buildType:{buildconfig}";
+        var address = $"{server}/app/rest/builds?locator=buildType:{buildconfig}";
         client.DefaultRequestHeaders.Add("Accept", "application/json");
 
         dynamic builds = DownloadJsonContent(client, address, "TestDebug1.txt");
@@ -409,7 +402,7 @@ TestDebug");
                     address = $"{server}{buildhref}";
                     client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-                    JObject buildresult = await DownloadJsonContent(client, address, "TestDebug2.txt");
+                    var buildresult = await DownloadJsonContent(client, address, "TestDebug2.txt");
 
                     var agentname = buildresult["agent"]?["name"]?.Value<string>();
 
@@ -425,7 +418,7 @@ TestDebug");
                         address = $"{server}{testhref},count:10000";
                         client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-                        JObject testresults = await DownloadJsonContent(client, address, "TestDebug3.txt");
+                        var testresults = await DownloadJsonContent(client, address, "TestDebug3.txt");
 
                         var testOccurrences = testresults["testOccurrence"];
                         if (testOccurrences != null)
@@ -451,7 +444,7 @@ TestDebug");
         return tests;
     }
 
-    static Dictionary<string, bool> writtenLogs = new Dictionary<string, bool>();
+    static Dictionary<string, bool> writtenLogs = [];
 
     static async Task<JObject> DownloadJsonContent(HttpClient client, string address, string debugFilename)
     {
@@ -478,30 +471,29 @@ TestDebug");
 
     static string PrintFailMatrix(string[] agents, Dictionary<string, List<Test>> agentTests, string[] prefixFrom, string[] prefixTo)
     {
-        string[] testnames = agentTests
+        string[] testnames = [.. agentTests
             .SelectMany(a => a.Value)
             .Select(t => t.Testname)
             .Distinct()
-            .OrderBy(t => t)
-            .ToArray();
+            .OrderBy(t => t)];
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
 
-        DateTime now = DateTime.Now;
+        var now = DateTime.Now;
 
         sb.Append("Test/Agent");
-        foreach (string agentname in agents.OrderBy(a => a))
+        foreach (var agentname in agents.OrderBy(a => a))
         {
-            string agentname2 = agentname;
+            var agentname2 = agentname;
 
-            for (int i = 0; i < prefixFrom.Length && i < prefixTo.Length; i++)
+            for (var i = 0; i < prefixFrom.Length && i < prefixTo.Length; i++)
             {
                 if (agentname2.StartsWith(prefixFrom[i]))
                 {
-                    string datestring = agentTests.Where(t => t.Value.First().Agentname == agentname).Select(t => t.Value.First().Buildstart).First();
-                    DateTime datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
+                    var datestring = agentTests.Where(t => t.Value.First().Agentname == agentname).Select(t => t.Value.First().Buildstart).First();
+                    var datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
 
-                    agentname2 = $"{prefixTo[i]}{agentname2.Substring(prefixFrom[i].Length)}|{agentname2}|{datetime}|";
+                    agentname2 = $"{prefixTo[i]}{agentname2[prefixFrom[i].Length..]}|{agentname2}|{datetime}|";
                     break;
                 }
             }
@@ -512,30 +504,30 @@ TestDebug");
         sb.AppendLine();
 
         sb.Append("Hours since last run");
-        foreach (string agentname in agents.OrderBy(a => a))
+        foreach (var agentname in agents.OrderBy(a => a))
         {
-            string datestring = agentTests.Where(t => t.Value.First().Agentname == agentname).Select(t => t.Value.First().Buildstart).First();
-            DateTime datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
-            string hourssince = (now - datetime).TotalHours.ToString("0", CultureInfo.InvariantCulture);
+            var datestring = agentTests.Where(t => t.Value.First().Agentname == agentname).Select(t => t.Value.First().Buildstart).First();
+            var datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
+            var hourssince = (now - datetime).TotalHours.ToString("0", CultureInfo.InvariantCulture);
 
             sb.Append($"\t{hourssince}");
         }
 
         sb.AppendLine();
 
-        int failcount = 0;
+        var failcount = 0;
 
-        int totalfailcount = 0;
-        int totalsuccesscount = 0;
-        int totalmissingcount = 0;
+        var totalfailcount = 0;
+        var totalsuccesscount = 0;
+        var totalmissingcount = 0;
 
-        foreach (string testname in testnames.OrderBy(t => t))
+        foreach (var testname in testnames.OrderBy(t => t))
         {
             sb.Append(testname);
 
-            bool failed = false;
+            var failed = false;
 
-            foreach (string agentname in agents.OrderBy(a => a))
+            foreach (var agentname in agents.OrderBy(a => a))
             {
                 if (agentTests[agentname].Any(t => t.Testname == testname))
                 {
@@ -566,21 +558,20 @@ TestDebug");
             sb.AppendLine();
         }
 
-        string agentSums = string.Join("\t", agentTests.OrderBy(t => t.Value.First().Agentname).Select(t => t.Value.Where(tt => tt.Status == "FAILURE").Count()));
+        var agentSums = string.Join("\t", agentTests.OrderBy(t => t.Value.First().Agentname).Select(t => t.Value.Where(tt => tt.Status == "FAILURE").Count()));
 
         sb.AppendLine($"{testnames.Length} tests, {failcount} failed, {testnames.Length - failcount} succeded (Total: {totalfailcount} failed, {totalsuccesscount} succeded, {totalmissingcount} missing)\t{agentSums}");
-
 
         return sb.ToString();
     }
 
     static void WriteHtml(string tablecontent, string filename)
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
 
         tablecontent = tablecontent.Replace("\r", "");
 
-        string[] rows = tablecontent.Replace("\r", "").Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var rows = tablecontent.Replace("\r", "").Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
 
         sb.AppendLine("<html>");
         sb.AppendLine("<body>");
@@ -630,11 +621,11 @@ td {
 
         sb.AppendLine("<table border=\"1\">");
 
-        foreach (string row in rows)
+        foreach (var row in rows)
         {
-            string[] values = row.Split('\t');
-            bool allsuccess = values.Skip(1).All(v => v == ".");
-            bool anyfails = values.Skip(1).Any(v => v == "x");
+            var values = row.Split('\t');
+            var allsuccess = values.Skip(1).All(v => v == ".");
+            var anyfails = values.Skip(1).Any(v => v == "x");
 
             if (allsuccess)
             {
@@ -645,14 +636,14 @@ td {
                 sb.Append("<tr class='fails'>");
             }
 
-            foreach (string value in values)
+            foreach (var value in values)
             {
-                int start = value.IndexOf('|');
-                int end = value.LastIndexOf('|');
+                var start = value.IndexOf('|');
+                var end = value.LastIndexOf('|');
                 if (start != -1 && end != -1 && start < end)
                 {
-                    string title = value.Substring(start + 1, end - start - 1).Replace("|", "\n");
-                    string cleanvalue = value.Substring(0, start);
+                    var title = value.Substring(start + 1, end - start - 1).Replace("|", "\n");
+                    var cleanvalue = value[..start];
                     sb.Append($"<td title='{title}'>{cleanvalue}</td>");
                 }
                 else
@@ -696,7 +687,7 @@ td {
 
     private static void LogColor(string message, ConsoleColor color)
     {
-        ConsoleColor oldColor = Console.ForegroundColor;
+        var oldColor = Console.ForegroundColor;
         try
         {
             Console.ForegroundColor = color;
@@ -710,7 +701,7 @@ td {
 
     private static void Log(string message)
     {
-        string hostname = Dns.GetHostName();
+        var hostname = Dns.GetHostName();
         Console.WriteLine($"{hostname}: {message}");
     }
 }

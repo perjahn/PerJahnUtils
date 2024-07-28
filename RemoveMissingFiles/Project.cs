@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace RemoveMissingFiles
@@ -13,65 +14,47 @@ namespace RemoveMissingFiles
         public List<string> _allfiles { get; set; }
         public int _removedfiles { get; set; }
 
-        private static string[] excludedtags = {
+        private static string[] excludedtags = [
             "Reference", "Folder", "Import", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
-            "COMReference", "WCFMetadata", "WebReferences", "WCFMetadataStorage", "WebReferenceUrl" };
+            "COMReference", "WCFMetadata", "WebReferences", "WCFMetadataStorage", "WebReferenceUrl" ];
 
         public static Project LoadProject(string solutionfile, string projectfilepath)
         {
-            Project newproj = new Project();
+            Project newproj = new();
             XDocument xdoc;
-            XNamespace ns;
 
-            string fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), projectfilepath);
+            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), projectfilepath);
 
             try
             {
                 xdoc = XDocument.Load(fullfilename);
             }
-            catch (IOException ex)
-            {
-                throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
-            }
-            catch (ArgumentException ex)
-            {
-                throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
-            }
-            catch (System.Xml.XmlException ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or XmlException)
             {
                 throw new ApplicationException($"Couldn't load project: '{fullfilename}': {ex.Message}");
             }
 
-            ns = xdoc.Root.Name.Namespace;
+            var ns = xdoc.Root.Name.Namespace;
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
 
-            newproj._allfiles =
-                (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
-                 where el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName)
-                 orderby el.Attribute("Include").Value
-                 select System.Uri.UnescapeDataString(el.Attribute("Include").Value))
-                 .ToList();
-
+            newproj._allfiles = [.. xdoc
+                .Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
+                .Where(el => el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName))
+                .OrderBy(el => el.Attribute("Include").Value)
+                .Select(el => Uri.UnescapeDataString(el.Attribute("Include").Value))];
 
             return newproj;
         }
 
-        public void Fix(string solutionfile, List<Project> projects)
+        public void Fix(string solutionfile)
         {
-            var existingfiles = new List<string>();
+            List<string> existingfiles = [];
 
-            foreach (string include in _allfiles)
+            foreach (var include in _allfiles)
             {
                 // Files must exist in file system.
-                string fullfilename = Path.Combine(
-                    Path.GetDirectoryName(solutionfile),
-                    Path.GetDirectoryName(_sln_path),
-                    include);
+                var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), include);
                 if (!File.Exists(fullfilename))
                 {
                     ConsoleHelper.WriteLineColor($"'{_sln_path}' --> '{include}'", ConsoleColor.Red);
@@ -84,33 +67,24 @@ namespace RemoveMissingFiles
             }
 
             _allfiles = existingfiles;
-
-            return;
         }
 
         public void WriteProject(string solutionfile, bool simulate)
         {
             XDocument xdoc;
-            string fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), _sln_path);
+            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), _sln_path);
 
             try
             {
                 xdoc = XDocument.Load(fullfilename);
             }
-            catch (IOException ex)
-            {
-                ConsoleHelper.WriteLine($"Couldn't load project: '{fullfilename}': {ex.Message}");
-                return;
-            }
-            catch (System.Xml.XmlException ex)
+            catch (Exception ex) when (ex is IOException or XmlException)
             {
                 ConsoleHelper.WriteLine($"Couldn't load project: '{fullfilename}': {ex.Message}");
                 return;
             }
 
-
-            UpdateFiles(xdoc, solutionfile);
-
+            UpdateFiles(xdoc);
 
             ConsoleHelper.WriteLine($"Writing file: '{fullfilename}'.");
             if (!simulate)
@@ -118,25 +92,21 @@ namespace RemoveMissingFiles
                 FileHelper.RemoveRO(fullfilename);
                 xdoc.Save(fullfilename);
             }
-
-            return;
         }
 
         // Todo: check case sensitivity
-        public void UpdateFiles(XDocument xdoc, string solutionfile)
+        public void UpdateFiles(XDocument xdoc)
         {
-            XNamespace ns = xdoc.Root.Name.Namespace;
+            var ns = xdoc.Root.Name.Namespace;
 
-            List<XElement> fileitems =
-                (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
-                 where el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName)
-                 orderby el.Attribute("Include").Value
-                 select el)
-                 .ToList();
+            List<XElement> fileitems = [.. xdoc
+                .Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
+                .Where(el => el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName))
+                .OrderBy(el => el.Attribute("Include").Value)];
 
-            foreach (XElement fileitem in fileitems)
+            foreach (var fileitem in fileitems)
             {
-                string filename = System.Uri.UnescapeDataString(fileitem.Attribute("Include").Value);
+                var filename = Uri.UnescapeDataString(fileitem.Attribute("Include").Value);
 
                 if (!_allfiles.Contains(filename))
                 {
@@ -144,8 +114,6 @@ namespace RemoveMissingFiles
                     fileitem.Remove();
                 }
             }
-
-            return;
         }
     }
 }

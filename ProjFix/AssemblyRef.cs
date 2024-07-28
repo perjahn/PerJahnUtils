@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 
 namespace ProjFix
@@ -16,44 +15,28 @@ namespace ProjFix
         public List<string> Hintpaths { get; set; }
         public List<string> Copylocals { get; set; }
 
-
         public void AddToDoc(XDocument xdoc, XNamespace ns)
         {
             ConsoleHelper.WriteLine($"  Adding assembly ref: '{Include}", true);
 
-            XElement newref;
-
-            if (Hintpath == null)
-            {
-                newref = new XElement(ns + "Reference",
+            XElement newref = Hintpath == null
+                ? new XElement(ns + "Reference",
                     new XAttribute("Include", Include),
-                    new XElement(ns + "SpecificVersion", "False")
-                    );
-            }
-            else
-            {
-                newref = new XElement(ns + "Reference",
+                    new XElement(ns + "SpecificVersion", "False"))
+                : new XElement(ns + "Reference",
                     new XAttribute("Include", Include),
                     new XElement(ns + "SpecificVersion", "False"),
-                    new XElement(ns + "HintPath", Hintpath)
-                    );
-            }
-
+                    new XElement(ns + "HintPath", Hintpath));
 
             // Sort insert
-            var groups = from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup")
-                         where el.Element(ns + "Reference") != null
-                         select el;
-            if (groups.Count() == 0)
+            XElement[] groups = [.. xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Where(el => el.Element(ns + "Reference") != null)];
+            if (groups.Length == 0)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow, $"NotImplementedException: Cannot insert reference!");
                 return;
             }
 
-            var refs = from el in groups.ElementAt(0).Elements(ns + "Reference")
-                       where el.Attribute("Include") != null
-                       orderby el.Attribute("Include").Value
-                       select el;
+            XElement[] refs = [.. groups.ElementAt(0).Elements(ns + "Reference").Where(el => el.Attribute("Include") != null).OrderBy(el => el.Attribute("Include").Value)];
 
             if (Include.CompareTo(refs.First().Attribute("Include").Value) < 0)
             {
@@ -65,10 +48,10 @@ namespace ProjFix
             }
             else
             {
-                for (int i = 0; i < refs.Count() - 1; i++)
+                for (var i = 0; i < refs.Length - 1; i++)
                 {
-                    string inc1 = refs.ElementAt(i).Attribute("Include").Value;
-                    string inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
+                    var inc1 = refs.ElementAt(i).Attribute("Include").Value;
+                    var inc2 = refs.ElementAt(i + 1).Attribute("Include").Value;
                     if (Include.CompareTo(inc1) > 0 && Include.CompareTo(inc2) < 0)
                     {
                         refs.ElementAt(i).AddAfterSelf(newref);
@@ -81,11 +64,9 @@ namespace ProjFix
         {
             // Update existing ref (hint path)
 
-            List<XElement> references2 =
-                (from el in xdoc.Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
-                 where el.Attribute("Include") != null && Project.GetShortRef(el.Attribute("Include").Value) == Project.GetShortRef(Include)
-                 select el)
-            .ToList();
+            List<XElement> references2 = [.. xdoc
+                .Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
+                .Where(el => el.Attribute("Include") != null && Project.GetShortRef(el.Attribute("Include").Value) == Project.GetShortRef(Include))];
 
             if (references2.Count < 1)
             {
@@ -98,15 +79,14 @@ namespace ProjFix
                 return;
             }
 
-            XElement reference = references2[0];
+            var reference = references2[0];
 
-
-            XElement hintPath = reference.Element(ns + "HintPath");
+            var hintPath = reference.Element(ns + "HintPath");
             if (Hintpath == null)
             {
                 if (hintPath != null)
                 {
-                    string oldpath = hintPath.Value;
+                    var oldpath = hintPath.Value;
                     if (oldpath != Hintpath)
                     {
                         ConsoleHelper.WriteLine($"  Updating assembly ref: Removing hintpath: '{Include}': '{oldpath}'.", true);
@@ -124,7 +104,7 @@ namespace ProjFix
                 }
                 else
                 {
-                    string oldpath = hintPath.Value;
+                    var oldpath = hintPath.Value;
                     if (oldpath != Hintpath)
                     {
                         ConsoleHelper.WriteLine($"  Updating assembly ref: Updating hintpath: '{Include}': '{oldpath}' -> '{Hintpath}'.", true);
@@ -133,7 +113,7 @@ namespace ProjFix
                 }
             }
 
-            XAttribute includeattr = reference.Attribute("Include");
+            var includeattr = reference.Attribute("Include");
             if (includeattr.Value != Include)
             {
                 ConsoleHelper.WriteLine($"  Updating assembly ref: Updating include: '{includeattr.Value}' -> '{Include}'.", true);

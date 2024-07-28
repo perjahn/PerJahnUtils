@@ -24,7 +24,6 @@ namespace ValidateSource
         static int _indentationsize;
         static int _loglevel;
 
-
         static int Main(string[] args)
         {
             string[]? filteredArgs = ParseArguments(args);
@@ -39,8 +38,7 @@ namespace ValidateSource
                 return 2;
             }
 
-
-            string[] excluderegexs = filteredArgs.Skip(1).ToArray();
+            string[] excluderegexs = [.. filteredArgs.Skip(1)];
 
             ParsePath(filteredArgs[0], out string path, out string? pattern);
 
@@ -68,7 +66,7 @@ namespace ValidateSource
 
             if (args.Any(a => a.StartsWith("-i")))
             {
-                string value = args.Last(a => a.StartsWith("-i")).Substring(2);
+                var value = args.Last(a => a.StartsWith("-i"))[2..];
                 if (!int.TryParse(value, out _indentationsize))
                 {
                     WriteLineColor("Couldn't parse indentation size: '" + value + "'", ConsoleColor.Red, 0);
@@ -78,7 +76,7 @@ namespace ValidateSource
 
             if (args.Any(a => a.StartsWith("-l")))
             {
-                string value = args.Last(a => a.StartsWith("-l")).Substring(2);
+                var value = args.Last(a => a.StartsWith("-l"))[2..];
                 if (!int.TryParse(value, out _loglevel))
                 {
                     WriteLineColor("Couldn't parse log level: '" + value + "'", ConsoleColor.Red, 0);
@@ -86,12 +84,12 @@ namespace ValidateSource
                 }
             }
 
-            string[] filteredArgs = args
-                .Where(a => !(new string[] { "-fix", "-fixTrailing", "-fixIndentation" })
-                    .Contains(a, StringComparer.OrdinalIgnoreCase))
-                .Where(a => !(new string[] { "-i", "-l" })
-                    .Any(aa => a.StartsWith(aa, StringComparison.OrdinalIgnoreCase)))
-                .ToArray();
+            string[] longArgs = ["-fix", "-fixTrailing", "-fixIndentation"];
+            string[] shortArgs = ["-i", "-l"];
+
+            string[] filteredArgs = [.. args
+                .Where(a => !longArgs.Contains(a, StringComparer.OrdinalIgnoreCase))
+                .Where(a => !shortArgs.Any(aa => a.StartsWith(aa, StringComparison.OrdinalIgnoreCase)))];
 
             return filteredArgs;
         }
@@ -146,12 +144,12 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
 
         static int SearchForMisformattedFiles(string path, string? pattern, string[] excluderegexs)
         {
-            string[]? filesTrailing = GetTrailingFiles(path, pattern, excluderegexs);
+            var filesTrailing = GetTrailingFiles(path, pattern, excluderegexs);
             if (filesTrailing == null)
             {
                 return 2;
             }
-            string[]? filesIndentation = GetIndentationFiles(path, pattern, excluderegexs);
+            var filesIndentation = GetIndentationFiles(path, pattern, excluderegexs);
             if (filesIndentation == null)
             {
                 return 2;
@@ -172,12 +170,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 FixIndentation(filesIndentation);
             }
 
-            if (_filesTrailing > 0 || _filesIndentation > 0)
-            {
-                return 1;
-            }
-
-            return 0;
+            return _filesTrailing > 0 || _filesIndentation > 0 ? 1 : 0;
         }
 
         static void WriteStats()
@@ -189,11 +182,11 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             }
             else
             {
-                long percent = _filesTrailing * 100 / _filesTotalTrailing;
-                string percentFiles = (percent == 0 && _filesTrailing > 0) ? "<1" : percent.ToString();
+                var percent = _filesTrailing * 100 / _filesTotalTrailing;
+                var percentFiles = (percent == 0 && _filesTrailing > 0) ? "<1" : percent.ToString();
 
                 percent = _rowsTrailing * 100 / _rowsTotalTrailing;
-                string percentRows = (percent == 0 && _rowsTrailing > 0) ? "<1" : percent.ToString();
+                var percentRows = (percent == 0 && _rowsTrailing > 0) ? "<1" : percent.ToString();
 
                 WriteLineColor(
                     "Trailing whitespace found in " + _filesTrailing + " (" + percentFiles + "%) source files, on " +
@@ -209,11 +202,11 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             }
             else
             {
-                long percent = _filesIndentation * 100 / _filesTotalIndentation;
-                string percentFiles = (percent == 0 && _filesIndentation > 0) ? "<1" : percent.ToString();
+                var percent = _filesIndentation * 100 / _filesTotalIndentation;
+                var percentFiles = (percent == 0 && _filesIndentation > 0) ? "<1" : percent.ToString();
 
                 percent = _rowsIndentation * 100 / _rowsTotalIndentation;
-                string percentRows = (percent == 0 && _rowsIndentation > 0) ? "<1" : percent.ToString();
+                var percentRows = (percent == 0 && _rowsIndentation > 0) ? "<1" : percent.ToString();
 
                 WriteLineColor(
                     "Inconsistent indentation found in " + _filesIndentation + " (" + percentFiles + "%) source files, on " +
@@ -229,21 +222,16 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             _rowsTotalTrailing = 0;
             _rowsTrailing = 0;
             _charsTrailing = 0;
-            List<string> outfiles = new List<string>();
+            List<string> outfiles = [];
 
             string[] infiles;
             try
             {
-                if (pattern == null)
-                {
-                    infiles = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-                }
-                else
-                {
-                    infiles = Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
-                }
+                infiles = pattern == null
+                    ? Directory.GetFiles(path, "*", SearchOption.AllDirectories)
+                    : Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
             }
-            catch (Exception ex) when (ex is ArgumentException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException)
+            catch (Exception ex) when (ex is ArgumentException or DirectoryNotFoundException or UnauthorizedAccessException)
             {
                 WriteLineColor("Path: '" + path + "'" + Environment.NewLine +
                     ex.Message, ConsoleColor.Red, 0);
@@ -251,27 +239,24 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             }
             _filesTotalTrailing = infiles.Length;
 
-
-            infiles = infiles
-                .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                .ToArray();
+            infiles = [.. infiles.Select(f => f.StartsWith(@".\") ? f[2..] : f)];
             if (pattern == null)
             {
-                infiles = infiles
-                    .Where(f => (new string[] { ".cpp", ".cs", ".ps1", ".psm1", ".sql" }).Contains(Path.GetExtension(f)))
-                    .Where(f => !(new string[] { ".Designer.cs" }).Any(ff => f.EndsWith(ff)))
-                    .Where(f => !(new string[] { "AssemblyInfo.cs" }).Contains(Path.GetFileName(f)))
-                    .ToArray();
+                string[] exts1 = [".cpp", ".cs", ".ps1", ".psm1", ".sql"];
+                string[] exts2 = [".Designer.cs"];
+                string[] exts3 = ["AssemblyInfo.cs"];
+
+                infiles = [.. infiles
+                    .Where(f => exts1.Contains(Path.GetExtension(f)))
+                    .Where(f => !exts2.Any(ff => f.EndsWith(ff)))
+                    .Where(f => !exts3.Contains(Path.GetFileName(f)))];
             }
 
-
-            foreach (string excluderegex in excluderegexs)
+            foreach (var excluderegex in excluderegexs)
             {
                 try
                 {
-                    infiles = infiles
-                        .Where(f => !Regex.IsMatch(f, excluderegex, RegexOptions.IgnoreCase))
-                        .ToArray();
+                    infiles = [.. infiles.Where(f => !Regex.IsMatch(f, excluderegex, RegexOptions.IgnoreCase))];
                 }
                 catch (ArgumentException ex)
                 {
@@ -280,16 +265,16 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            foreach (string filename in infiles)
+            foreach (var filename in infiles)
             {
-                string[] rows = File.ReadAllLines(filename);
+                var rows = File.ReadAllLines(filename);
                 _rowsTotalTrailing += rows.Length;
-                bool first = true;
+                var first = true;
 
-                for (int i = 0; i < rows.Length; i++)
+                for (var i = 0; i < rows.Length; i++)
                 {
-                    string row = rows[i];
-                    if (row.EndsWith(" ") || row.EndsWith("\t"))
+                    var row = rows[i];
+                    if (row.EndsWith(' ') || row.EndsWith('\t'))
                     {
                         if (first)
                         {
@@ -303,7 +288,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                         int offset;
                         for (offset = row.Length; offset > 0; offset--)
                         {
-                            if (row[offset - 1] == ' ' || row[offset - 1] == '\t')
+                            if (row[offset - 1] is ' ' or '\t')
                             {
                                 _charsTrailing++;
                             }
@@ -313,7 +298,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                             }
                         }
 
-                        WriteLogLevel("" + (i + 1) + ": " + row.Substring(0, offset), 3);
+                        WriteLogLevel(string.Empty + (i + 1) + ": " + row[..offset], 3);
                         WriteLineColor(new string('_', row.Length - offset).ToString(), ConsoleColor.Yellow, 3);
 
                         _rowsTrailing++;
@@ -321,7 +306,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            return outfiles.ToArray();
+            return [.. outfiles];
         }
 
         static string[]? GetIndentationFiles(string path, string? pattern, string[] excluderegexs)
@@ -330,21 +315,16 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
 
             _rowsTotalIndentation = 0;
             _rowsIndentation = 0;
-            List<string> outfiles = new List<string>();
+            List<string> outfiles = [];
 
             string[] infiles;
             try
             {
-                if (pattern == null)
-                {
-                    infiles = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-                }
-                else
-                {
-                    infiles = Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
-                }
+                infiles = pattern == null
+                    ? Directory.GetFiles(path, "*", SearchOption.AllDirectories)
+                    : Directory.GetFiles(path, pattern, SearchOption.AllDirectories);
             }
-            catch (Exception ex) when (ex is ArgumentException || ex is DirectoryNotFoundException || ex is UnauthorizedAccessException)
+            catch (Exception ex) when (ex is ArgumentException or DirectoryNotFoundException or UnauthorizedAccessException)
             {
                 WriteLineColor("Path: '" + path + "'" + Environment.NewLine +
                     ex.Message, ConsoleColor.Red, 0);
@@ -352,27 +332,24 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
             }
             _filesTotalIndentation = infiles.Length;
 
-
-            infiles = infiles
-                .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                .ToArray();
+            infiles = [.. infiles.Select(f => f.StartsWith(@".\") ? f[2..] : f)];
             if (pattern == null)
             {
-                infiles = infiles
-                    .Where(f => (new string[] { ".cpp", ".cs", ".ps1", ".psm1", ".sql" }).Contains(Path.GetExtension(f)))
-                    .Where(f => !(new string[] { ".Designer.cs" }).Any(ff => f.EndsWith(ff)))
-                    .Where(f => !(new string[] { "AssemblyInfo.cs" }).Contains(Path.GetFileName(f)))
-                    .ToArray();
+                string[] exts1 = [".cpp", ".cs", ".ps1", ".psm1", ".sql"];
+                string[] exts2 = [".Designer.cs"];
+                string[] exts3 = ["AssemblyInfo.cs"];
+
+                infiles = [.. infiles
+                    .Where(f => exts1.Contains(Path.GetExtension(f)))
+                    .Where(f => !exts2.Any(ff => f.EndsWith(ff)))
+                    .Where(f => !exts3.Contains(Path.GetFileName(f)))];
             }
 
-
-            foreach (string excluderegex in excluderegexs)
+            foreach (var excluderegex in excluderegexs)
             {
                 try
                 {
-                    infiles = infiles
-                        .Where(f => !Regex.IsMatch(f, excluderegex, RegexOptions.IgnoreCase))
-                        .ToArray();
+                    infiles = [.. infiles.Where(f => !Regex.IsMatch(f, excluderegex, RegexOptions.IgnoreCase))];
                 }
                 catch (ArgumentException ex)
                 {
@@ -381,18 +358,18 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            foreach (string filename in infiles)
+            foreach (var filename in infiles)
             {
-                string[] rows = File.ReadAllLines(filename);
+                var rows = File.ReadAllLines(filename);
                 _rowsTotalIndentation += rows.Length;
-                bool first = true;
+                var first = true;
 
-                for (int i = 0; i < rows.Length; i++)
+                for (var i = 0; i < rows.Length; i++)
                 {
-                    string row = rows[i];
-                    if (row.StartsWith(" "))
+                    var row = rows[i];
+                    if (row.StartsWith(' '))
                     {
-                        int offset = 0;
+                        var offset = 0;
                         while (offset < row.Length && row[offset] == ' ')
                         {
                             offset++;
@@ -409,9 +386,9 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                                 first = false;
                             }
 
-                            WriteLogLevel("" + (i + 1) + ": ", 3);
+                            WriteLogLevel(string.Empty + (i + 1) + ": ", 3);
                             WriteColor(new string('_', offset).ToString(), ConsoleColor.Yellow, 3);
-                            WriteLineLogLevel(row.Substring(offset), 3);
+                            WriteLineLogLevel(row[offset..], 3);
 
                             _rowsIndentation++;
                         }
@@ -419,7 +396,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 }
             }
 
-            return outfiles.ToArray();
+            return [.. outfiles];
         }
 
         static void FixTrailing(string[] files)
@@ -434,12 +411,12 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
 
             Console.WriteLine("All trailing whitespaces will be removed from the " + files.Length + " files...");
 
-            foreach (string filename in files)
+            foreach (var filename in files)
             {
                 WriteLineLogLevel("Fixing file '" + filename + "'", 3);
 
-                string[] rows = File.ReadAllLines(filename);
-                for (int i = 0; i < rows.Length; i++)
+                var rows = File.ReadAllLines(filename);
+                for (var i = 0; i < rows.Length; i++)
                 {
                     rows[i] = rows[i].TrimEnd();
                 }
@@ -461,18 +438,18 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
 
             Console.WriteLine("All inconsistent indentation will be fixed in the " + files.Length + " files...");
 
-            foreach (string filename in files)
+            foreach (var filename in files)
             {
                 WriteLineLogLevel("Fixing file '" + filename + "'", 3);
 
-                string[] rows = File.ReadAllLines(filename);
+                var rows = File.ReadAllLines(filename);
 
-                for (int i = 0; i < rows.Length; i++)
+                for (var i = 0; i < rows.Length; i++)
                 {
-                    string row = rows[i];
-                    if (row.StartsWith(" "))
+                    var row = rows[i];
+                    if (row.StartsWith(' '))
                     {
-                        int offset = 0;
+                        var offset = 0;
                         while (offset < row.Length && row[offset] == ' ')
                         {
                             offset++;
@@ -480,7 +457,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
 
                         if (offset % _indentationsize != 0)
                         {
-                            int add = _indentationsize - offset % _indentationsize;
+                            var add = _indentationsize - offset % _indentationsize;
                             rows[i] = new string(' ', add) + rows[i];
                         }
                     }
@@ -518,7 +495,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 return;
             }
 
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;
@@ -537,7 +514,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
                 return;
             }
 
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;

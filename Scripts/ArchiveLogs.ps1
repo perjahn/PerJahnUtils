@@ -269,7 +269,7 @@ function RetrieveSizes([string[]] $servers, $cred, [string] $logfolder, [string]
         $size | Add-Member NoteProperty ArchiveSize ((dir $archivefolder | Measure-Object Length -Sum).Sum)
         $size
     } | ? { $_ })
-    
+
     Log ("Got " + $sizes.Count + " sizes.")
 
     return $sizes
@@ -320,7 +320,7 @@ function MoveServerLogs([string[]] $servers, $cred, [string] $logfolder, [string
                 Write-Host ($hostname + ": " + $message)
             }
         }
-        
+
         function GetUniqueFileName([string] $filename)
         {
             for ([int] $i=0; $i -lt 10000; $i++)
@@ -360,7 +360,7 @@ function MoveServerLogs([string[]] $servers, $cred, [string] $logfolder, [string
                     return
                 }
             }
-            
+
             [bool] $debug = $false
             if ($debug)
             {
@@ -410,7 +410,7 @@ function CompressServerLogs([string[]] $servers, $cred, [string] $date, [string]
                 Write-Host ($hostname + ": " + $message)
             }
         }
-        
+
         function GetUniqueFileName([string] $filename)
         {
             for ([int] $i=0; $i -lt 10000; $i++)
@@ -436,7 +436,7 @@ function CompressServerLogs([string[]] $servers, $cred, [string] $date, [string]
         Set-Alias zip $zipexepath
 
         cd $archivefolder
-        
+
         dir -File | ? { $_.Length -eq 0 } | % {
             Log ("Deleting empty file: '" + $_.FullName + "'")
             del $_.FullName

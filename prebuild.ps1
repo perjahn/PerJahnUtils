@@ -42,11 +42,20 @@ function Generate-BuildFile([string] $buildfile) {
             }
 
             [string] $filename = [IO.Path]::ChangeExtension($_, ".csproj")
+            if (!(Test-Path $filename)) {
+                Write-Host "Excluding project: Missing csproj for solution: '$_'" -f Yellow
+                return $false
+            }
+
             [string] $content = [IO.File]::ReadAllText($filename)
             if (!$content.Contains("Microsoft.NET.Sdk")) {
                 Write-Host "Excluding old C# project: '$($filename.Substring((pwd).Path.Length + 1))'" -f Yellow
                 return $false
             }
+
+            [string] $qq = "<AnalysisMode>All</AnalysisMode><EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild><AnalysisLevelStyle>preview</AnalysisLevelStyle><NoWarn>CA1033,CA1063,CA1303,CA1304,CA1305,CA1310,CA1311,CA1515,CS1591,CA1816,CA1822,CA1849,CA1852,CA2007,CA2100,IDE0006,IDE0008,IDE0040,IDE0210</NoWarn><GenerateDocumentationFile>true</GenerateDocumentationFile>"
+
+            sed -i "s;<TargetFramework>net8\.0</TargetFramework>;<TargetFramework>net9.0</TargetFramework>$($qq);g" $filename
             return $true
         })
     }

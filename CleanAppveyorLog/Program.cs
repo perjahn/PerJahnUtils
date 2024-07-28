@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace CleanAppveyorLog
@@ -16,19 +14,19 @@ namespace CleanAppveyorLog
                 return;
             }
 
-            string infile = args[0];
-            string outfile = args[1];
+            var infile = args[0];
+            var outfile = args[1];
 
             CleanFile(infile, outfile);
         }
 
         static void CleanFile(string infile, string outfile)
         {
-            string[] rows = File.ReadAllLines(infile);
+            var rows = File.ReadAllLines(infile);
 
-            for (int i = 0; i < rows.Length; i++)
+            for (var i = 0; i < rows.Length; i++)
             {
-                string row = rows[i];
+                var row = rows[i];
 
                 // <1ms
                 // <11ms
@@ -54,7 +52,7 @@ namespace CleanAppveyorLog
                 var m = Regex.Match(row, @"\s+\[?<?(\s*\ds)*\s*\d+ms\]?$");
                 if (m.Index > 0)
                 {
-                    rows[i] = row.Substring(0, m.Index);
+                    rows[i] = row[..m.Index];
                 }
             }
 

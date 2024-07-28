@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Xml.Linq;
 
 namespace GenerateTransform
@@ -27,7 +25,7 @@ namespace GenerateTransform
             bool result6 = CompareTest4();
             Console.WriteLine($"CompareTest4: {result6}");
 
-            if (result1 == false || result2 == false || result3 == false || result4 == false || result5 == false || result6 == false)
+            if (!result1 || !result2 || !result3 || !result4 || !result5 || !result6)
             {
                 Console.WriteLine("Fail!");
                 return 1;
@@ -41,9 +39,9 @@ namespace GenerateTransform
 
         private bool PathTest1()
         {
-            XDocument xdoc = new XDocument();
-            XElement el1 = new XElement("bbb");
-            XElement el2 = new XElement("aaa", el1);
+            XDocument xdoc = new();
+            XElement el1 = new("bbb");
+            XElement el2 = new("aaa", el1);
 
             xdoc.Add(el2);
 
@@ -52,21 +50,20 @@ namespace GenerateTransform
 
         private bool PathTest2()
         {
-            XElement el1 = new XElement("bbb");
-            XElement el2 = new XElement("aaa", el1);
+            XElement el1 = new("bbb");
 
             return XmlHelper.GetElementPath(el1) == "/aaa/bbb";
         }
 
         private bool CompareTest1()
         {
-            XElement e1 = new XElement("aaa");
-            XElement e2 = new XElement("aaa");
+            XElement e1 = new("aaa");
+            XElement e2 = new("aaa");
 
-            XAttribute a1 = new XAttribute("a", "1");
-            XAttribute a2 = new XAttribute("a", "1");
-            XAttribute a3 = new XAttribute("b", "2");
-            XAttribute a4 = new XAttribute("b", "2");
+            XAttribute a1 = new("a", "1");
+            XAttribute a2 = new("a", "1");
+            XAttribute a3 = new("b", "2");
+            XAttribute a4 = new("b", "2");
 
             e1.Add(a1);
             e1.Add(a3);
@@ -79,13 +76,13 @@ namespace GenerateTransform
 
         private bool CompareTest2()
         {
-            XElement e1 = new XElement("aaa");
-            XElement e2 = new XElement("aaa");
+            XElement e1 = new("aaa");
+            XElement e2 = new("aaa");
 
-            XAttribute a1 = new XAttribute("a", "1");
-            XAttribute a2 = new XAttribute("a", "1");
-            XAttribute a3 = new XAttribute("b", "2");
-            XAttribute a4 = new XAttribute("b", "2");
+            XAttribute a1 = new("a", "1");
+            XAttribute a2 = new("a", "1");
+            XAttribute a3 = new("b", "2");
+            XAttribute a4 = new("b", "2");
 
             e1.Add(a3);
             e1.Add(a1);
@@ -98,13 +95,13 @@ namespace GenerateTransform
 
         private bool CompareTest3()
         {
-            XElement e1 = new XElement("aaa");
-            XElement e2 = new XElement("aaa");
+            XElement e1 = new("aaa");
+            XElement e2 = new("aaa");
 
-            XAttribute a1 = new XAttribute("a", "1");
-            XAttribute a2 = new XAttribute("a", "1");
-            XAttribute a3 = new XAttribute("b", "1");
-            XAttribute a4 = new XAttribute("b", "2");
+            XAttribute a1 = new("a", "1");
+            XAttribute a2 = new("a", "1");
+            XAttribute a3 = new("b", "1");
+            XAttribute a4 = new("b", "2");
 
             e1.Add(a3);
             e1.Add(a1);
@@ -117,12 +114,12 @@ namespace GenerateTransform
 
         private bool CompareTest4()
         {
-            XElement e1 = new XElement("aaa");
-            XElement e2 = new XElement("aaa");
+            XElement e1 = new("aaa");
+            XElement e2 = new("aaa");
 
-            XAttribute a1 = new XAttribute("a", "1");
-            XAttribute a2 = new XAttribute("a", "1");
-            XAttribute a4 = new XAttribute("b", "2");
+            XAttribute a1 = new("a", "1");
+            XAttribute a2 = new("a", "1");
+            XAttribute a4 = new("b", "2");
 
             e1.Add(a1);
 

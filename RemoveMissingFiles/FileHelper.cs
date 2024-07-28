@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 
 namespace RemoveMissingFiles
 {
@@ -9,7 +6,7 @@ namespace RemoveMissingFiles
     {
         public static void RemoveRO(string filename)
         {
-            FileAttributes fa = File.GetAttributes(filename);
+            var fa = File.GetAttributes(filename);
             if ((fa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
             {
                 File.SetAttributes(filename, fa & ~FileAttributes.ReadOnly);

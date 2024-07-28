@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -30,24 +29,21 @@ Usage: CopyToServer <source> <target> <username> <password>");
                 return 1;
             }
 
-            string share = source.StartsWith(@"\\") ? GetShare(source) : GetShare(target);
+            var share = source.StartsWith(@"\\") ? GetShare(source) : GetShare(target);
 
-            NetworkCredential credentials = new NetworkCredential(username, password);
+            NetworkCredential credentials = new(username, password);
 
             using (new NetworkConnection(share, credentials))
             {
-                string dir = source.Contains(Path.DirectorySeparatorChar) ? Path.GetDirectoryName(source) : ".";
-                string pattern = Path.GetFileName(source);
+                var dir = source.Contains(Path.DirectorySeparatorChar) ? Path.GetDirectoryName(source) : ".";
+                var pattern = Path.GetFileName(source);
                 if (dir == null)
                 {
                     dir = source;
                     pattern = "*";
                 }
 
-                string[] files =
-                    Directory.GetFiles(dir, pattern)
-                        .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                        .ToArray();
+                string[] files = [.. Directory.GetFiles(dir, pattern).Select(f => f.StartsWith(@".\") ? f[2..] : f)];
 
                 if (!Directory.Exists(target))
                 {
@@ -55,9 +51,9 @@ Usage: CopyToServer <source> <target> <username> <password>");
                     Directory.CreateDirectory(target);
                 }
 
-                foreach (string filename in files)
+                foreach (var filename in files)
                 {
-                    string targetfile = Path.Combine(target, Path.GetFileName(filename));
+                    var targetfile = Path.Combine(target, Path.GetFileName(filename));
                     Console.WriteLine($"'{filename}' -> '{targetfile}'");
                     try
                     {
@@ -75,13 +71,13 @@ Usage: CopyToServer <source> <target> <username> <password>");
 
         static string GetShare(string path)
         {
-            int index = path.IndexOf(Path.DirectorySeparatorChar, 2);
+            var index = path.IndexOf(Path.DirectorySeparatorChar, 2);
             if (index == -1)
             {
                 throw new ApplicationException($"Malformed unc path: '{path}'");
             }
 
-            index = path.Substring(index + 1).Contains(Path.DirectorySeparatorChar) ?
+            index = path[(index + 1)..].Contains(Path.DirectorySeparatorChar) ?
                 path.IndexOf(Path.DirectorySeparatorChar, index + 1) :
                 path.Length;
             if (index == -1)
@@ -89,7 +85,7 @@ Usage: CopyToServer <source> <target> <username> <password>");
                 throw new ApplicationException($"Malformed unc path: '{path}'");
             }
 
-            string share = path.Substring(0, index);
+            var share = path[..index];
 
             Console.WriteLine($"Share: '{path}' -> '{share}'");
 

@@ -9,19 +9,18 @@ namespace CheckNamespace
     {
         static int Main(string[] args)
         {
-            int result = CheckNamespace(args);
+            var result = CheckNamespace(args);
 
             return result;
         }
 
         static int CheckNamespace(string[] args)
         {
-            string usage = @"CheckNamespace 1.1
+            var usage = @"CheckNamespace 1.1
 
 Usage: CheckNamespace <solution files...>
 
 Example: powershell CheckNamespace (dir C:\git\mycode -i *.sln -r)";
-
 
             if (args.Length == 0)
             {
@@ -29,24 +28,21 @@ Example: powershell CheckNamespace (dir C:\git\mycode -i *.sln -r)";
                 return 1;
             }
 
+            List<Solution> solutions = [.. LoadSolutions(args)];
 
-            List<Solution> solutions = LoadSolutions(args).ToList();
-
-            List<Project> projects = solutions.SelectMany(s => s._projects).ToList();
+            List<Project> projects = [.. solutions.SelectMany(s => s._projects)];
 
             Console.WriteLine($"Total projects: {projects.Count}");
 
-            projects = projects
+            projects = [.. projects
                 .GroupBy(p => Path.Combine(Path.GetDirectoryName(p._solutionfile), p._sln_path))
-                .Select(g => g.First())
-                .ToList();
+                .Select(g => g.First())];
 
             Console.WriteLine($"Unique projects: {projects.Count}");
 
+            var failcount = 0;
 
-            int failcount = 0;
-
-            foreach (Project p in projects.OrderBy(p => Path.Combine(Path.GetDirectoryName(p._solutionfile), p._sln_path)))
+            foreach (var p in projects.OrderBy(p => Path.Combine(Path.GetDirectoryName(p._solutionfile), p._sln_path)))
             {
                 failcount += p.CheckNamespace();
             }
@@ -58,7 +54,7 @@ Example: powershell CheckNamespace (dir C:\git\mycode -i *.sln -r)";
 
         static private IEnumerable<Solution> LoadSolutions(string[] solpaths)
         {
-            foreach (string path in solpaths)
+            foreach (var path in solpaths)
             {
                 Solution s;
 

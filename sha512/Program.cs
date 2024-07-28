@@ -10,10 +10,11 @@ namespace sha512
     {
         static int Main(string[] args)
         {
-            bool useFile = args.Contains("-f");
-            var parsedArgs = args.Where(a => a != "-f").ToArray();
-            bool useBase64 = parsedArgs.Contains("-base64");
-            parsedArgs = parsedArgs.Where(a => a != "-base64").ToArray();
+            var parsedArgs = args;
+            var useFile = parsedArgs.Contains("-f");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-f")];
+            var useBase64 = parsedArgs.Contains("-base64");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-base64")];
             if (parsedArgs.Length != 1)
             {
                 Console.WriteLine("Usage: sha512 [-f] [-base64] <filename or string>");
@@ -38,10 +39,9 @@ namespace sha512
 
         public static string GetHashString(byte[] buf, bool useBase64)
         {
-            using var crypto = SHA512.Create();
             return useBase64 ?
-                Convert.ToBase64String(crypto.ComputeHash(buf)):
-                string.Concat(crypto.ComputeHash(buf).Select(b => b.ToString("x2")));
+                Convert.ToBase64String(SHA512.HashData(buf)) :
+                string.Concat(SHA512.HashData(buf).Select(b => b.ToString("x2")));
         }
     }
 }

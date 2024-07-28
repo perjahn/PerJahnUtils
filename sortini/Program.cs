@@ -1,9 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace sortini
 {
@@ -17,8 +15,8 @@ namespace sortini
                 return 1;
             }
 
-            string infile = args[0];
-            string outfile = args[1];
+            var infile = args[0];
+            var outfile = args[1];
 
             if (!File.Exists(infile))
             {
@@ -26,10 +24,10 @@ namespace sortini
                 return 1;
             }
 
-            string[] rows = File.ReadAllLines(infile).Where(l => l != string.Empty).ToArray();
+            string[] rows = [.. File.ReadAllLines(infile).Where(l => l != string.Empty)];
 
-            int sectionstart = -1;
-            for (int row = 0; row < rows.Length; row++)
+            var sectionstart = -1;
+            for (var row = 0; row < rows.Length; row++)
             {
                 if (rows[row].Trim().StartsWith('['))
                 {
@@ -60,8 +58,8 @@ namespace sortini
 
         static string[] FormatRows(string[] rows)
         {
-            var newRows = rows.ToList();
-            for (int row = 0; row < newRows.Count; row++)
+            List<string> newRows = [.. rows];
+            for (var row = 0; row < newRows.Count; row++)
             {
                 if (row != 0 && newRows[row].StartsWith('['))
                 {
@@ -70,7 +68,7 @@ namespace sortini
                 }
             }
 
-            return newRows.ToArray();
+            return [.. newRows];
         }
     }
 }

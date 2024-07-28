@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -13,9 +12,9 @@ namespace upgradeprojects
         {
             var rootpath = args.Length == 0 ? "." : args[0];
 
-            bool removeUselessPropertyGroups = !args.Contains("-DontRemoveUselessPropertyGroups");
-            bool removeUselessFiles = !args.Contains("-DontRemoveUselessFiles");
-            bool dryRun = args.Contains("-DryRun");
+            var removeUselessPropertyGroups = !args.Contains("-DontRemoveUselessPropertyGroups");
+            var removeUselessFiles = !args.Contains("-DontRemoveUselessFiles");
+            var dryRun = args.Contains("-DryRun");
 
             Upgrade(rootpath, removeUselessPropertyGroups, dryRun);
 
@@ -27,12 +26,11 @@ namespace upgradeprojects
 
         static void RemoveUselessFiles(string rootpath, bool dryRun)
         {
-            var files =
+            string[] files = [..
                 Directory.GetFiles(rootpath, "App.config", SearchOption.AllDirectories).Concat(
                 Directory.GetFiles(rootpath, "packages.config", SearchOption.AllDirectories).Concat(
                 Directory.GetFiles(rootpath, "AssemblyInfo.cs", SearchOption.AllDirectories)))
-                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f.Substring(2) : f)
-                .ToArray();
+                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f[2..] : f)];
 
             Array.Sort(files);
 
@@ -48,9 +46,8 @@ namespace upgradeprojects
 
         static void Upgrade(string rootpath, bool removeUselessPropertyGroups, bool dryRun)
         {
-            var solutionsFiles = Directory.GetFiles(rootpath, "*.sln", SearchOption.AllDirectories)
-                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f.Substring(2) : f)
-                .ToArray();
+            string[] solutionsFiles = [.. Directory.GetFiles(rootpath, "*.sln", SearchOption.AllDirectories)
+                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f[2..] : f)];
 
             Console.WriteLine($"Found {solutionsFiles.Length} solutions.");
 
@@ -60,9 +57,8 @@ namespace upgradeprojects
             }
 
 
-            var projectFiles = Directory.GetFiles(rootpath, "*.*proj", SearchOption.AllDirectories)
-                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f.Substring(2) : f)
-                .ToArray();
+            string[] projectFiles = [.. Directory.GetFiles(rootpath, "*.*proj", SearchOption.AllDirectories)
+                .Select(f => f.StartsWith($".{Path.DirectorySeparatorChar}") || f.StartsWith($".{Path.AltDirectorySeparatorChar}") ? f[2..] : f)];
 
             Console.WriteLine($"Found {projectFiles.Length} projects.");
 
@@ -77,16 +73,16 @@ namespace upgradeprojects
             Console.WriteLine($"Reading: '{filename}'");
 
             var oldBytes = File.ReadAllBytes(filename);
-            using var ms1 = new MemoryStream(oldBytes);
-            using var reader = new StreamReader(ms1);
+            using MemoryStream ms1 = new(oldBytes);
+            using StreamReader reader = new(ms1);
             var content = reader.ReadToEnd();
 
             content = content.Replace(
                 "\nProject(\"{9A19103F-16F7-4668-BE54-9A1E7A4F7556}\")",
                 "\nProject(\"{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}\")");
 
-            using var ms2 = new MemoryStream();
-            using var writer = new StreamWriter(ms2);
+            using MemoryStream ms2 = new();
+            using StreamWriter writer = new(ms2);
             writer.Write(content);
             writer.Flush();
             var bytes = ms2.ToArray();
@@ -114,7 +110,6 @@ namespace upgradeprojects
             }
             var xdoc = result;
 
-
             xdoc.Descendants()
                 .Attributes()
                 .Where(x => x.IsNamespaceDeclaration)
@@ -127,7 +122,7 @@ namespace upgradeprojects
 
             xdoc.Root?.Attributes().Remove();
 
-            XAttribute attribute = new XAttribute("Sdk", "Microsoft.NET.Sdk");
+            XAttribute attribute = new("Sdk", "Microsoft.NET.Sdk");
             xdoc.Root?.Add(attribute);
 
             var references = xdoc.Elements("Project").Elements("ItemGroup").Elements("Reference");
@@ -138,22 +133,15 @@ namespace upgradeprojects
                 var includeAttribute = reference.Attribute("Include");
                 if (includeAttribute != null)
                 {
-                    var includeValues = includeAttribute.Value.Split(',').Select(t => t.Trim()).Where(t => t != string.Empty).ToArray();
+                    string[] includeValues = [.. includeAttribute.Value.Split(',').Select(t => t.Trim()).Where(t => t != string.Empty)];
 
-                    if (includeValues.Length == 0)
-                    {
-                        includeAttribute.Value = string.Empty;
-                    }
-                    else
-                    {
-                        includeAttribute.Value = includeValues[0];
-                    }
+                    includeAttribute.Value = includeValues.Length == 0 ? string.Empty : includeValues[0];
 
                     var version = includeValues.FirstOrDefault(t => t.StartsWith("Version="));
                     if (version != null)
                     {
-                        var value = version.Substring(8).Trim();
-                        var attr = new XAttribute("Version", value);
+                        var value = version[8..].Trim();
+                        XAttribute attr = new("Version", value);
                         reference.Add(attr);
                     }
                 }
@@ -165,15 +153,12 @@ namespace upgradeprojects
                 projectReference.Elements().Remove();
             }
 
-
-
             if (removeUselessPropertyGroups)
             {
                 xdoc.Elements("Project").Elements("PropertyGroup")
-                    .Where(e => e.Attributes("Condition").Count() > 0)
+                    .Where(e => e.Attributes("Condition").Any())
                     .Remove();
             }
-
 
             var firstTargetFrameworkVersion = xdoc.Elements("Project").Elements("PropertyGroup").Elements("TargetFrameworkVersion").FirstOrDefault();
             if (firstTargetFrameworkVersion != null)
@@ -183,7 +168,7 @@ namespace upgradeprojects
                 string newValue = oldValue;
                 if (newValue.StartsWith('v'))
                 {
-                    newValue = "net" + newValue.Substring(1);
+                    newValue = "net" + newValue[1..];
                 }
                 newValue = newValue.Replace(".", string.Empty);
                 if (newValue != oldValue)
@@ -193,9 +178,7 @@ namespace upgradeprojects
                 }
             }
 
-
-
-            string[] removePropertyGroupChildren = {
+            string[] removePropertyGroupChildren = [
                 "AppDesignerFolder",
                 "AssemblyName",
                 "AutoGenerateBindingRedirects" ,
@@ -211,8 +194,7 @@ namespace upgradeprojects
                 "TargetFrameworkVersion",
                 "TestProjectType",
                 "VisualStudioVersion",
-                "VSToolsPath" };
-
+                "VSToolsPath" ];
 
             xdoc.Elements("Project").Elements("PropertyGroup").Elements()
                 .Where(e => removePropertyGroupChildren.Contains(e.Name.LocalName))
@@ -235,7 +217,6 @@ namespace upgradeprojects
                 .Where(i => !i.HasElements)
                 .Remove();
 
-
             SaveXDocument(xdoc, filename, oldBytes, dryRun);
         }
 
@@ -249,7 +230,7 @@ namespace upgradeprojects
             catch (Exception ex)
             {
                 Console.WriteLine($"Couldn't read xmlfile, ignoring: '{filename}': {ex.Message}");
-                bytes = new byte[0];
+                bytes = [];
                 return null;
             }
 
@@ -257,7 +238,7 @@ namespace upgradeprojects
 
             try
             {
-                using var ms = new MemoryStream(bytes);
+                using MemoryStream ms = new(bytes);
                 xdoc = XDocument.Load(ms);
             }
             catch (Exception ex)
@@ -277,7 +258,7 @@ namespace upgradeprojects
                 Indent = true
             };
 
-            using var ms = new MemoryStream();
+            using MemoryStream ms = new();
             using var xw = XmlWriter.Create(ms, settings);
             xdoc.Save(xw);
             xw.Flush();
@@ -302,24 +283,14 @@ namespace upgradeprojects
         {
             var utf8bom = new byte[] { 0xEF, 0xBB, 0xBF };
 
-            if (bytes[0] == utf8bom[0] && bytes[1] == utf8bom[1] && bytes[2] == utf8bom[2])
-            {
-                return bytes;
-            }
-
-            return utf8bom.Concat(bytes).ToArray();
+            return bytes[0] == utf8bom[0] && bytes[1] == utf8bom[1] && bytes[2] == utf8bom[2] ? bytes : [.. utf8bom, .. bytes];
         }
 
         static byte[] RemoveBom(byte[] bytes)
         {
             var utf8bom = new byte[] { 0xEF, 0xBB, 0xBF };
 
-            if (bytes[0] == utf8bom[0] && bytes[1] == utf8bom[1] && bytes[2] == utf8bom[2])
-            {
-                return bytes.Skip(3).ToArray();
-            }
-
-            return bytes;
+            return bytes[0] == utf8bom[0] && bytes[1] == utf8bom[1] && bytes[2] == utf8bom[2] ? [.. bytes.Skip(3)] : bytes;
         }
     }
 }

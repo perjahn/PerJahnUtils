@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace GatherOutputAssemblies
 {
@@ -10,7 +8,7 @@ namespace GatherOutputAssemblies
 
         public static void ColorWrite(ConsoleColor color, string s)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;
@@ -24,7 +22,7 @@ namespace GatherOutputAssemblies
 
         public static void ColorWriteLine(ConsoleColor color, string s)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
             try
             {
                 Console.ForegroundColor = color;

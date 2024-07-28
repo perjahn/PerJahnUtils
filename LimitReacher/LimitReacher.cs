@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -23,7 +22,7 @@ Value should be parsable to double.");
                 return 1;
             }
 
-            string filename = args[0];
+            var filename = args[0];
             if (!File.Exists(filename))
             {
                 Console.WriteLine($"File not found: '{filename}'");
@@ -36,18 +35,16 @@ Value should be parsable to double.");
                 return 1;
             }
 
-            string[] rows = File.ReadAllLines(filename);
+            var rows = File.ReadAllLines(filename);
 
-            var values = rows
+            (DateTime date, double value)[] values = [.. rows
                 .Skip(1)
                 .Where(r => r.Contains('\t'))
-                .Select(r => new { date = DateTime.Parse(r.Split('\t')[0]), value = limit - double.Parse(r.Split('\t')[1]) });
+                .Select(r => (date: DateTime.Parse(r.Split('\t')[0]), value: limit - double.Parse(r.Split('\t')[1])))];
 
-            double y = GetLinearRegressionYIntercept(
-                values.Select(v => v.value).ToArray(),
-                values.Select(v => (double)(v.date.Ticks)).ToArray());
+            var y = GetLinearRegressionYIntercept([.. values.Select(v => v.value)], [.. values.Select(v => (double)v.date.Ticks)]);
 
-            DateTime d = new DateTime((long)y);
+            DateTime d = new((long)y);
             Console.WriteLine($"Y intercept: {d}");
 
             return 0;
@@ -55,21 +52,21 @@ Value should be parsable to double.");
 
         static double GetLinearRegressionYIntercept(double[] xvalues, double[] yvalues)
         {
-            var values = xvalues.Zip(yvalues, (x, y) => new { x, y }).ToArray();
+            (double x, double y)[] values = [.. xvalues.Zip(yvalues, (x, y) => (x, y))];
 
-            double sumx = values.Sum(v => v.x);
-            double sumy = values.Sum(v => v.y);
-            double sumxsq = values.Sum(v => v.x * v.x);
-            double sumysq = values.Sum(v => v.y * v.y);
-            double sumcodev = values.Sum(v => v.x * v.y);
+            var sumx = values.Sum(v => v.x);
+            var sumy = values.Sum(v => v.y);
+            var sumxsq = values.Sum(v => v.x * v.x);
+            var sumysq = values.Sum(v => v.y * v.y);
+            var sumcodev = values.Sum(v => v.x * v.y);
 
             double count = values.Length;
 
-            double ssx = sumxsq - sumx * sumx / count;
-            double ssy = sumysq - sumy * sumy / count;
-            double sco = sumcodev - sumx * sumy / count;
+            var ssx = sumxsq - sumx * sumx / count;
+            var ssy = sumysq - sumy * sumy / count;
+            var sco = sumcodev - sumx * sumy / count;
 
-            double yintercept = sumy / count - sco / ssx * sumx / count;
+            var yintercept = sumy / count - sco / ssx * sumx / count;
 
             return yintercept;
         }

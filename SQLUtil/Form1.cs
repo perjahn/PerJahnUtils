@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.Common;
 using System.Drawing;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
 
@@ -17,15 +19,15 @@ namespace SQLUtil
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            DataTable dtProviders = System.Data.Common.DbProviderFactories.GetFactoryClasses();
+            DataTable dtProviders = DbProviderFactories.GetFactoryClasses();
             dtProviders.DefaultView.Sort = "Name";
             cbProviders.DataSource = dtProviders;
 
-            string connstrs = Properties.Settings.Default.ConnectionString;
+            var connstrs = Properties.Settings.Default.ConnectionString;
             if (!string.IsNullOrEmpty(connstrs))
             {
-                string[] arr = connstrs.Replace("\r", string.Empty).Split('\n');
-                foreach (string connstr in arr)
+                var arr = connstrs.Replace("\r", string.Empty).Split('\n');
+                foreach (var connstr in arr)
                 {
                     cbConnstr.Items.Add(connstr);
                 }
@@ -34,15 +36,19 @@ namespace SQLUtil
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            string connstrs = string.Empty;
-            foreach (string connstr in cbConnstr.Items)
+            var connstrs = string.Empty;
+            foreach (var connstr in cbConnstr.Items)
             {
                 if (connstr != string.Empty)
                 {
                     if (connstrs == string.Empty)
+                    {
                         connstrs = connstr;
+                    }
                     else
+                    {
                         connstrs += Environment.NewLine + connstr;
+                    }
                 }
             }
             Properties.Settings.Default.ConnectionString = connstrs;
@@ -52,7 +58,7 @@ namespace SQLUtil
 
         private void cbConnstr_Leave(object sender, EventArgs e)
         {
-            string text = cbConnstr.Text;
+            var text = cbConnstr.Text;
             if (!cbConnstr.Items.Contains(text) && !string.IsNullOrEmpty(text))
             {
                 cbConnstr.Items.Add(text);
@@ -64,18 +70,16 @@ namespace SQLUtil
             try
             {
                 DataTable dt;
-                using (db mydb = new db(cbProviders.SelectedValue.ToString(), cbConnstr.Text))
+                using db mydb = new(cbProviders.SelectedValue.ToString(), cbConnstr.Text);
+                mydb.FillSchema = cbSchema.Checked;
+
+                dt = mydb.ExecuteDataTableSQL(tbSql.Text, null);
+
+                if (cbSchema.Checked)
                 {
-                    mydb.FillSchema = cbSchema.Checked;
-
-                    dt = mydb.ExecuteDataTableSQL(tbSql.Text, null);
-
-                    if (cbSchema.Checked)
+                    foreach (var dc in dt.Columns)
                     {
-                        foreach (DataColumn dc in dt.Columns)
-                        {
-                            dc.ColumnName = dc.DataType + "|" + dc.ColumnName + "|";
-                        }
+                        dc.ColumnName = dc.DataType + "|" + dc.ColumnName + "|";
                     }
                 }
 
@@ -86,7 +90,7 @@ namespace SQLUtil
                         return;
                     }
 
-                    string filename = saveFileDialog1.FileName;
+                    var filename = saveFileDialog1.FileName;
 
                     string separator;
                     if (saveFileDialog1.FilterIndex == 1)
@@ -98,22 +102,20 @@ namespace SQLUtil
                         separator = "\t";  // 2=tab
                     }
 
-                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(filename))
+                    using StreamWriter sw = new(filename);
+                    for (var c = 0; c < dt.Columns.Count; c++)
                     {
-                        for (int c = 0; c < dt.Columns.Count; c++)
+                        sw.Write((c == 0 ? string.Empty : separator) + dt.Columns[c].ColumnName);
+                    }
+                    sw.WriteLine();
+
+                    foreach (var dr in dt.Rows)
+                    {
+                        for (var c = 0; c < dt.Columns.Count; c++)
                         {
-                            sw.Write((c == 0 ? string.Empty : separator) + dt.Columns[c].ColumnName);
+                            sw.Write((c == 0 ? string.Empty : separator) + dr[c]);
                         }
                         sw.WriteLine();
-
-                        foreach (DataRow dr in dt.Rows)
-                        {
-                            for (int c = 0; c < dt.Columns.Count; c++)
-                            {
-                                sw.Write((c == 0 ? string.Empty : separator) + dr[c]);
-                            }
-                            sw.WriteLine();
-                        }
                     }
                 }
                 else
@@ -126,7 +128,7 @@ namespace SQLUtil
             }
             catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex.ToString());
             }
         }
     }

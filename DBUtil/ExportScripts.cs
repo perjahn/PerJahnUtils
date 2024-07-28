@@ -26,82 +26,74 @@ namespace DBUtil
 
         public void Export()
         {
-            _dbname = "";
-            _sql = "";
-            _result = "";
+            _dbname = string.Empty;
+            _sql = string.Empty;
+            _result = string.Empty;
 
-
-            foreach (string database in databases)
+            foreach (var database in databases)
             {
-                string connstr = db.ConstructConnectionString(
-                    dbprovider, dbserver, database, dbusername, dbpassword);
+                var connstr = db.ConstructConnectionString(dbprovider, dbserver, database, dbusername, dbpassword);
 
-                using (db mydb = new db(dbprovider, connstr))
-                {
-                    _sql =
+                using db mydb = new(dbprovider, connstr);
+                _sql =
                     "select *" +
                     " from [" + database + "].dbo.sysobjects so" +
                     " join [" + database + "].dbo.syscomments sc on sc.id = so.id" +
                     " where so.type='P' or so.type='PC'" +
                     " order by so.name";
 
-                    mydb.FillSchema = false;
-                    DataTable dt = mydb.ExecuteDataTableSQL(_sql);
+                mydb.FillSchema = false;
+                DataTable dt = mydb.ExecuteDataTableSQL(_sql);
 
-                    foreach (DataRow dr in dt.Rows)
+                foreach (var dr in dt.Rows)
+                {
+                    if ((short)dr["colid"] > 1)
                     {
-                        if ((short)dr["colid"] > 1)
+                        // Multipart SP
+                        continue;
+                    }
+
+                    var name = dr["name"].ToString();
+
+                    var filename = Path.Combine(path, name + ".sql");
+
+                    var sqlwhere = "(type='P' or type='PC') and name='" + name + "'";
+
+                    DataRow[] rows = dt.Select(sqlwhere, "colid");
+
+                    StringBuilder sb = new();
+
+                    foreach (var drPart in rows)
+                    {
+                        var text = drPart["text"].ToString();
+                        sb.Append(text);
+                    }
+
+                    var sp = sb.ToString();
+
+                    if (writemodified)
+                    {
+                        if (File.Exists(filename))
                         {
-                            // Multipart SP
-                            continue;
-                        }
-
-                        string name = dr["name"].ToString();
-
-                        string filename = Path.Combine(path, name + ".sql");
-
-                        string sqlwhere = "(type='P' or type='PC') and name='" + name + "'";
-
-                        DataRow[] rows = dt.Select(sqlwhere, "colid");
-
-                        StringBuilder sb = new StringBuilder();
-
-                        foreach (DataRow drPart in rows)
-                        {
-                            string text = drPart["text"].ToString();
-                            sb.Append(text);
-                        }
-
-                        string sp = sb.ToString();
-
-                        if (writemodified)
-                        {
-                            if (File.Exists(filename))
+                            string buf;
+                            using StreamReader sr = new(filename);
+                            buf = sr.ReadToEnd();
+                            if (buf == sp)
                             {
-                                string buf;
-                                using (StreamReader sr = new StreamReader(filename))
-                                {
-                                    buf = sr.ReadToEnd();
-                                }
-                                if (buf == sp)
-                                {
-                                    continue;
-                                }
+                                continue;
                             }
                         }
-
-                        if (!Directory.Exists(path))
-                            Directory.CreateDirectory(path);
-
-                        using (StreamWriter sw = new StreamWriter(filename))
-                        {
-                            sw.Write(sp);
-                        }
                     }
+
+                    if (!Directory.Exists(path))
+                    {
+                        Directory.CreateDirectory(path);
+                    }
+
+                    using StreamWriter sw = new(filename);
+                    sw.Write(sp);
                 }
             }
-
-            return;
         }
     }
 }

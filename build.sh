@@ -1,4 +1,4 @@
-docker build -t perjahnutils .
+DOCKER_BUILDKIT=0 docker build -t perjahnutils .
 
 rm -rf artifacts
 mkdir artifacts

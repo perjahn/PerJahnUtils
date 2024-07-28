@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace GatherOutputAssemblies
 {
@@ -11,9 +12,9 @@ namespace GatherOutputAssemblies
         {
             // Make all string comparisons (and sort/order) invariant of current culture
             // Thus, project output files is written in a consistent manner
-            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            string usage =
+            var usage =
 @"GatherOutputAssemblies 2.0 - Program for gathering compiled output from Visual Studio.
 
 Usage: GatherOutputAssemblies [-a] [-d] [-r] [-s] [-v] [-w] <solutionfiles> <buildconfig> <outputfolder> +include1... -exclude1...
@@ -50,90 +51,75 @@ usually exe and web projects, although test projects usually wreak havoc with
 this assumption and usually needs to be excluded to make projects referenced by
 test projects copied to the output folder.";
 
+            var gatherall = false;
+            var deletetargetfolder = false;
+            var recurse = false;
+            var simulate = false;
+            var verbose = false;
 
-            bool gatherall = false;
-            bool deletetargetfolder = false;
-            bool recurse = false;
-            bool simulate = false;
-            bool verbose = false;
+            var parsedArgs = args;
 
-            if (args.Contains("-a"))
+            if (parsedArgs.Contains("-a"))
             {
                 gatherall = true;
-                args = args.Where(a => a != "-a").ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => a != "-a")];
             }
-            if (args.Contains("-d"))
+            if (parsedArgs.Contains("-d"))
             {
                 deletetargetfolder = true;
-                args = args.Where(a => a != "-d").ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => a != "-d")];
             }
-            if (args.Contains("-r"))
+            if (parsedArgs.Contains("-r"))
             {
                 recurse = true;
-                args = args.Where(a => a != "-r").ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => a != "-r")];
             }
-            if (args.Contains("-s"))
+            if (parsedArgs.Contains("-s"))
             {
                 simulate = true;
-                args = args.Where(a => a != "-s").ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => a != "-s")];
             }
-            if (args.Contains("-v"))
+            if (parsedArgs.Contains("-v"))
             {
                 verbose = true;
-                args = args.Where(a => a != "-v").ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => a != "-v")];
             }
 
+            string[] includeProjects = [.. parsedArgs.Where(a => a.StartsWith('+')).Select(a => a[1..])];
+            string[] excludeProjects = [.. parsedArgs.Where(a => a.StartsWith('-')).Select(a => a[1..])];
 
-            string[] includeProjects =
-                args
-                .Where(a => a.StartsWith("+"))
-                .Select(a => a.Substring(1))
-                .ToArray();
+            parsedArgs = [.. parsedArgs.Where(a => !a.StartsWith('+')).Where(a => !a.StartsWith('-'))];
 
-            string[] excludeProjects =
-                args
-                .Where(a => a.StartsWith("-"))
-                .Select(a => a.Substring(1))
-                .ToArray();
-
-            args =
-                args
-                .Where(a => !a.StartsWith("+"))
-                .Where(a => !a.StartsWith("-"))
-                .ToArray();
-
-            if (args.Length != 3)
+            if (parsedArgs.Length != 3)
             {
                 Console.WriteLine(usage);
                 return 0;
             }
 
-            string[] solutionfiles = args[0].Split(',');
-            solutionfiles = solutionfiles
+            var solutionfiles = parsedArgs[0].Split(',');
+            solutionfiles = [.. solutionfiles
                 .SelectMany(f =>
                 {
-                    string dir = Path.GetDirectoryName(f);
-                    string pattern = Path.GetFileName(f);
+                    var dir = Path.GetDirectoryName(f);
+                    var pattern = Path.GetFileName(f);
                     if (dir == string.Empty)
                     {
                         dir = ".";
                     }
                     Console.WriteLine("Dir: '" + dir + "', Pattern: '" + pattern + "'");
-                    return Directory.GetFiles(dir, pattern, recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
-                        .Select(ff => ff.StartsWith(@".\") ? ff.Substring(2) : ff)
-                        .ToArray();
-                })
-                .ToArray();
+                    string[] files = [.. Directory.GetFiles(dir, pattern, recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                        .Select(ff => ff.StartsWith(@".\") ? ff[2..] : ff)];
+                    return files;
+                })];
 
             Console.WriteLine("Found " + solutionfiles.Length + " solutions.");
-            foreach (string filename in solutionfiles)
+            foreach (var filename in solutionfiles)
             {
                 Console.WriteLine("'" + filename + "'");
             }
 
-            string buildconfig = args[1];
-            string outputpath = args[2];
-
+            var buildconfig = parsedArgs[1];
+            var outputpath = parsedArgs[2];
 
             return LoadSolutions(solutionfiles, buildconfig, outputpath, includeProjects, excludeProjects, deletetargetfolder, gatherall, simulate, verbose);
         }
@@ -144,34 +130,26 @@ test projects copied to the output folder.";
         {
             Console.WriteLine("Loading " + solutionfiles.Length + " solutions...");
 
-            Solution[] solutions = solutionfiles
-                .Select(s => new Solution(s))
-                .ToArray();
+            Solution[] solutions = [.. solutionfiles.Select(s => new Solution(s))];
 
-            string[] projectfiles = solutions
+            string[] projectfiles = [.. solutions
                 .SelectMany(s => s.Projectfiles)
                 .Distinct()
-                .OrderBy(f => f)
-                .ToArray();
+                .OrderBy(f => f)];
 
             Console.WriteLine("Loading " + projectfiles.Length + " projects...");
 
-            Project[] projects = projectfiles
-                .Select(f => Project.LoadProject(f))
-                .Where(p => p != null)
-                .ToArray();
+            Project[] projects = [.. projectfiles.Select(Project.LoadProject).Where(p => p != null)];
 
-            foreach (Project project in projects)
+            foreach (var project in projects)
             {
-                project._solutionfiles = solutions
+                project._solutionfiles = [.. solutions
                     .Where(s => s.Projectfiles.Contains(project._path))
                     .Select(s => s._path)
-                    .OrderBy(f => f)
-                    .ToArray();
+                    .OrderBy(f => f)];
             }
 
-
-            int result = Solution.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, deletetargetfolder, gatherall, simulate, verbose);
+            var result = Solution.CopyProjectOutput(projects, buildconfig, outputpath, includeProjects, excludeProjects, deletetargetfolder, gatherall, simulate, verbose);
 
             return result;
         }

@@ -7,7 +7,7 @@ namespace GenerateTransform
 {
     class XmlHelper
     {
-        public static string[] idattributenames = { "id", "key" };
+        public static string[] idattributenames = ["id", "key"];
 
         public static string GetElementPath(XElement ele)
         {
@@ -21,10 +21,10 @@ namespace GenerateTransform
                 return false;
             }
 
-            foreach (string idname in idattributenames)
+            foreach (var idname in idattributenames)
             {
-                XAttribute a1 = el1.Attribute(idname);
-                XAttribute a2 = el2.Attribute(idname);
+                var a1 = el1.Attribute(idname);
+                var a2 = el2.Attribute(idname);
 
                 if ((a1 == null && a2 != null) || (a1 != null && a2 == null) ||
                     (a1 != null && a2 != null && a1.Value != a2.Value))
@@ -38,7 +38,7 @@ namespace GenerateTransform
 
         public static bool AreEqual(XElement el1, XElement el2)
         {
-            int b = 123;
+            var b = 123;
             if (el1.Name.LocalName == "add" && el1.Attribute("name") != null && el1.Attribute("name").Value == "membershipProvider")
             {
                 b++;
@@ -49,52 +49,38 @@ namespace GenerateTransform
                 return false;
             }
 
-            XAttribute[] attributes1 = el1.Attributes().ToArray();
-            XAttribute[] attributes2 = el2.Attributes().ToArray();
-            if (attributes1.Length != attributes2.Length)
-            {
-                return false;
-            }
+            XAttribute[] attributes1 = [.. el1.Attributes()];
+            XAttribute[] attributes2 = [.. el2.Attributes()];
 
-            if (Enumerable.SequenceEqual(
+            return attributes1.Length == attributes2.Length && Enumerable.SequenceEqual(
                 attributes1.Select(a => new { name = a.Name.LocalName, value = a.Value }).OrderBy(a => a.name),
-                attributes2.Select(a => new { name = a.Name.LocalName, value = a.Value }).OrderBy(a => a.name)))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+                attributes2.Select(a => new { name = a.Name.LocalName, value = a.Value }).OrderBy(a => a.name));
         }
 
-        public static XElement FindExistingElement(XDocument xdoc, XElement el, string[] idattributenames)
+        public static XElement FindExistingElement()
         {
             return null;
         }
 
-        public static XAttribute[] GetNewAndChangedAttributes(XElement el1, XElement el2)
+        public static XAttribute[] GetNewAndChangedAttributes()
         {
             throw new NotImplementedException();
         }
 
         public static XContainer CreateParentElements(XDocument xdoc, string path)
         {
-            string nsstring = "http://schemas.microsoft.com/XML-Document-Transform";
-
-            string buildpath = string.Empty;
-
-            string parentpath = path.Substring(0, path.LastIndexOf('/'));
-
+            var nsstring = "http://schemas.microsoft.com/XML-Document-Transform";
+            var buildpath = string.Empty;
+            var parentpath = path[..path.LastIndexOf('/')];
             XContainer result = xdoc;
 
-            foreach (string elname in parentpath.Split('/').Where(elname => elname != string.Empty))
+            foreach (var elname in parentpath.Split('/').Where(elname => elname != string.Empty))
             {
-                bool isroot = buildpath == string.Empty;
+                var isroot = buildpath == string.Empty;
 
                 buildpath += "/" + elname;
 
-                XElement parentel = xdoc.Descendants().Where(el => buildpath == GetElementPath(el)).SingleOrDefault();
+                var parentel = xdoc.Descendants().SingleOrDefault(el => buildpath == GetElementPath(el));
 
                 if (parentel == null)
                 {
@@ -135,29 +121,20 @@ namespace GenerateTransform
             // b=1, c=2
             // --> 1
 
-            XAttribute[] attributes1 = el1.Attributes().Where(a => XmlHelper.idattributenames.Contains(a.Name.LocalName)).OrderBy(a => a).ToArray();
-            XAttribute[] attributes2 = el2.Attributes().Where(a => XmlHelper.idattributenames.Contains(a.Name.LocalName)).OrderBy(a => a).ToArray();
+            XAttribute[] attributes1 = [.. el1.Attributes().Where(a => XmlHelper.idattributenames.Contains(a.Name.LocalName)).OrderBy(a => a)];
+            XAttribute[] attributes2 = [.. el2.Attributes().Where(a => XmlHelper.idattributenames.Contains(a.Name.LocalName)).OrderBy(a => a)];
 
-            int[] results = attributes1.Zip(attributes2, (a1, a2) => a1.Value.CompareTo(a2.Value)).ToArray();
+            int[] results = [.. attributes1.Zip(attributes2, (a1, a2) => a1.Value.CompareTo(a2.Value))];
             if (results.Any(r => r < 0) && results.Any(r => r > 0))
             {
-                string concat1 = string.Join(string.Empty, attributes1.Select(a => a.Name.LocalName));
-                string concat2 = string.Join(string.Empty, attributes2.Select(a => a.Name.LocalName));
+                var concat1 = string.Join(string.Empty, attributes1.Select(a => a.Name.LocalName));
+                var concat2 = string.Join(string.Empty, attributes2.Select(a => a.Name.LocalName));
                 Console.WriteLine($"WARNING: No common attributes, sorting using concat names: {el1.Name.LocalName} <-> {el2.Name.LocalName}: '{concat1}', '{concat2}'");
 
                 return concat1.CompareTo(concat2);
             }
 
-            if (results.Any(r => r < 0))
-            {
-                return -1;
-            }
-            if (results.Any(r => r > 0))
-            {
-                return 1;
-            }
-
-            return 0;
+            return results.Any(r => r < 0) ? -1 : results.Any(r => r > 0) ? 1 : 0;
         }
     }
 }

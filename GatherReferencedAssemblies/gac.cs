@@ -11,31 +11,28 @@ namespace GatherReferencedAssemblies
 
         private static void InitIsSystemAssembly()
         {
-            SystemAssemblies = new List<string>();
+            SystemAssemblies = [];
 
-            AssemblyCacheEnum asmEnum = new AssemblyCacheEnum(null);
+            AssemblyCacheEnum asmEnum = new(null);
             string nextAsm;
             while ((nextAsm = asmEnum.GetNextAssembly()) != null)
             {
                 SystemAssemblies.Add(nextAsm.Split(',')[0]);
             }
 
-            int count1 = SystemAssemblies.Count();
-            SystemAssemblies = SystemAssemblies.Distinct().OrderBy(a => a).ToList();
-            int count2 = SystemAssemblies.Count();
+            var count1 = SystemAssemblies.Count;
+            SystemAssemblies = [.. SystemAssemblies.Distinct().OrderBy(a => a)];
+            var count2 = SystemAssemblies.Count;
         }
 
         public static bool IsSystemAssembly(string assemblyname, bool ignoreCase)
         {
             if (SystemAssemblies == null)
-                InitIsSystemAssembly();
-
-            if (SystemAssemblies.Any(a => string.Compare(assemblyname, a, ignoreCase) == 0))
             {
-                return true;
+                InitIsSystemAssembly();
             }
 
-            return false;
+            return SystemAssemblies.Any(a => string.Compare(assemblyname, a, ignoreCase) == 0);
         }
     }
 }

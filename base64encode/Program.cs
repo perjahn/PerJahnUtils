@@ -9,8 +9,9 @@ namespace base64encode
     {
         static int Main(string[] args)
         {
-            bool usefile = args.Contains("-f");
-            var parsedArgs = args.Where(a => a != "-f").ToArray();
+            var parsedArgs = args;
+            var usefile = parsedArgs.Contains("-f");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-f")];
             if (parsedArgs.Length != 1)
             {
                 Console.WriteLine("Usage: base64encode [-f] <filename or string>");

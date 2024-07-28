@@ -55,7 +55,6 @@ namespace SyncNugetPackages
             Reserved = 0x80000000u
         }
 
-
         [StructLayout(LayoutKind.Sequential)]
         public class NETRESOURCE
         {
@@ -75,8 +74,6 @@ namespace SyncNugetPackages
         [DllImport("mpr.dll")]
         public static extern int WNetCancelConnection2(string lpName, Int32 dwFlags, bool bForce);
 
-        static MD5 md5 = MD5.Create();
-
         class Myfileinfo
         {
             public string filename;
@@ -86,13 +83,13 @@ namespace SyncNugetPackages
 
         static int Main(string[] args)
         {
-            string[] parsedArgs = args;
+            var parsedArgs = args;
 
-            bool simulate = parsedArgs.Contains("-s");
-            parsedArgs = parsedArgs.Where(a => a != "-s").ToArray();
+            var simulate = parsedArgs.Contains("-s");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-s")];
 
-            bool verbose = parsedArgs.Contains("-v");
-            parsedArgs = parsedArgs.Where(a => a != "-v").ToArray();
+            var verbose = parsedArgs.Contains("-v");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-v")];
 
             if (parsedArgs.Length != 3)
             {
@@ -135,72 +132,63 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                 return;
             }
 
-
             string[] cachePaths =
-            {
+            [
                 compressedFolder,
                 extractedFolder
-            };
+            ];
             string[] serverPaths =
-            {
+            [
                 @"\C$\Windows\SysWOW64\config\systemprofile\AppData\Local\NuGet\Cache",
                 @"\C$\Windows\SysWOW64\config\systemprofile\.nuget\packages"
-            };
+            ];
 
-            var operations = cachePaths.Zip(serverPaths, (string cachePath, string serverPath) =>
-                new { cachePath, serverPath });
+            var operations = cachePaths.Zip(serverPaths, (string cachePath, string serverPath) => new { cachePath, serverPath });
 
             foreach (var operation in operations)
             {
-                string cachePath = operation.cachePath;
-                string serverPath = operation.serverPath;
+                var cachePath = operation.cachePath;
+                var serverPath = operation.serverPath;
 
-                int cachePathOffset = cachePath.EndsWith(@"\") ? cachePath.Length : cachePath.Length + 1;
-
+                var cachePathOffset = cachePath.EndsWith('\\') ? cachePath.Length : cachePath.Length + 1;
 
                 Log("Gathering local files from " + cachePath + "...");
-                var filesCache = Directory.GetFiles(cachePath, "*", SearchOption.AllDirectories)
+                List<Myfileinfo> filesCache = [.. Directory.GetFiles(cachePath, "*", SearchOption.AllDirectories)
                     .Select(f => new Myfileinfo
                     {
-                        filename = f.Substring(cachePathOffset),
-                        info = new FileInfo(f),
+                        filename = f[cachePathOffset..],
+                        info = new(f),
                         hash = ComputeHash(f)
-                    })
-                    .ToList();
+                    })];
 
-                Log("Count: " + filesCache.Count());
+                Log("Count: " + filesCache.Count);
 
-                Dictionary<string, int> copies = new Dictionary<string, int>
-                {
-                    ["local"] = 0
-                };
-                foreach (string server in servers)
+                Dictionary<string, int> copies = new() { ["local"] = 0 };
+                foreach (var server in servers)
                 {
                     copies[server] = 0;
                 }
 
                 long copiedsize = 0;
-                foreach (string server in servers)
+                foreach (var server in servers)
                 {
-                    string networkPath = @"\\" + server + serverPath;
-                    string localDrive = "Y:";
+                    var networkPath = @"\\" + server + serverPath;
+                    var localDrive = "Y:";
 
                     MapDrive(networkPath, localDrive);
 
                     SyncFolders(cachePath, cachePathOffset, filesCache, localDrive + @"\", server, simulate, verbose, ref copies, out copiedsize);
                 }
 
-
                 Log("Copied files (" + copiedsize + " bytes):");
                 Log("  local: " + copies["local"]);
-                foreach (string server in servers)
+                foreach (var server in servers)
                 {
                     Log("  " + server + ": " + copies[server]);
                 }
 
-
                 Log("Unmapping Y:");
-                int result = WNetCancelConnection2("Y:", 1, true);
+                var result = WNetCancelConnection2("Y:", 1, true);
                 if (result != 0)
                 {
                     throw new ApplicationException("Couldn't unmap Y:. Error result: " + result);
@@ -222,7 +210,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                 }
             }
 
-            NETRESOURCE netResource = new NETRESOURCE
+            NETRESOURCE netResource = new()
             {
                 dwScope = ResourceScope.GlobalNet,
                 dwType = ResourceType.Disk,
@@ -253,37 +241,36 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
         {
             copiedsize = 0;
 
-            int offset2 = path2.EndsWith(@"\") ? path2.Length : path2.Length + 1;
+            var offset2 = path2.EndsWith('\\') ? path2.Length : path2.Length + 1;
 
             Log("***** Gathering files from: " + path2 + " *****");
 
-            var files2 = Directory.GetFiles(path2, "*", SearchOption.AllDirectories)
+            List<Myfileinfo> files2 = [.. Directory.GetFiles(path2, "*", SearchOption.AllDirectories)
                 .SelectMany(f =>
                 {
-                    Myfileinfo[] infos = new Myfileinfo[1];
+                    var infos = new Myfileinfo[1];
                     try
                     {
                         infos[0] = new Myfileinfo
                         {
-                            filename = f.Substring(offset2),
-                            info = new FileInfo(f),
+                            filename = f[offset2..],
+                            info = new(f),
                             hash = ComputeHash(f)
                         };
                     }
-                    catch (Exception ex) when (ex is PathTooLongException || ex is DirectoryNotFoundException || ex is NullReferenceException)
+                    catch (Exception ex) when (ex is PathTooLongException or DirectoryNotFoundException or NullReferenceException)
                     {
-                        infos = new Myfileinfo[0];
+                        infos = [];
                         Log(f + ": " + ex.Message);
                     }
                     return infos;
-                })
-                .ToList();
+                })];
 
-            Log("Server: " + server + ", count: " + files2.Count());
+            Log("Server: " + server + ", count: " + files2.Count);
 
             foreach (var file2 in files2)
             {
-                var files = files1.Where(f => f.filename == file2.filename);
+                Myfileinfo[] files = [.. files1.Where(f => f.filename == file2.filename)];
 
                 foreach (var file1 in files)
                 {
@@ -315,9 +302,9 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                     }
                 }
 
-                if (files.Count() == 0)
+                if (files.Length == 0)
                 {
-                    string targetfile = Path.Combine(path1, file2.filename);
+                    var targetfile = Path.Combine(path1, file2.filename);
 
                     try
                     {
@@ -325,7 +312,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         {
                             Log("Copying (new1): '" + file2.info.FullName + "' -> '" + targetfile + "'");
                         }
-                        string dir = Path.GetDirectoryName(targetfile);
+                        var dir = Path.GetDirectoryName(targetfile);
                         if (!Directory.Exists(dir))
                         {
                             Directory.CreateDirectory(dir);
@@ -337,13 +324,13 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         copiedsize += file2.info.Length;
                         files1.Add(new Myfileinfo
                         {
-                            filename = targetfile.Substring(offset1),
-                            info = new FileInfo(targetfile),
+                            filename = targetfile[offset1..],
+                            info = new(targetfile),
                             hash = ComputeHash(targetfile)
                         });
                         copies["local"]++;
                     }
-                    catch (Exception ex) when (ex is PathTooLongException || ex is DirectoryNotFoundException || ex is NullReferenceException)
+                    catch (Exception ex) when (ex is PathTooLongException or DirectoryNotFoundException or NullReferenceException)
                     {
                         Log("Couldn't copy file: '" + file2.info.FullName + "' -> '" + targetfile + "'");
                         Log(ex.Message);
@@ -353,11 +340,11 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
             foreach (var file1 in files1)
             {
-                var files = files2.Where(f => f.filename == file1.filename);
+                Myfileinfo[] files = [.. files2.Where(f => f.filename == file1.filename)];
 
-                if (files.Count() == 0)
+                if (files.Length == 0)
                 {
-                    string targetfile = Path.Combine(path2, file1.filename);
+                    var targetfile = Path.Combine(path2, file1.filename);
 
                     try
                     {
@@ -365,7 +352,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         {
                             Log("Copying (new2): '" + file1.info.FullName + "' -> '" + targetfile + "'");
                         }
-                        string dir = Path.GetDirectoryName(targetfile);
+                        var dir = Path.GetDirectoryName(targetfile);
                         if (!Directory.Exists(dir))
                         {
                             Directory.CreateDirectory(dir);
@@ -377,13 +364,13 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         copiedsize += file1.info.Length;
                         files2.Add(new Myfileinfo
                         {
-                            filename = targetfile.Substring(offset2),
-                            info = new FileInfo(targetfile),
+                            filename = targetfile[offset2..],
+                            info = new(targetfile),
                             hash = ComputeHash(targetfile)
                         });
                         copies[server]++;
                     }
-                    catch (Exception ex) when (ex is PathTooLongException || ex is DirectoryNotFoundException || ex is NullReferenceException)
+                    catch (Exception ex) when (ex is PathTooLongException or DirectoryNotFoundException or NullReferenceException)
                     {
                         Log("Couldn't copy file: '" + file1.info.FullName + "' -> '" + targetfile + "'");
                         Log(ex.Message);
@@ -394,10 +381,8 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
         static byte[] ComputeHash(string filename)
         {
-            using (var fs = File.OpenRead(filename))
-            {
-                return md5.ComputeHash(fs);
-            }
+            using var fs = File.OpenRead(filename);
+            return SHA256.HashData(fs);
         }
 
         static void Log(string message)

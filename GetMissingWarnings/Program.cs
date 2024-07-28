@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace GetMissingWarnings
@@ -13,13 +13,15 @@ namespace GetMissingWarnings
 
         static void Main(string[] args)
         {
-            bool allenabled = args.Contains("-a");
-            args = args.Where(a => a != "-a").ToArray();
+            var parsedArgs = args;
 
-            string[] exclude = args.Where(a => a.StartsWith("-e")).SelectMany(a => a.Substring(2).Split(',')).ToArray();
-            args = args.Where(a => !a.StartsWith("-e")).ToArray();
+            var allenabled = parsedArgs.Contains("-a");
+            parsedArgs = [.. parsedArgs.Where(a => a != "-a")];
 
-            if (args.Length != 1)
+            string[] exclude = [.. parsedArgs.Where(a => a.StartsWith("-e")).SelectMany(a => a[2..].Split(','))];
+            parsedArgs = [.. parsedArgs.Where(a => !a.StartsWith("-e"))];
+
+            if (parsedArgs.Length != 1)
             {
                 Console.WriteLine(
 @"Usage: GetMissingWarnings [-a] [-eProj1,Proj2] <path>
@@ -29,9 +31,9 @@ namespace GetMissingWarnings
                 return;
             }
 
-            string path = args[0];
+            var path = parsedArgs[0];
 
-            string[] files = null;
+            string[] files;
 
             try
             {
@@ -43,27 +45,23 @@ namespace GetMissingWarnings
                 return;
             }
 
-            files = files
-                .Select(f => f.StartsWith(@".\") ? f.Substring(2) : f)
-                .ToArray();
+            files = [.. files.Select(f => f.StartsWith(@".\") ? f[2..] : f)];
 
-            string[] filteredfiles = files.Where(f => !exclude.Any(f.Contains)).ToArray();
+            string[] filteredfiles = [.. files.Where(f => !exclude.Any(f.Contains))];
 
             if (filteredfiles.Length < files.Length)
             {
-                WriteLineColor($"Excluding: {(files.Length - filteredfiles.Length)} files:", ConsoleColor.Yellow);
-                foreach (string file in files.Where(f => !filteredfiles.Contains(f)))
+                WriteLineColor($"Excluding: {files.Length - filteredfiles.Length} files:", ConsoleColor.Yellow);
+                foreach (var file in files.Where(f => !filteredfiles.Contains(f)))
                 {
                     WriteLineColor($"  '{file}'", ConsoleColor.Yellow);
                 }
             }
 
-
-            foreach (string file in filteredfiles)
+            foreach (var file in filteredfiles)
             {
                 LoadProject(file, allenabled);
             }
-
 
             Console.WriteLine();
             WriteLineColor($"Missing files: {_missingfiles}", ConsoleColor.Magenta);
@@ -73,81 +71,60 @@ namespace GetMissingWarnings
         static void LoadProject(string projectfile, bool allenabled)
         {
             XDocument xdoc;
-            XNamespace ns;
 
             try
             {
                 xdoc = XDocument.Load(projectfile);
             }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
-                return;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
-                return;
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
-                return;
-            }
-            catch (System.Xml.XmlException ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or XmlException)
             {
                 Console.WriteLine($"Couldn't load project: '{projectfile}': {ex.Message}");
                 return;
             }
 
-            ns = xdoc.Root.Name.Namespace;
-
+            var ns = xdoc.Root.Name.Namespace;
 
             // Is there any config that is missing warnings-as-errors, but has siblings which has warnings-as-errors?
 
             if (allenabled)
             {
-                var elements = xdoc
+                XElement[] elements = [.. xdoc
                     .Elements(ns + "Project")
                     .Elements(ns + "PropertyGroup")
-                    .Where(el => !el.Elements(ns + "TreatWarningsAsErrors").Any() && el.Attributes().Any());
+                    .Where(el => !el.Elements(ns + "TreatWarningsAsErrors").Any() && el.Attributes().Any())];
 
-                if (elements.Any())
+                if (elements.Length != 0)
                 {
-                    WriteLineColor($"********** '{projectfile}' {elements.Count()} **********", ConsoleColor.Cyan);
-
+                    WriteLineColor($"********** '{projectfile}' {elements.Length} **********", ConsoleColor.Cyan);
                     Console.WriteLine(string.Join(Environment.NewLine, elements.Select(el => el.ToString())));
                 }
 
-                _totalmissing += elements.Count();
-                if (elements.Count() > 0)
+                _totalmissing += elements.Length;
+                if (elements.Length > 0)
                 {
                     _missingfiles++;
                 }
             }
             else
             {
-                var elements = xdoc
+                XElement[] elements = [.. xdoc
                     .Elements(ns + "Project")
                     .Elements(ns + "PropertyGroup")
                     .Where(el => !el.Elements(ns + "TreatWarningsAsErrors").Any() && el.Attributes().Any() &&
-                        el.Parent.Elements(ns + "PropertyGroup").Where(el2 => el2.Elements(ns + "TreatWarningsAsErrors").Any() && el2.Attributes().Any()).Any());
+                        el.Parent.Elements(ns + "PropertyGroup").Any(el2 => el2.Elements(ns + "TreatWarningsAsErrors").Any() && el2.Attributes().Any()))];
 
-                if (elements.Any())
+                if (elements.Length != 0)
                 {
-                    WriteLineColor($"********** '{projectfile}' {elements.Count()} **********", ConsoleColor.Cyan);
-
+                    WriteLineColor($"********** '{projectfile}' {elements.Length} **********", ConsoleColor.Cyan);
                     Console.WriteLine(string.Join(Environment.NewLine, elements.Select(el => el.ToString())));
                 }
 
-                _totalmissing += elements.Count();
-                if (elements.Count() > 0)
+                _totalmissing += elements.Length;
+                if (elements.Length != 0)
                 {
                     _missingfiles++;
                 }
             }
-
-            return;
         }
 
         private static void WriteLineColor(string message, ConsoleColor color)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.Common;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -21,13 +22,13 @@ namespace DBUtil
         private void Form1_Load(object sender, EventArgs e)
         {
             // Retrieve the installed providers and factories.
-            _dtProviders = System.Data.Common.DbProviderFactories.GetFactoryClasses();
+            _dtProviders = DbProviderFactories.GetFactoryClasses();
             _dtProviders.DefaultView.Sort = "Name";
 
             cbProvider.DataSource = _dtProviders;
             cbProvider.Text = "SqlClient Data Provider";
 
-            foreach (string dbserver in Properties.Settings.Default.DBServers.Replace("\r", "").Split('\n'))
+            foreach (var dbserver in Properties.Settings.Default.DBServers.Replace("\r", "").Split('\n'))
             {
                 cbServer.Items.Add(dbserver);
             }
@@ -39,11 +40,11 @@ namespace DBUtil
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            StringBuilder sb = new StringBuilder();
-            bool first = true;
-            foreach (string dbserver in cbServer.Items)
+            StringBuilder sb = new();
+            var first = true;
+            foreach (var dbserver in cbServer.Items)
             {
-                string s = dbserver.Trim();
+                var s = dbserver.Trim();
                 if (s != string.Empty)
                 {
                     sb.Append(first ? dbserver : Environment.NewLine + dbserver);
@@ -57,7 +58,7 @@ namespace DBUtil
 
         private void cbServer_Leave(object sender, EventArgs e)
         {
-            string s = cbServer.Text.Trim();
+            var s = cbServer.Text.Trim();
 
             if (s != string.Empty && !cbServer.Items.Contains(s))
             {
@@ -71,19 +72,19 @@ namespace DBUtil
             {
                 GetAllDBs();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex.ToString());
             }
         }
 
         private void btExport_Click(object sender, EventArgs e)
         {
-            DumpData Dump = new DumpData();
+            DumpData Dump = new();
 
             try
             {
-                string[] dbs = tbDatabases.Text.Replace("\r", "").Split('\n').Select(db => db.Trim()).Where(db => db != "").ToArray();
+                string[] dbs = [.. tbDatabases.Text.Replace("\r", string.Empty).Split('\n').Select(db => db.Trim()).Where(db => db != string.Empty)];
 
                 Dump.databases = dbs;
                 Dump.path = tbOutputPath.Text;
@@ -93,14 +94,14 @@ namespace DBUtil
                 Dump.binaryhex = cbBinaryhex.Checked;
                 Dump.binaryfile = cbBinaryfile.Checked;
 
-                Dump.excludeTables = tbExcludeTables.Text.Replace("\r", "").Split('\n').Select(table => table.Trim()).Where(table => table != "").ToArray();
+                Dump.excludeTables = [.. tbExcludeTables.Text.Replace("\r", string.Empty).Split('\n').Select(table => table.Trim()).Where(table => table != string.Empty)];
                 if (Dump.excludeTables.Length == 1 && string.IsNullOrEmpty(Dump.excludeTables[0]))
                 {
                     Dump.excludeTables = new string[] { };
                 }
                 Dump.useRegexpTables = cbUseRegexpTables.Checked;
 
-                Dump.excludeColumns = tbExcludeColumns.Text.Replace("\r", "").Split('\n').Select(col => col.Trim()).Where(col => col != "").ToArray();
+                Dump.excludeColumns = [.. tbExcludeColumns.Text.Replace("\r", string.Empty).Split('\n').Select(col => col.Trim()).Where(col => col != string.Empty)];
                 if (Dump.excludeColumns.Length == 1 && string.IsNullOrEmpty(Dump.excludeColumns[0]))
                 {
                     Dump.excludeColumns = new string[] { };
@@ -119,7 +120,7 @@ namespace DBUtil
                         Dump.separator = "\t";
                         break;
                     default:
-                        System.Windows.Forms.MessageBox.Show("No separator selected!");
+                        MessageBox.Show("No separator selected!");
                         return;
                 }
 
@@ -146,13 +147,13 @@ namespace DBUtil
 
                 this.Text = Dump._result;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show(
-                                "DB: " + Dump._dbname + "\n" +
-                                "Table: " + Dump._tablename + "\n" +
-                                "SQL: " + Dump._sql + "\n" +
-                                ex.ToString());
+                MessageBox.Show(
+                    "DB: " + Dump._dbname + "\n" +
+                    "Table: " + Dump._tablename + "\n" +
+                    "SQL: " + Dump._sql + "\n" +
+                    ex.ToString());
             }
         }
 
@@ -162,17 +163,15 @@ namespace DBUtil
 
             if (cbSQLLogin.Checked)
             {
-                dbs = db.GetAllDatabases(
-                    cbProvider.SelectedValue.ToString(), cbServer.Text, tbUsername.Text, tbPassword.Text);
+                dbs = db.GetAllDatabases(cbProvider.SelectedValue.ToString(), cbServer.Text, tbUsername.Text, tbPassword.Text);
             }
             else
             {
-                dbs = db.GetAllDatabases(
-                    cbProvider.SelectedValue.ToString(), cbServer.Text, null, null);
+                dbs = db.GetAllDatabases(cbProvider.SelectedValue.ToString(), cbServer.Text, null, null);
             }
 
-            StringBuilder sbdbs = new StringBuilder();
-            foreach (string db in dbs)
+            StringBuilder sbdbs = new();
+            foreach (var db in dbs)
             {
                 sbdbs.AppendLine(db);
             }
@@ -200,11 +199,11 @@ namespace DBUtil
 
         private void btImportBlob_Click(object sender, EventArgs e)
         {
-            ImportBlob imp = new ImportBlob();
+            ImportBlob imp = new();
 
             try
             {
-                string[] dbs = tbDatabases.Text.Replace("\r", "").Split('\n').Select(db => db.Trim()).Where(db => db != "").ToArray();
+                string[] dbs = [.. tbDatabases.Text.Replace("\r", string.Empty).Split('\n').Select(db => db.Trim()).Where(db => db != string.Empty)];
 
                 if (dbs.Length != 1)
                 {
@@ -229,19 +228,19 @@ namespace DBUtil
 
                 imp.InsertFileIntoCell(tbSelect.Text, tbColumn.Text, tbFilename.Text);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex.ToString());
             }
         }
 
         private void btExportScripts_Click(object sender, EventArgs e)
         {
-            ExportScripts es = new ExportScripts();
+            ExportScripts es = new();
 
             try
             {
-                string[] dbs = tbDatabases.Text.Replace("\r", "").Split('\n').Select(db => db.Trim()).Where(db => db != "").ToArray();
+                string[] dbs = [.. tbDatabases.Text.Replace("\r", string.Empty).Split('\n').Select(db => db.Trim()).Where(db => db != string.Empty)];
 
                 es.dbprovider = cbProvider.SelectedValue.ToString();
                 es.dbserver = cbServer.Text;
@@ -264,22 +263,22 @@ namespace DBUtil
 
                 this.Text = es._result;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show(
-                                "DB: " + es._dbname + "\n" +
-                                "SQL: " + es._sql + "\n" +
-                                ex.ToString());
+                MessageBox.Show(
+                    "DB: " + es._dbname + "\n" +
+                    "SQL: " + es._sql + "\n" +
+                    ex.ToString());
             }
         }
 
         private void btImport_Click(object sender, EventArgs e)
         {
-            Import imp = new Import();
+            Import imp = new();
 
             try
             {
-                string[] dbs = tbDatabases.Text.Replace("\r", "").Split('\n').Select(db => db.Trim()).Where(db => db != "").ToArray();
+                string[] dbs = [.. tbDatabases.Text.Replace("\r", string.Empty).Split('\n').Select(db => db.Trim()).Where(db => db != string.Empty)];
 
                 if (dbs.Length != 1)
                 {
@@ -304,9 +303,9 @@ namespace DBUtil
 
                 imp.ImportData(tbInputPath.Text);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex.ToString());
             }
         }
     }

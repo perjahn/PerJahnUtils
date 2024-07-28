@@ -21,7 +21,7 @@ namespace GenerateTransform
         {
             if (args.Length == 1 && args[0] == "-unittest")
             {
-                UnitTest tests = new UnitTest();
+                UnitTest tests = new();
                 return tests.Test();
             }
 
@@ -38,7 +38,6 @@ transfile:   Transformation output file that will be created.");
                 return 1;
             }
 
-
             CreateTransform(args[0], args[1], args[2]);
 
             return 0;
@@ -46,8 +45,7 @@ transfile:   Transformation output file that will be created.");
 
         private static void CreateTransform(string sourcefile, string targetfile, string transfile)
         {
-            List<TransformElement> transformElements = new List<TransformElement>();
-
+            List<TransformElement> transformElements = [];
             XDocument xsource, xtarget;
 
             try
@@ -69,44 +67,27 @@ transfile:   Transformation output file that will be created.");
                 return;
             }
 
-            XElement[] elements = xsource
-                .Descendants()
-                .Concat(xtarget.Descendants())
-                .ToArray();
-
-            XElement[] sourceElements = xsource
-                .Descendants()
-                .ToArray();
-
-            XElement[] targetElements = xtarget
-                .Descendants()
-                .ToArray();
+            XElement[] elements = [.. xsource.Descendants().Concat(xtarget.Descendants())];
+            XElement[] sourceElements = [.. xsource.Descendants()];
+            XElement[] targetElements = [.. xtarget.Descendants()];
 
             Console.WriteLine($"Total elements: {elements.Length} ({sourceElements.Length} + {targetElements.Length})");
 
-            string[] elementpaths = elements
-                .Select(e => XmlHelper.GetElementPath(e))
+            string[] elementpaths = [.. elements
+                .Select(XmlHelper.GetElementPath)
                 .Distinct()
-                .OrderBy(p => p)
-                .ToArray();
+                .OrderBy(p => p)];
 
             Console.WriteLine($"Distinct paths: {elementpaths.Length}");
 
-            foreach (string elementpath in elementpaths)
+            foreach (var elementpath in elementpaths)
             {
-                sourceElements = xsource
-                    .Descendants()
-                    .Where(el => XmlHelper.GetElementPath(el) == elementpath)
-                    .ToArray();
+                sourceElements = [.. xsource.Descendants().Where(el => XmlHelper.GetElementPath(el) == elementpath)];
+                targetElements = [.. xtarget.Descendants().Where(el => XmlHelper.GetElementPath(el) == elementpath)];
 
-                targetElements = xtarget
-                    .Descendants()
-                    .Where(el => XmlHelper.GetElementPath(el) == elementpath)
-                    .ToArray();
-
-                foreach (XElement targetel in targetElements)
+                foreach (var targetel in targetElements)
                 {
-                    int b = 123;
+                    var b = 123;
                     if (targetel.Name.LocalName == "add" && targetel.Attribute("name") != null && targetel.Attribute("name").Value == "membershipProvider")
                     {
                         b++;
@@ -114,9 +95,7 @@ transfile:   Transformation output file that will be created.");
 
                     // If exist, update. Else add.
 
-                    XElement[] matchingElements = sourceElements
-                        .Where(sourceel => XmlHelper.AreEqualId(targetel, sourceel))
-                        .ToArray();
+                    XElement[] matchingElements = [.. sourceElements.Where(sourceel => XmlHelper.AreEqualId(targetel, sourceel))];
                     if (matchingElements.Length > 1)
                     {
                         // Dont know which sourceel targetel match.
@@ -129,11 +108,11 @@ transfile:   Transformation output file that will be created.");
                         {
                             //Console.WriteLine($"Updating: {elementpath}");
                             Console.Write("u");
-                            TransformElement updateel = new TransformElement
+                            TransformElement updateel = new()
                             {
                                 op = Operation.update,
                                 Path = elementpath,
-                                Xelement = new XElement(targetel.Name.LocalName, targetel.Attributes())
+                                Xelement = new(targetel.Name.LocalName, targetel.Attributes())
                             };
                             transformElements.Add(updateel);
                         }
@@ -144,28 +123,28 @@ transfile:   Transformation output file that will be created.");
                         {
                             //Console.WriteLine($"Insert: elementpath}");
                             Console.Write("i");
-                            TransformElement insertel = new TransformElement
+                            TransformElement insertel = new()
                             {
                                 op = Operation.insert,
                                 Path = elementpath,
-                                Xelement = new XElement(targetel.Name.LocalName, targetel.Attributes())
+                                Xelement = new(targetel.Name.LocalName, targetel.Attributes())
                             };
                             transformElements.Add(insertel);
                         }
                     }
                 }
 
-                foreach (XElement sourceel in sourceElements)
+                foreach (var sourceel in sourceElements)
                 {
                     if (!targetElements.Any(targetel => XmlHelper.AreEqualId(sourceel, targetel)))
                     {
                         Console.Write("d");
                         //Console.WriteLine($"Delete: {elementpath}");
-                        TransformElement removeel = new TransformElement
+                        TransformElement removeel = new()
                         {
                             op = Operation.remove,
                             Path = elementpath,
-                            Xelement = new XElement(sourceel.Name.LocalName,
+                            Xelement = new(sourceel.Name.LocalName,
                             sourceel.Attributes().Where(a => XmlHelper.idattributenames.Contains(a.Name.LocalName)).OrderBy(a => a))
                         };
                         transformElements.Add(removeel);
@@ -173,21 +152,20 @@ transfile:   Transformation output file that will be created.");
                 }
             }
 
-
             WriteElements(transformElements, transfile);
         }
 
         private static void WriteElements(List<TransformElement> transformElements, string transfile)
         {
             XNamespace ns = @"http://schemas.microsoft.com/XML-Document-Transform";
-            XDocument xtrans = new XDocument();
+            XDocument xtrans = new();
 
-            string[] paths = transformElements.Select(el => el.Path).Distinct().ToArray();
+            string[] paths = [.. transformElements.Select(el => el.Path).Distinct()];
 
-            Console.WriteLine($"Transform elements: {transformElements.Count()}, paths: {paths.Length}");
-            foreach (string path in paths)
+            Console.WriteLine($"Transform elements: {transformElements.Count}, paths: {paths.Length}");
+            foreach (var path in paths)
             {
-                foreach (TransformElement transel in transformElements
+                foreach (var transel in transformElements
                     .Where(el => el.Path == path)
                     .OrderBy(el => el.Xelement, new XElementComparer()))
                 {
@@ -197,9 +175,9 @@ transfile:   Transformation output file that will be created.");
                             {
                                 //Console.WriteLine($"{path}: Insert");
 
-                                XContainer parent = XmlHelper.CreateParentElements(xtrans, path);
-                                XElement newel = new XElement(transel.Xelement.Name.LocalName);
-                                foreach (XAttribute attr in transel.Xelement.Attributes())
+                                var parent = XmlHelper.CreateParentElements(xtrans, path);
+                                XElement newel = new(transel.Xelement.Name.LocalName);
+                                foreach (var attr in transel.Xelement.Attributes())
                                 {
                                     newel.Add(new XAttribute(attr.Name.LocalName, attr.Value));
                                 }
@@ -212,19 +190,19 @@ transfile:   Transformation output file that will be created.");
                             {
                                 //Console.WriteLine($"{path}: Update");
 
-                                XContainer parent = XmlHelper.CreateParentElements(xtrans, path);
-                                XElement newel = new XElement(transel.Xelement.Name.LocalName);
-                                foreach (XAttribute attr in transel.Xelement.Attributes())
+                                var parent = XmlHelper.CreateParentElements(xtrans, path);
+                                XElement newel = new(transel.Xelement.Name.LocalName);
+                                foreach (var attr in transel.Xelement.Attributes())
                                 {
                                     newel.Add(new XAttribute(attr.Name.LocalName, attr.Value));
                                 }
 
-                                string idstring = string.Join(",",
+                                var idstring = string.Join(",",
                                     transel.Xelement.Attributes().Select(a => a.Name.LocalName)
                                         .Where(i => XmlHelper.idattributenames.Contains(i))
                                         .OrderBy(i => i));
 
-                                string valuestring = string.Join(",",
+                                var valuestring = string.Join(",",
                                     transel.Xelement.Attributes().Select(a => a.Name.LocalName)
                                         .Where(i => !XmlHelper.idattributenames.Contains(i))
                                         .OrderBy(i => i));
@@ -239,14 +217,14 @@ transfile:   Transformation output file that will be created.");
                             {
                                 //Console.WriteLine($"{path}: Delete");
 
-                                XContainer parent = XmlHelper.CreateParentElements(xtrans, path);
-                                XElement newel = new XElement(transel.Xelement.Name.LocalName);
-                                foreach (XAttribute attr in transel.Xelement.Attributes())
+                                var parent = XmlHelper.CreateParentElements(xtrans, path);
+                                XElement newel = new(transel.Xelement.Name.LocalName);
+                                foreach (var attr in transel.Xelement.Attributes())
                                 {
                                     newel.Add(new XAttribute(attr.Name.LocalName, attr.Value));
                                 }
 
-                                string idstring = string.Join(",",
+                                var idstring = string.Join(",",
                                     transel.Xelement.Attributes().Select(a => a.Name.LocalName)
                                         .Where(i => XmlHelper.idattributenames.Contains(i))
                                         .OrderBy(i => i));
@@ -261,8 +239,6 @@ transfile:   Transformation output file that will be created.");
             }
 
             xtrans.Save(transfile);
-
-            return;
         }
     }
 }

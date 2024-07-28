@@ -2,7 +2,6 @@
 using System;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -20,9 +19,9 @@ namespace GetElasticSize
                 return 1;
             }
 
-            string serverurl = args[0];
-            string username = args[1];
-            string password = args[2];
+            var serverurl = args[0];
+            var username = args[1];
+            var password = args[2];
 
             await GetSize(serverurl, username, password);
 
@@ -31,27 +30,26 @@ namespace GetElasticSize
 
         private static async Task GetSize(string serverurl, string username, string password)
         {
-            using var client = new HttpClient();
+            using HttpClient client = new();
 
-            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+            var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-
-            string address = $"{serverurl}/_cat/indices?pretty";
+            var address = $"{serverurl}/_cat/indices?pretty";
 
             Log($"'{address}'");
 
-            string result = await client.GetStringAsync(address);
+            var result = await client.GetStringAsync(address);
 
-            JArray indices = JArray.Parse(result);
+            var indices = JArray.Parse(result);
 
-            int maxlength = indices.Max(i => i["index"]?.Value<string>()?.Length ?? 0);
+            var maxlength = indices.Max(i => i["index"]?.Value<string>()?.Length ?? 0);
 
-            foreach (JToken index in indices.OrderBy(i => -GetSizeFromPrefix(i["store.size"]?.Value<string>() ?? string.Empty)))
+            foreach (var index in indices.OrderBy(i => -GetSizeFromPrefix(i["store.size"]?.Value<string>() ?? string.Empty)))
             {
-                string separator = $"  {new string(' ', maxlength - index["index"]?.Value<string>()?.Length ?? 0)}";
+                var separator = $"  {new string(' ', maxlength - index["index"]?.Value<string>()?.Length ?? 0)}";
                 Console.WriteLine($"{index["index"]}{separator}{index["store.size"]}");
             }
         }
@@ -60,32 +58,25 @@ namespace GetElasticSize
         {
             if (prefixsize.EndsWith("tb"))
             {
-                return (long)(double.Parse(prefixsize.Substring(0, prefixsize.Length - 2), CultureInfo.InvariantCulture) * 1024 * 1024 * 1024 * 1024);
+                return (long)(double.Parse(prefixsize[..^2], CultureInfo.InvariantCulture) * 1024 * 1024 * 1024 * 1024);
             }
             else if (prefixsize.EndsWith("gb"))
             {
-                return (long)(double.Parse(prefixsize.Substring(0, prefixsize.Length - 2), CultureInfo.InvariantCulture) * 1024 * 1024 * 1024);
+                return (long)(double.Parse(prefixsize[..^2], CultureInfo.InvariantCulture) * 1024 * 1024 * 1024);
             }
             else if (prefixsize.EndsWith("mb"))
             {
-                return (long)(double.Parse(prefixsize.Substring(0, prefixsize.Length - 2), CultureInfo.InvariantCulture) * 1024 * 1024);
+                return (long)(double.Parse(prefixsize[..^2], CultureInfo.InvariantCulture) * 1024 * 1024);
             }
             else if (prefixsize.EndsWith("kb"))
             {
-                return (long)(double.Parse(prefixsize.Substring(0, prefixsize.Length - 2), CultureInfo.InvariantCulture) * 1024);
+                return (long)(double.Parse(prefixsize[..^2], CultureInfo.InvariantCulture) * 1024);
             }
-            else if (prefixsize.EndsWith("b"))
+            else if (prefixsize.EndsWith('b'))
             {
-                return (long)(double.Parse(prefixsize.Substring(0, prefixsize.Length - 1), CultureInfo.InvariantCulture));
+                return (long)double.Parse(prefixsize[..^1], CultureInfo.InvariantCulture);
             }
-            else if (prefixsize == string.Empty)
-            {
-                return 0;
-            }
-            else
-            {
-                throw new NotImplementedException($"Unknown size: '{prefixsize}'");
-            }
+            return prefixsize == string.Empty ? 0 : throw new NotImplementedException($"Unknown size: '{prefixsize}'");
         }
 
         private static void Log(string message)

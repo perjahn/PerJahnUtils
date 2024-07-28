@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Net;
 using System.Net.Mail;
+using System.Threading;
 
 namespace mailer
 {
@@ -10,22 +11,21 @@ namespace mailer
         {
             try
             {
-                if (args.Length < 5 || args.Length > 8)
+                if (args.Length is < 5 or > 8)
                 {
                     Console.WriteLine(@"Usage: mailer <to> <from> <subject> <message> <smtpserver> [user] [pass] [attachfile]");
                     Console.WriteLine(@"Example: mailer per.jahn@domain.se noreply@somewhere.se ""Hello!"" ""bla bla bla"" mail.domain.com");
                     return;
                 }
 
-                string to = args[0];
-                string from = args[1];
-                string subject = args[2];
-                string body = args[3].Replace(@"\n", "\n");
-                string smtpServer = args[4];
+                var to = args[0];
+                var from = args[1];
+                var subject = args[2];
+                var body = args[3].Replace(@"\n", "\n");
+                var smtpServer = args[4];
                 string username = null;
                 string password = null;
                 string filename = null;
-
 
                 if (args.Length == 6)
                 {
@@ -43,47 +43,42 @@ namespace mailer
                     filename = args[7];
                 }
 
-
                 Console.WriteLine($"Using: to: '{to}' from: '{from}' subject: '{subject}' body: '{body}' smtpserver: '{smtpServer}' filename: '{filename}'");
 
                 SmtpClient smtpClient;
-                int separator = smtpServer.IndexOf(':');
-                if (separator < 0)
+                var port = -1;
+                var separator = smtpServer.IndexOf(':');
+                if (separator >= 0)
                 {
-                    smtpClient = new SmtpClient(smtpServer);
-                }
-                else
-                {
-                    var s = smtpServer.Substring(separator + 1);
-                    if (int.TryParse(s, out int port))
+                    var p = smtpServer[(separator + 1)..];
+                    if (!int.TryParse(p, out port) || port < 0)
                     {
-                        smtpClient = new SmtpClient(smtpServer.Substring(0, separator), port);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Invalid port: '{s}'");
+                        Console.WriteLine($"Invalid port: '{p}'");
                         return;
                     }
+                    smtpServer = smtpServer[..separator];
                 }
+
+                using var smtpClient = port < 0 ? new SmtpClient(smtpServer) : new SmtpClient(smtpServer, port);
 
                 if (username != null && password != null)
                 {
-                    smtpClient.Credentials = new System.Net.NetworkCredential(username, password);
+                    smtpClient.Credentials = new NetworkCredential(username, password);
                 }
 
-                MailMessage message = new MailMessage(from, to, subject, body);
+                using MailMessage message = new(from, to, subject, body);
                 smtpClient.EnableSsl = true;
 
                 if (filename != null)
                 {
-                    Attachment att = new Attachment(filename);
+                    Attachment att = new(filename);
                     message.Attachments.Add(att);
                 }
 
                 smtpClient.Send(message);
 
                 // Sleep a little while, required for sending email to some smtp servers.
-                System.Threading.Thread.Sleep(5000);
+                Thread.Sleep(5000);
 
                 Console.WriteLine("Done!");
             }

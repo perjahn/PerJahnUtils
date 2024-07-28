@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -40,9 +39,9 @@ Examples:
 
         static void SetNodeValue(string nodepath, string value)
         {
-            string[] files = System.IO.Directory.GetFiles(".", "*.csproj", System.IO.SearchOption.AllDirectories);
+            var files = Directory.GetFiles(".", "*.csproj", SearchOption.AllDirectories);
 
-            foreach (string filename in files)
+            foreach (var filename in files)
             {
                 SetNodeValue(filename, nodepath, value);
             }
@@ -50,53 +49,49 @@ Examples:
 
         static void SetNodeValue(string filename, string nodepath, string value)
         {
-            string vsuri = "http://schemas.microsoft.com/developer/msbuild/2003";
+            var vsuri = "http://schemas.microsoft.com/developer/msbuild/2003";
 
-            XmlDocument xdoc = new XmlDocument();
-            bool modified = false;
+            XmlDocument xdoc = new();
+            var modified = false;
 
             string buf;
-            using (System.IO.StreamReader sr = new System.IO.StreamReader(filename))
-            {
-                buf = sr.ReadToEnd();
-            }
+            using StreamReader sr = new(filename);
+            buf = sr.ReadToEnd();
 
             if (buf.StartsWith("<!DOCTYPE"))
             {
-                int pos = buf.IndexOf('>');
-                buf = buf.Substring(pos + 1).Trim();
+                var pos = buf.IndexOf('>');
+                buf = buf[(pos + 1)..].Trim();
             }
             buf = buf.Replace("&reg;", "");
 
             xdoc.LoadXml(buf);
 
-            System.Xml.XmlNamespaceManager nsm = new System.Xml.XmlNamespaceManager(xdoc.NameTable);
+            XmlNamespaceManager nsm = new(xdoc.NameTable);
             nsm.AddNamespace("xs", vsuri);
-
 
             Console.WriteLine("File: '" + filename + "'");
 
-            string[] tokens = nodepath.Split('/');
+            var tokens = nodepath.Split('/');
 
             //string path = string.Empty;
             XmlNode xnode = xdoc;
-            for (int depth = 0; depth < tokens.Length; depth++)
+            for (var depth = 0; depth < tokens.Length; depth++)
             {
-                string token = tokens[depth];
+                var token = tokens[depth];
 
                 if (token == string.Empty)
+                {
                     continue;
-
-                //path += "/" + token;
-
+                }
 
                 string configuration;
-                int pos1 = token.IndexOf('[');
-                int pos2 = token.IndexOf(']');
+                var pos1 = token.IndexOf('[');
+                var pos2 = token.IndexOf(']');
                 string elementname;
                 if (pos1 >= 0 && pos2 > pos1)
                 {
-                    elementname = token.Substring(0, pos1);
+                    elementname = token[..pos1];
                     configuration = token.Substring(pos1 + 1, pos2 - pos1 - 1);
                 }
                 else
@@ -104,69 +99,33 @@ Examples:
                     elementname = token;
                     configuration = string.Empty;
                 }
-                string nodequery = "xs:" + elementname;
+                var nodequery = "xs:" + elementname;
 
-                bool found = false;
+                var found = false;
 
-                XmlNodeList xlist = xnode.SelectNodes(nodequery, nsm);
-                foreach (XmlNode xnode2 in xlist)
+                var xlist = xnode.SelectNodes(nodequery, nsm);
+                foreach (var xnode2 in xlist)
                 {
-                    if (xnode2 is XmlElement)
+                    if (xnode2 is not XmlElement xnode3)
                     {
-                        bool newnode = configuration == "NEW" ? true : false;
+                        continue;
+                    }
 
-                        if (newnode)
+                    var newnode = configuration == "NEW";
+
+                    if (newnode)
+                    {
+                        var xattr = xnode3.Attributes["Condition"];
+                        if (xattr != null)
                         {
-                            XmlAttribute xattr = xnode2.Attributes["Condition"];
-                            if (xattr != null)
-                                continue;
-
-                            if (depth == tokens.Length - 1)
-                            {
-                                // Reached end node - set value
-                                XmlElement xele = xnode2 as XmlElement;
-                                string oldvalue = xele.InnerText;
-                                if (oldvalue != value)
-                                {
-                                    xele.InnerText = value;
-                                    modified = true;
-                                    Console.WriteLine("'" + xele.Name + "': '" + oldvalue + "' -> '" + xele.InnerText + "'");
-                                }
-                            }
-                            else
-                            {
-                                if (xnode2.SelectNodes("xs:" + tokens[depth + 1], nsm).Count == 0)
-                                {
-                                    continue;
-                                }
-                            }
+                            continue;
                         }
-                        else
-                        {
-                            if (configuration != string.Empty)
-                            {
-                                XmlAttribute xattr = xnode2.Attributes["Condition"];
-                                if (xattr == null)
-                                    continue;
-                                string condition = xattr.Value;
-                                int pos3 = condition.IndexOf("==");
-                                if (pos3 >= 0)
-                                {
-                                    string[] conditionvalues = condition.Substring(pos3 + 2).Trim().Trim('\'').Split('|');
-                                    if (!conditionvalues.Any(c => c.Trim() == configuration))
-                                        continue;
-                                }
-                            }
-                        }
-
-                        xnode = xnode2;
-                        found = true;
 
                         if (depth == tokens.Length - 1)
                         {
                             // Reached end node - set value
-                            XmlElement xele = xnode2 as XmlElement;
-                            string oldvalue = xele.InnerText;
+                            var xele = xnode2 as XmlElement;
+                            var oldvalue = xele.InnerText;
                             if (oldvalue != value)
                             {
                                 xele.InnerText = value;
@@ -174,12 +133,56 @@ Examples:
                                 Console.WriteLine("'" + xele.Name + "': '" + oldvalue + "' -> '" + xele.InnerText + "'");
                             }
                         }
+                        else
+                        {
+                            if (xnode3.SelectNodes("xs:" + tokens[depth + 1], nsm).Count == 0)
+                            {
+                                continue;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (configuration != string.Empty)
+                        {
+                            var xattr = xnode3.Attributes["Condition"];
+                            if (xattr == null)
+                            {
+                                continue;
+                            }
+                            var condition = xattr.Value;
+                            var pos3 = condition.IndexOf("==");
+                            if (pos3 >= 0)
+                            {
+                                string[] conditionvalues = condition[(pos3 + 2)..].Trim().Trim('\'').Split('|');
+                                if (!conditionvalues.Any(c => c.Trim() == configuration))
+                                {
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+
+                    xnode = xnode3;
+                    found = true;
+
+                    if (depth == tokens.Length - 1)
+                    {
+                        // Reached end node - set value
+                        var xele = xnode2 as XmlElement;
+                        var oldvalue = xele.InnerText;
+                        if (oldvalue != value)
+                        {
+                            xele.InnerText = value;
+                            modified = true;
+                            Console.WriteLine("'" + xele.Name + "': '" + oldvalue + "' -> '" + xele.InnerText + "'");
+                        }
                     }
                 }
                 if (!found)
                 {
                     // Didn't find any child node - create it
-                    XmlElement xele = xdoc.CreateElement(elementname, vsuri);
+                    var xele = xdoc.CreateElement(elementname, vsuri);
                     xnode.AppendChild(xele);
 
                     xnode = xele;
@@ -196,7 +199,7 @@ Examples:
 
             if (modified)
             {
-                FileAttributes fa = File.GetAttributes(filename);
+                var fa = File.GetAttributes(filename);
                 if ((fa & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
                 {
                     File.SetAttributes(filename, fa & ~FileAttributes.ReadOnly);

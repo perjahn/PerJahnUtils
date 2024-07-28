@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -14,10 +13,10 @@ namespace SyncFiles
 
         static void Main(string[] args)
         {
-            bool result = Run(args);
-            if (result)
+            var success = Run(args);
+            if (success)
             {
-                Log($"-=-=- Ending: {DateTime.Now.ToString("yyyyMMdd HHmmss")} -=-=-");
+                Log($"-=-=- Ending: {DateTime.Now:yyyyMMdd HHmmss} -=-=-");
             }
 
             if (Environment.UserInteractive)
@@ -33,7 +32,7 @@ namespace SyncFiles
 
             if (parsedArgs == null || parsedArgs.Length != 4)
             {
-                string usage =
+                var usage =
 @"SyncFiles 1.2
 
 Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s] <sourcefile> <targetfile> <sourcepath> <targetpath>
@@ -49,7 +48,7 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
                 return false;
             }
 
-            Log($"-=-=- Starting: {DateTime.Now.ToString("yyyyMMdd HHmmss")} -=-=-");
+            Log($"-=-=- Starting: {DateTime.Now:yyyyMMdd HHmmss} -=-=-");
 
             CopyFiles.SyncFiles(parsedArgs[0], parsedArgs[1], parsedArgs[2], parsedArgs[3]);
 
@@ -58,33 +57,33 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
 
         static string[]? ParseOptions(string[] args)
         {
-            if (args.Contains("-d"))
+            var parsedArgs = args;
+
+            if (parsedArgs.Contains("-d"))
             {
                 CopyFiles.CompareMetadata = true;
-                args = args.Except(new string[] { "-d" }).ToArray();
+                parsedArgs = [.. parsedArgs.Except(["-d"])];
             }
             else
             {
                 CopyFiles.CompareMetadata = false;
             }
 
+            string[] argsExcludes = [.. parsedArgs.Where(a => a.StartsWith("-e"))];
+            CopyFiles.Excludes = [.. argsExcludes.Select(a => a[2..])];
+            parsedArgs = [.. parsedArgs.Where(a => !a.StartsWith("-e"))];
 
-            string[] argsExcludes = args.Where(a => a.ToLower().StartsWith("-e")).ToArray();
-            CopyFiles.Excludes = argsExcludes.Select(a => a.Substring(2)).ToArray();
-            args = args.Where(a => !a.ToLower().StartsWith("-e")).ToArray();
-
-
-            string[] argsIdentifierfile = args.Where(a => a.ToLower().StartsWith("-i")).ToArray();
+            string[] argsIdentifierfile = [.. parsedArgs.Where(a => a.StartsWith("-i"))];
             if (argsIdentifierfile.Length > 1)
             {
                 return null;
             }
             if (argsIdentifierfile.Length == 1)
             {
-                string identifierfile = argsIdentifierfile[0].Substring(2);
+                string identifierfile = argsIdentifierfile[0][2..];
                 try
                 {
-                    CopyFiles.Identifiers = File.ReadAllLines(identifierfile).Where(l => l != string.Empty).ToArray();
+                    CopyFiles.Identifiers = [.. File.ReadAllLines(identifierfile).Where(l => l != string.Empty)];
                 }
                 catch (FileNotFoundException ex)
                 {
@@ -92,19 +91,18 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
                     return null;
                 }
 
-                args = args.Where(a => !a.ToLower().StartsWith("-i")).ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => !a.StartsWith("-i"))];
             }
 
-
-            string[] argsLogpath = args.Where(a => a.ToLower().StartsWith("-l")).ToArray();
+            string[] argsLogpath = [.. parsedArgs.Where(a => a.StartsWith("-l"))];
             if (argsLogpath.Length > 1)
             {
                 return null;
             }
-            string logfile = $"SyncFiles_{DateTime.Now:yyyyMMdd}.txt";
+            var logfile = $"SyncFiles_{DateTime.Now:yyyyMMdd}.txt";
             if (argsLogpath.Length == 1)
             {
-                string logpath = argsLogpath[0].Substring(2);
+                var logpath = argsLogpath[0][2..];
                 if (!Directory.Exists(logpath))
                 {
                     Console.WriteLine($"Creating log folder: '{logpath}'.{Environment.NewLine}");
@@ -112,57 +110,53 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
                 }
 
                 LogWriter.Logfile = Path.Combine(logpath, logfile);
-                args = args.Where(a => !a.ToLower().StartsWith("-l")).ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => !a.StartsWith("-l"))];
             }
             else
             {
                 LogWriter.Logfile = logfile;
             }
 
-
-            string[] argsMaxsize = args.Where(a => a.ToLower().StartsWith("-m")).ToArray();
+            string[] argsMaxsize = [.. parsedArgs.Where(a => a.StartsWith("-m"))];
             if (argsMaxsize.Length > 1)
             {
                 return null;
             }
             if (argsMaxsize.Length == 1)
             {
-                if (argsMaxsize[0].Length < 3 || !long.TryParse(argsMaxsize[0].Substring(2), out long result))
+                if (argsMaxsize[0].Length < 3 || !long.TryParse(argsMaxsize[0][2..], out long result))
                 {
                     Console.WriteLine($"Invalid maxsize value specified: '{argsMaxsize[0]}'.{Environment.NewLine}");
                     return null;
                 }
 
                 CopyFiles.Maxsize = result;
-                args = args.Where(a => !a.ToLower().StartsWith("-m")).ToArray();
+                parsedArgs = [.. parsedArgs.Where(a => !a.StartsWith("-m"))];
             }
 
-
-            if (args.Contains("-s"))
+            if (parsedArgs.Contains("-s"))
             {
                 CopyFiles.Simulate = true;
-                args = args.Except(new string[] { "-s" }).ToArray();
+                parsedArgs = [.. parsedArgs.Except(["-s"])];
             }
             else
             {
-                string? envWhatIf = Environment.GetEnvironmentVariable("WhatIf");
-                CopyFiles.Simulate = string.IsNullOrWhiteSpace(envWhatIf) || envWhatIf == "false" ? false : true;
+                var envWhatIf = Environment.GetEnvironmentVariable("WhatIf");
+                CopyFiles.Simulate = !string.IsNullOrWhiteSpace(envWhatIf) && envWhatIf != "false";
             }
 
-
-            if (args.Contains("-v"))
+            if (parsedArgs.Contains("-v"))
             {
                 LogWriter.Verbose = true;
-                args = args.Except(new string[] { "-v" }).ToArray();
+                parsedArgs = [.. parsedArgs.Except(["-v"])];
             }
             else
             {
-                string? envVerbose = Environment.GetEnvironmentVariable("Verbose");
-                LogWriter.Verbose = string.IsNullOrWhiteSpace(envVerbose) || envVerbose == "false" ? false : true;
+                var envVerbose = Environment.GetEnvironmentVariable("Verbose");
+                LogWriter.Verbose = !string.IsNullOrWhiteSpace(envVerbose) && envVerbose != "false";
             }
 
-
-            return args;
+            return parsedArgs;
         }
     }
 }

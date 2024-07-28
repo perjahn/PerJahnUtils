@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using MySql.Data.MySqlClient;
 
 namespace ExportDataTable
@@ -44,17 +43,14 @@ namespace ExportDataTable
 
         private int ExecuteNonQuery(string sql, CommandType ct)
         {
-            int iReturnValue = 0;
+            using var cmd = _cn.CreateCommand();
 
-            using (var cmd = _cn.CreateCommand())
-            {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
 
-                iReturnValue = cmd.ExecuteNonQuery();
-            }
+            var iReturnValue = cmd.ExecuteNonQuery();
 
             return iReturnValue;
         }
@@ -73,26 +69,25 @@ namespace ExportDataTable
 
         private object ExecuteScalar(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            using (var cmd = _cn.CreateCommand())
+            using var cmd = _cn.CreateCommand();
+
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
+
+            if (parameters != null)
             {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
-
-                if (parameters != null)
+                foreach (var pair in parameters)
                 {
-                    foreach (var pair in parameters)
-                    {
-                        MySqlParameter p = cmd.CreateParameter();
-                        p.ParameterName = pair.Key.ToString();
-                        p.Value = pair.Value;
-                        cmd.Parameters.Add(p);
-                    }
+                    MySqlParameter p = cmd.CreateParameter();
+                    p.ParameterName = pair.Key.ToString();
+                    p.Value = pair.Value;
+                    cmd.Parameters.Add(p);
                 }
-
-                return cmd.ExecuteScalar();
             }
+
+            return cmd.ExecuteScalar();
         }
         #endregion Scalar
 
@@ -109,26 +104,25 @@ namespace ExportDataTable
 
         private MySqlDataReader ExecuteReader(string sql, Dictionary<string, object> parameters, CommandType ct)
         {
-            using (var cmd = _cn.CreateCommand())
+            using var cmd = _cn.CreateCommand();
+
+            cmd.Connection = _cn;
+            cmd.CommandType = ct;
+            cmd.CommandText = sql;
+            cmd.CommandTimeout = CommandTimeout;
+
+            if (parameters != null)
             {
-                cmd.Connection = _cn;
-                cmd.CommandType = ct;
-                cmd.CommandText = sql;
-                cmd.CommandTimeout = CommandTimeout;
-
-                if (parameters != null)
+                foreach (var pair in parameters)
                 {
-                    foreach (var pair in parameters)
-                    {
-                        MySqlParameter p = cmd.CreateParameter();
-                        p.ParameterName = pair.Key.ToString();
-                        p.Value = pair.Value;
-                        cmd.Parameters.Add(p);
-                    }
+                    MySqlParameter p = cmd.CreateParameter();
+                    p.ParameterName = pair.Key.ToString();
+                    p.Value = pair.Value;
+                    cmd.Parameters.Add(p);
                 }
-
-                return cmd.ExecuteReader();
             }
+
+            return cmd.ExecuteReader();
         }
         #endregion Reader
     }

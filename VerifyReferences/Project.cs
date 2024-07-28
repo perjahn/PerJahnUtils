@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace VerifyReferences
@@ -16,19 +17,18 @@ namespace VerifyReferences
             ProjectFile = projectpath;
 
             XDocument xdoc;
-            XNamespace ns;
 
             try
             {
                 xdoc = XDocument.Load(ProjectFile);
             }
-            catch (System.Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Xml.XmlException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or XmlException)
             {
-                string message =
+                var message =
                     teamcityErrorMessage ?
                         string.Format(
                             "##teamcity[message text='Could not load project: {0}' status='ERROR']",
-                            ex.Message.Replace("\'", "")) :
+                            ex.Message.Replace("\'", string.Empty)) :
                         string.Format(
                             "Couldn't load project: '{0}'",
                             ex.Message);
@@ -36,67 +36,58 @@ namespace VerifyReferences
                 throw new ApplicationException(message);
             }
 
-            ns = xdoc.Root.Name.Namespace;
+            var ns = xdoc.Root.Name.Namespace;
 
-            References =
-                xdoc.Elements(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
-                    .Where(el => el.Attribute("Include") != null && el.Elements(ns + "HintPath").Count() >= 1)
-                    .OrderBy(el => el.Attribute("Include").Value)
-                    .Select(el => new Reference
-                    {
-                        Include = el.Attribute("Include").Value,
-                        Shortinclude = el.Attribute("Include").Value.Split(',')[0],
-                        Hintpath = el.Elements(ns + "HintPath")
-                            .OrderBy(elHintPath => elHintPath.Value)
-                            .First()
-                            .Value,
-                        Path = CompactPath(Path.Combine(Path.GetDirectoryName(projectpath), el.Elements(ns + "HintPath")
-                            .OrderBy(elHintPath => elHintPath.Value)
-                            .First()
-                            .Value))
-                    })
-                    .ToList();
+            References = [.. xdoc
+                .Elements(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
+                .Where(el => el.Attribute("Include") != null && el.Elements(ns + "HintPath").Any())
+                .OrderBy(el => el.Attribute("Include").Value)
+                .Select(el => new Reference
+                {
+                    Include = el.Attribute("Include").Value,
+                    Shortinclude = el.Attribute("Include").Value.Split(',')[0],
+                    Hintpath = el.Elements(ns + "HintPath")
+                        .OrderBy(elHintPath => elHintPath.Value)
+                        .First()
+                        .Value,
+                    Path = CompactPath(Path.Combine(Path.GetDirectoryName(projectpath), el.Elements(ns + "HintPath")
+                        .OrderBy(elHintPath => elHintPath.Value)
+                        .First()
+                        .Value))
+                })];
         }
 
         public string GetRelativePath(string pathFrom, string pathTo)
         {
-            string s = pathFrom;
+            var s = pathFrom;
 
             int pos = 0, dirs = 0;
             while (!pathTo.StartsWith(s) && s.Length > 0)
             {
                 pos = s.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos == -1)
-                {
-                    s = string.Empty;
-                }
-                else
-                {
-                    s = s.Substring(0, pos);
-                }
-
+                s = pos == -1 ? string.Empty : s[..pos];
                 dirs++;
             }
 
             dirs--;
 
-            return string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs).ToArray()) + pathTo.Substring(pos + 1);
+            return string.Join(string.Empty, Enumerable.Repeat($"..{Path.DirectorySeparatorChar}", dirs)) + pathTo[(pos + 1)..];
         }
 
         // Remove unnecessary .. from path
         public static string CompactPath(string path)
         {
-            List<string> folders = path.Split(Path.DirectorySeparatorChar).ToList();
+            List<string> folders = [.. path.Split(Path.DirectorySeparatorChar)];
 
-            for (int i = 0; i < folders.Count;)
+            for (var i = 0; i < folders.Count;)
             {
-                if (i > 0 && folders[i] == ".." && folders[i - 1] != ".." && folders[i - 1] != "")
+                if (i > 0 && folders[i] == ".." && folders[i - 1] != ".." && folders[i - 1] != string.Empty)
                 {
                     folders.RemoveAt(i - 1);
                     folders.RemoveAt(i - 1);
                     i--;
                 }
-                else if (i > 0 && folders[i] == "" && folders[i - 1] == "")
+                else if (i > 0 && folders[i] == string.Empty && folders[i - 1] == string.Empty)
                 {
                     folders.RemoveAt(i);
                 }
@@ -106,16 +97,15 @@ namespace VerifyReferences
                 }
             }
 
-            string path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders.ToArray());
+            var path2 = string.Join(Path.DirectorySeparatorChar.ToString(), folders);
 
-            string sep = Path.DirectorySeparatorChar.ToString();
-            if (path2 == "" && (path.StartsWith(sep) || path.EndsWith(sep)))
+            var sep = Path.DirectorySeparatorChar.ToString();
+            if (path2 == string.Empty && (path.StartsWith(sep) || path.EndsWith(sep)))
             {
                 path2 = Path.DirectorySeparatorChar.ToString();
             }
 
             return path2;
         }
-
     }
 }

@@ -8,10 +8,11 @@ namespace PopulateNugetCache
     {
         static int Main(string[] args)
         {
-            bool dryrun = args.Contains("-dryrun");
+            var dryrun = args.Contains("-dryrun");
             var operation = args.Contains("-move") ? Populate.OperationMode.move : Populate.OperationMode.copy;
-            bool verbose = args.Contains("-verbose");
-            var parsedArgs = args.Where(a => a != "-dryrun" && a != "-move" && a != "-verbose").ToArray();
+            var verbose = args.Contains("-verbose");
+            var allowedFlags = new[] { "-dryrun", "-move", "-verbose" };
+            string[] parsedArgs = [.. args.Where(a => !allowedFlags.Contains(a))];
 
             if (parsedArgs.Length != 1)
             {
@@ -25,7 +26,7 @@ namespace PopulateNugetCache
                 return 1;
             }
 
-            string sourceRootFolder = parsedArgs[0];
+            var sourceRootFolder = parsedArgs[0];
 
             if (!Directory.Exists(sourceRootFolder))
             {

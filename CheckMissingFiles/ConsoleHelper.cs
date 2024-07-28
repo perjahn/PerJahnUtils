@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CheckMissingFiles
 {
@@ -17,7 +15,7 @@ namespace CheckMissingFiles
 
         public static void WriteLineColor(string s, ConsoleColor color)
         {
-            ConsoleColor oldColor = Console.ForegroundColor;
+            var oldColor = Console.ForegroundColor;
 
             try
             {

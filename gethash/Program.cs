@@ -54,7 +54,7 @@ namespace gethash
 
             sha256Hash.TransformFinalBlock(buf, 0, 0);
 
-            var builder = new StringBuilder();
+            StringBuilder builder = new();
 
             for (int i = 0; i < sha256Hash.Hash.Length; i++)
             {
