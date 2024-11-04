@@ -45,7 +45,6 @@ namespace mailer
 
                 Console.WriteLine($"Using: to: '{to}' from: '{from}' subject: '{subject}' body: '{body}' smtpserver: '{smtpServer}' filename: '{filename}'");
 
-                SmtpClient smtpClient;
                 var port = -1;
                 var separator = smtpServer.IndexOf(':');
                 if (separator >= 0)
@@ -59,7 +58,7 @@ namespace mailer
                     smtpServer = smtpServer[..separator];
                 }
 
-                using var smtpClient = port < 0 ? new SmtpClient(smtpServer) : new SmtpClient(smtpServer, port);
+                using SmtpClient smtpClient = port < 0 ? new(smtpServer) : new(smtpServer, port);
 
                 if (username != null && password != null)
                 {
