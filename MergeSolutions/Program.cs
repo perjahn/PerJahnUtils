@@ -227,10 +227,10 @@ Example: MergeSolutions all.sln sol1.sln sol2.sln -proj1");
             if (errors.Count > 0)
             {
                 StringBuilder message = new();
-                message.AppendLine("Couldn't find solution files:");
+                _ = message.AppendLine("Couldn't find solution files:");
                 foreach (var error in errors)
                 {
-                    message.AppendLine(error);
+                    _ = message.AppendLine(error);
                 }
                 throw new ApplicationException(message.ToString());
             }

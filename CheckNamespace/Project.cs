@@ -10,10 +10,10 @@ namespace CheckNamespace
 {
     class Project
     {
-        public string _solutionfile { get; set; }
-        public string _sln_path { get; set; }
-        public string _rootnamespace { get; set; }
-        public List<string> _allfiles { get; set; }
+        public string Solutionfile { get; set; }
+        public string Sln_path { get; set; }
+        public string Rootnamespace { get; set; }
+        public List<string> Allfiles { get; set; }
 
         private static string[] excludedtags = [
             "Reference", "Folder", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
@@ -21,8 +21,8 @@ namespace CheckNamespace
 
         public Project(string solutionfile, string projectfilepath)
         {
-            _solutionfile = solutionfile;
-            _sln_path = projectfilepath;
+            Solutionfile = solutionfile;
+            Sln_path = projectfilepath;
 
             XDocument xdoc;
 
@@ -56,10 +56,10 @@ namespace CheckNamespace
             }
             else
             {
-                _rootnamespace = namespaces.Single();
+                Rootnamespace = namespaces.Single();
             }
 
-            _allfiles = [.. xdoc
+            Allfiles = [.. xdoc
                 .Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
                 .Where(el => el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName))
                 .OrderBy(el => el.Attribute("Include").Value)
@@ -70,13 +70,13 @@ namespace CheckNamespace
         {
             var failcount = 0;
 
-            foreach (var filename in _allfiles.Where(f => string.Compare(Path.GetExtension(f), ".cs", true) == 0))
+            foreach (var filename in Allfiles.Where(f => string.Compare(Path.GetExtension(f), ".cs", true) == 0))
             {
                 // Files must exist in file system.
-                var fullfilename = Path.Combine(Path.GetDirectoryName(_solutionfile), Path.GetDirectoryName(_sln_path), filename);
+                var fullfilename = Path.Combine(Path.GetDirectoryName(Solutionfile), Path.GetDirectoryName(Sln_path), filename);
                 if (!File.Exists(fullfilename))
                 {
-                    ConsoleHelper.WriteLineColor($"File not found: Project path: '{_sln_path}', File path: '{filename}'.", ConsoleColor.Red);
+                    ConsoleHelper.WriteLineColor($"File not found: Project path: '{Sln_path}', File path: '{filename}'.", ConsoleColor.Red);
                     return 0;
                 }
 
@@ -92,16 +92,16 @@ namespace CheckNamespace
                         {
                             ns = ns[..index];
                         }
-                        if (ns != _rootnamespace && !ns.StartsWith($"{_rootnamespace}."))
+                        if (ns != Rootnamespace && !ns.StartsWith($"{Rootnamespace}."))
                         {
-                            var commonns = GetCommonString(_rootnamespace, ns);
+                            var commonns = GetCommonString(Rootnamespace, ns);
 
                             Console.Write(Path.GetDirectoryName(fullfilename) + Path.DirectorySeparatorChar);
                             ConsoleHelper.WriteColor(Path.GetFileName(fullfilename), ConsoleColor.White);
                             Console.Write($"' ({rownum}): '");
 
                             Console.Write(commonns);
-                            ConsoleHelper.WriteColor(_rootnamespace[commonns.Length..], ConsoleColor.Magenta);
+                            ConsoleHelper.WriteColor(Rootnamespace[commonns.Length..], ConsoleColor.Magenta);
 
                             Console.Write("' <-> '");
 
@@ -130,7 +130,7 @@ namespace CheckNamespace
                 {
                     return sb.ToString();
                 }
-                sb.Append(a[i]);
+                _ = sb.Append(a[i]);
             }
 
             return sb.ToString();

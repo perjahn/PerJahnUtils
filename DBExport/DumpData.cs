@@ -15,7 +15,7 @@ namespace DBExport
             if (!Directory.Exists(folder))
             {
                 Console.WriteLine($"Creating folder: '{folder}'");
-                Directory.CreateDirectory(folder);
+                _ = Directory.CreateDirectory(folder);
             }
 
             var sql = "select name from sys.tables order by name";
@@ -34,8 +34,8 @@ namespace DBExport
             var reader = await cmd.ExecuteReaderAsync();
             while (reader.Read())
             {
-                string tablename = reader.GetString(0);
-                string filename = Path.Combine(folder, $"{tablename}.txt");
+                var tablename = reader.GetString(0);
+                var filename = Path.Combine(folder, $"{tablename}.txt");
 
                 rows += await DumpTable(connstr, tablename, filename);
                 //rows += await Task.Run(() => DumpTable(connstr, tablename, filename));
@@ -59,12 +59,17 @@ namespace DBExport
             SqlConnection connection = new(connstr);
             connection.Open();
 
-            var sql = $"select * from [{tablename}]";
+            var sql = "select * from @tablename%";
 
             using var cmd = connection.CreateCommand();
 
             cmd.Connection = connection;
             cmd.CommandText = sql;
+
+            var p = cmd.CreateParameter();
+            p.ParameterName = "tablename";
+            p.Value = tablename;
+            _ = cmd.Parameters.Add(p);
 
             using var reader = await cmd.ExecuteReaderAsync();
             using StreamWriter writer = new(filename);

@@ -9,62 +9,62 @@ namespace GatherOutputAssemblies
 {
     class Project
     {
-        public string _path { get; set; }
-        public string[] _solutionfiles { get; set; }
+        public string ProjectPath { get; set; }
+        public string[] Solutionfiles { get; set; }
 
-        public string _proj_guid { get; set; }
-        public List<string> _ProjectTypeGuids { get; set; }
+        public string Proj_guid { get; set; }
+        public List<string> ProjectTypeGuids { get; set; }
 
-        public List<string> _proj_guids { get; set; }
+        public List<string> Proj_guids { get; set; }
 
-        public List<OutputPath> _outputpaths { get; set; }
-        public List<OutputPath> _outdirs { get; set; }
-        public List<Reference> _projectReferences { get; set; }
+        public List<OutputPath> Outputpaths { get; set; }
+        public List<OutputPath> Outdirs { get; set; }
+        public List<Reference> ProjectReferences { get; set; }
 
         public static Project LoadProject(string filename)
         {
             Project newproj = new();
             XDocument xdoc;
 
-            newproj._path = filename;
+            newproj.ProjectPath = filename;
 
             try
             {
-                xdoc = XDocument.Load(newproj._path);
+                xdoc = XDocument.Load(newproj.ProjectPath);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or XmlException)
             {
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Couldn't load project: '" + newproj._path + "': " + ex.Message);
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"Couldn't load project: '{newproj.ProjectPath}': {ex.Message}");
                 return null;
             }
 
             var ns = xdoc.Root.Name.Namespace;
 
-            newproj._proj_guids = [.. xdoc
+            newproj.Proj_guids = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "PropertyGroup")
                 .Elements(ns + "ProjectGuid")
                 .Select(g => g.Value)];
 
-            newproj._ProjectTypeGuids = [.. xdoc
+            newproj.ProjectTypeGuids = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "PropertyGroup")
                 .Elements(ns + "ProjectTypeGuids")
                 .SelectMany(g => g.Value.Split(';'))];
 
-            newproj._outputpaths = [.. xdoc
+            newproj.Outputpaths = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "PropertyGroup")
                 .Elements(ns + "OutputPath")
                 .Select(el => new OutputPath() { Condition = GetCondition(el), Path = el.Value })];
 
-            newproj._outdirs = [.. xdoc
+            newproj.Outdirs = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "PropertyGroup")
                 .Elements(ns + "OutDir")
                 .Select(el => new OutputPath() { Condition = GetCondition(el), Path = el.Value })];
 
-            newproj._projectReferences = [.. xdoc
+            newproj.ProjectReferences = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "ItemGroup")
                 .Elements(ns + "ProjectReference")
@@ -95,26 +95,26 @@ namespace GatherOutputAssemblies
 
         private void Compact()
         {
-            if (_proj_guids.Count > 1)
+            if (Proj_guids.Count > 1)
             {
                 ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow,
-                    "Warning: Corrupt project file: " + _path +
-                    ", multiple guids: '" + _proj_guids.Count +
+                    $"Warning: Corrupt project file: {ProjectPath}" +
+                    $", multiple guids: '{Proj_guids.Count}" +
                     "', selecting first ProjectGuid element.");
             }
-            if (_proj_guids.Count >= 1)
+            if (Proj_guids.Count >= 1)
             {
-                _proj_guid = _proj_guids[0];
-                _proj_guids = null;
+                Proj_guid = Proj_guids[0];
+                Proj_guids = null;
             }
 
-            foreach (var projref in _projectReferences)
+            foreach (var projref in ProjectReferences)
             {
                 if (projref.Names.Count > 1)
                 {
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow,
-                        "Warning: Corrupt project file: " + _path +
-                        ", project reference: '" + projref.Include +
+                        $"Warning: Corrupt project file: {ProjectPath}" +
+                        $", project reference: '{projref.Include}" +
                         "', selecting first Name in ProjectReference element.");
                 }
                 if (projref.Names.Count >= 1)
@@ -144,12 +144,12 @@ namespace GatherOutputAssemblies
                 if (verbose)
                 {
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Red,
-                        _path + ": Couldn't find any matching OutputPath or OutDir in the project file. " +
+                        $"{ProjectPath}: Couldn't find any matching OutputPath or OutDir in the project file. " +
                         "Also keep in mind, the specified buildconfig condition must match a single OutputPath or Outdir which contains actual files!");
                 }
                 else
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "No useful OutputPath or OutDir found: '" + _path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"No useful OutputPath or OutDir found: '{ProjectPath}'");
                 }
                 return null;
             }
@@ -163,9 +163,9 @@ namespace GatherOutputAssemblies
         {
             List<OutputPath> resultfolders = [];
 
-            foreach (var solutiondir in _solutionfiles.Select(Path.GetDirectoryName))
+            foreach (var solutiondir in Solutionfiles.Select(Path.GetDirectoryName))
             {
-                foreach (var path in _outputpaths)
+                foreach (var path in Outputpaths)
                 {
                     OutputPath p = path;
                     p.Path = p.Path
@@ -175,7 +175,7 @@ namespace GatherOutputAssemblies
                     resultfolders.Add(p);
                 }
 
-                foreach (var path in _outdirs)
+                foreach (var path in Outdirs)
                 {
                     OutputPath p = path;
                     p.Path = p.Path
@@ -210,7 +210,7 @@ namespace GatherOutputAssemblies
             count1 = paths.Length;
             if (count1 == 1)
             {
-                return Path.Combine(Path.GetDirectoryName(_path), paths[0]);
+                return Path.Combine(Path.GetDirectoryName(ProjectPath), paths[0]);
             }
 
             // Release
@@ -221,11 +221,11 @@ namespace GatherOutputAssemblies
             count2 = paths.Length;
             if (count2 == 1)
             {
-                return Path.Combine(Path.GetDirectoryName(_path), paths[0]);
+                return Path.Combine(Path.GetDirectoryName(ProjectPath), paths[0]);
             }
 
             // buildconfig folder in project folder, default for vcx projects
-            var projectsubfolder = Path.Combine(Path.GetDirectoryName(_path), buildconfig.Split('|')[0]);
+            var projectsubfolder = Path.Combine(Path.GetDirectoryName(ProjectPath), buildconfig.Split('|')[0]);
             if (Directory.Exists(projectsubfolder))
             {
                 return projectsubfolder;
@@ -240,19 +240,19 @@ namespace GatherOutputAssemblies
             count4 = paths.Length;
             if (count4 == 1)
             {
-                return Path.Combine(Path.GetDirectoryName(_path), paths[0]);
+                return Path.Combine(Path.GetDirectoryName(ProjectPath), paths[0]);
             }
 
             if (paths.Length == 0)
             {
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow, _path +
-                    ": Couldn't find any path (matched " + count1 + "," + count2 + "," + count3 + "," + count4 + ").");
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow,
+                    $"{ProjectPath}: Couldn't find any path (matched {count1},{count2},{count3},{count4}).");
             }
 
             if (paths.Length > 1)
             {
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow, _path +
-                    ": Couldn't find distinct path (matched " + count1 + "," + count2 + "," + count3 + "," + count4 + ").");
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow,
+                    $"{ProjectPath}: Couldn't find distinct path (matched {count1},{count2},{count3},{count4}).");
             }
 
             return null;
@@ -269,7 +269,7 @@ namespace GatherOutputAssemblies
             var index = condition.IndexOf("==");
             if (index == -1)
             {
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "'" + _path + "': Malformed PropertyGroup Condition: '" + condition + "'");
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"'{ProjectPath}': Malformed PropertyGroup Condition: '{condition}'");
                 return false;
             }
             var c = condition[(index + 2)..].Trim().Trim('\'');
@@ -287,7 +287,7 @@ namespace GatherOutputAssemblies
 
         private bool ContainsFiles(string outputpath)
         {
-            var sourcepath = Path.Combine(Path.GetDirectoryName(_path), outputpath);
+            var sourcepath = Path.Combine(Path.GetDirectoryName(ProjectPath), outputpath);
             return Directory.Exists(sourcepath) && Directory.GetFiles(sourcepath, "*", SearchOption.AllDirectories).Length > 0;
         }
     }

@@ -14,14 +14,14 @@ namespace CheckMissingFiles
     {
         public string ProjectFile { get; set; }
         public string[] SolutionFiles { get; set; }
-        private List<XElement> _allfiles { get; set; }
+        private List<XElement> Allfiles { get; set; }
 
         public bool ParseError { get; set; }
         public int MissingfilesError { get; set; }
         public int MissingfilesWarning { get; set; }
         public int Excessfiles { get; set; }
 
-        private bool _teamcityErrorMessage { get; set; }
+        private bool TeamcityErrorMessage { get; set; }
 
         private static string[] excludedelements = [
             "AppDesigner", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths", "COMReference", "DnxInvisibleContent",
@@ -33,7 +33,7 @@ namespace CheckMissingFiles
             ProjectFile = projectfile;
             SolutionFiles = solutionfiles;
 
-            _teamcityErrorMessage = teamcityErrorMessage;
+            TeamcityErrorMessage = teamcityErrorMessage;
 
             XDocument xdoc;
 
@@ -55,7 +55,7 @@ namespace CheckMissingFiles
 
             try
             {
-                _allfiles = [.. xdoc
+                Allfiles = [.. xdoc
                     .Elements(ns + "Project")
                     .Elements(ns + "ItemGroup")
                     .Elements()
@@ -68,7 +68,7 @@ namespace CheckMissingFiles
             }
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
-            _allfiles.ForEach(el => el.Attribute("Include").Value = Uri.UnescapeDataString(el.Attribute("Include").Value));
+            Allfiles.ForEach(el => el.Attribute("Include").Value = Uri.UnescapeDataString(el.Attribute("Include").Value));
         }
 
         public void Check(bool reverseCheck)
@@ -76,7 +76,7 @@ namespace CheckMissingFiles
             string formatStringError;
             string formatStringWarning;
 
-            if (_teamcityErrorMessage)
+            if (TeamcityErrorMessage)
             {
                 formatStringError = "##teamcity[message text='File not found: {0} --> {1}' status='ERROR']";
                 formatStringWarning = "##teamcity[message text='File not found: {0} --> {1}' status='WARNING']";
@@ -92,7 +92,7 @@ namespace CheckMissingFiles
             MissingfilesWarning = 0;
             Excessfiles = 0;
 
-            if (_allfiles.Count == 0)
+            if (Allfiles.Count == 0)
             {
                 ConsoleHelper.WriteLine($"No files found in project: '{string.Join("', '", SolutionFiles)}': '{ProjectFile}'");
             }
@@ -106,7 +106,7 @@ namespace CheckMissingFiles
                 string[] files = [.. Directory.GetFiles(projectfolder, "*", SearchOption.AllDirectories)
                     .Where(f => !string.Equals(f, ProjectFile, StringComparison.OrdinalIgnoreCase))];
 
-                string[] allfiles = [.. _allfiles.Select(el =>
+                string[] allfiles = [.. Allfiles.Select(el =>
                 {
                     try
                     {
@@ -132,10 +132,10 @@ namespace CheckMissingFiles
             }
             else
             {
-                List<string> _allfilesError = [.. _allfiles
+                List<string> _allfilesError = [.. Allfiles
                     .Where(el => !excludedelements.Contains(el.Name.LocalName))
                     .Select(el => el.Attribute("Include").Value)];
-                List<string> _allfilesWarning = [.. _allfiles
+                List<string> _allfilesWarning = [.. Allfiles
                     .Where(el => el.Name.LocalName == "None")
                     .Select(el => el.Attribute("Include").Value)];
 

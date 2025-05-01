@@ -9,10 +9,10 @@ namespace CreatePublish
 {
     class Project
     {
-        public string _sln_shortfilename { get; set; }
-        public string _sln_path { get; set; }
+        public string Sln_shortfilename { get; set; }
+        public string Sln_path { get; set; }
 
-        public List<string> _ProjectTypeGuids { get; set; }
+        public List<string> ProjectTypeGuids { get; set; }
 
         public static Project LoadProject(string solutionfile, string projectfilepath)
         {
@@ -37,12 +37,12 @@ namespace CreatePublish
                 .Element(ns + "Project").Elements(ns + "PropertyGroup").Elements(ns + "ProjectTypeGuids")
                 .Select(el => el.Value.Split(';'))];
 
-            newproj._ProjectTypeGuids = [];
+            newproj.ProjectTypeGuids = [];
             foreach (var guids in guidsarr)
             {
                 foreach (var guid in guids)
                 {
-                    newproj._ProjectTypeGuids.Add(guid);
+                    newproj.ProjectTypeGuids.Add(guid);
                 }
             }
 

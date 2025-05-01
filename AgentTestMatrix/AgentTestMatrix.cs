@@ -69,7 +69,7 @@ TestDebug");
         if (Environment.UserInteractive)
         {
             Console.WriteLine("Press any key to continue...");
-            Console.ReadKey();
+            _ = Console.ReadKey();
         }
 
         return result;
@@ -423,8 +423,14 @@ TestDebug");
                         var testOccurrences = testresults["testOccurrence"];
                         if (testOccurrences != null)
                         {
-                            foreach (JObject testOccurrence in testOccurrences)
+                            foreach (var testOccurrence in testOccurrences)
                             {
+                                if (testOccurrence == null || testOccurrence.Type != JTokenType.Object)
+                                {
+                                    Log("Invalid test occurrence.");
+                                    continue;
+                                }
+
                                 tests.Add(new Test
                                 {
                                     Agentname = agentname,
@@ -481,7 +487,7 @@ TestDebug");
 
         var now = DateTime.Now;
 
-        sb.Append("Test/Agent");
+        _ = sb.Append("Test/Agent");
         foreach (var agentname in agents.OrderBy(a => a))
         {
             var agentname2 = agentname;
@@ -498,22 +504,22 @@ TestDebug");
                 }
             }
 
-            sb.Append($"\t{agentname2}");
+            _ = sb.Append($"\t{agentname2}");
         }
 
-        sb.AppendLine();
+        _ = sb.AppendLine();
 
-        sb.Append("Hours since last run");
+        _ = sb.Append("Hours since last run");
         foreach (var agentname in agents.OrderBy(a => a))
         {
             var datestring = agentTests.Where(t => t.Value.First().Agentname == agentname).Select(t => t.Value.First().Buildstart).First();
             var datetime = DateTime.ParseExact(datestring, "yyyyMMddTHHmmss+ffff", CultureInfo.InvariantCulture, DateTimeStyles.None);
             var hourssince = (now - datetime).TotalHours.ToString("0", CultureInfo.InvariantCulture);
 
-            sb.Append($"\t{hourssince}");
+            _ = sb.Append($"\t{hourssince}");
         }
 
-        sb.AppendLine();
+        _ = sb.AppendLine();
 
         var failcount = 0;
 
@@ -523,7 +529,7 @@ TestDebug");
 
         foreach (var testname in testnames.OrderBy(t => t))
         {
-            sb.Append(testname);
+            _ = sb.Append(testname);
 
             var failed = false;
 
@@ -533,19 +539,19 @@ TestDebug");
                 {
                     if (agentTests[agentname].Any(t => t.Testname == testname && t.Status == "FAILURE"))
                     {
-                        sb.Append("\tx");
+                        _ = sb.Append("\tx");
                         totalfailcount++;
                         failed = true;
                     }
                     else
                     {
-                        sb.Append("\t.");
+                        _ = sb.Append("\t.");
                         totalsuccesscount++;
                     }
                 }
                 else
                 {
-                    sb.Append("\t-");
+                    _ = sb.Append("\t-");
                     totalmissingcount++;
                 }
             }
@@ -555,12 +561,12 @@ TestDebug");
                 failcount++;
             }
 
-            sb.AppendLine();
+            _ = sb.AppendLine();
         }
 
-        var agentSums = string.Join("\t", agentTests.OrderBy(t => t.Value.First().Agentname).Select(t => t.Value.Where(tt => tt.Status == "FAILURE").Count()));
+        var agentSums = string.Join("\t", agentTests.OrderBy(t => t.Value.First().Agentname).Select(t => t.Value.Count(tt => tt.Status == "FAILURE")));
 
-        sb.AppendLine($"{testnames.Length} tests, {failcount} failed, {testnames.Length - failcount} succeded (Total: {totalfailcount} failed, {totalsuccesscount} succeded, {totalmissingcount} missing)\t{agentSums}");
+        _ = sb.AppendLine($"{testnames.Length} tests, {failcount} failed, {testnames.Length - failcount} succeded (Total: {totalfailcount} failed, {totalsuccesscount} succeded, {totalmissingcount} missing)\t{agentSums}");
 
         return sb.ToString();
     }
@@ -573,10 +579,10 @@ TestDebug");
 
         var rows = tablecontent.Replace("\r", "").Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
 
-        sb.AppendLine("<html>");
-        sb.AppendLine("<body>");
-        sb.AppendLine("<style>");
-        sb.AppendLine(
+        _ = sb.AppendLine("<html>");
+        _ = sb.AppendLine("<body>");
+        _ = sb.AppendLine("<style>");
+        _ = sb.AppendLine(
 @"body {
     font-family: Verdana, Arial, Helvetica, sans-serif;
     font-size: 12px;
@@ -601,25 +607,25 @@ td {
 .missing {
     background-color: rgb(200,200,200);
 }");
-        sb.AppendLine("</style>");
-        sb.AppendLine("<script src='http://code.jquery.com/jquery-latest.min.js'></script>");
-        sb.AppendLine("<script>");
-        sb.AppendLine(
+        _ = sb.AppendLine("</style>");
+        _ = sb.AppendLine("<script src='http://code.jquery.com/jquery-latest.min.js'></script>");
+        _ = sb.AppendLine("<script>");
+        _ = sb.AppendLine(
 @"$(document).ready(function(){$('#checkboxID').change(function(){
     var self = this;
     $('tr.successes').toggle(self.checked);
 }).change();});");
-        sb.AppendLine("</script>");
-        sb.AppendLine("</head>");
-        sb.AppendLine("<body>");
+        _ = sb.AppendLine("</script>");
+        _ = sb.AppendLine("</head>");
+        _ = sb.AppendLine("<body>");
 
-        sb.AppendLine(@"<p><label for='checkboxID'>Show all tests</label><input type='checkbox' id='checkboxID' /></p>");
-        sb.AppendLine("<p>x Test failed.<br/>");
-        sb.AppendLine(". Test passed.<br/>");
-        sb.AppendLine("- Test missing.</p>");
-        sb.AppendLine("<p>Obvious thing you should know: There's a tooltip on column headers!</p>");
+        _ = sb.AppendLine(@"<p><label for='checkboxID'>Show all tests</label><input type='checkbox' id='checkboxID' /></p>");
+        _ = sb.AppendLine("<p>x Test failed.<br/>");
+        _ = sb.AppendLine(". Test passed.<br/>");
+        _ = sb.AppendLine("- Test missing.</p>");
+        _ = sb.AppendLine("<p>Obvious thing you should know: There's a tooltip on column headers!</p>");
 
-        sb.AppendLine("<table border=\"1\">");
+        _ = sb.AppendLine("<table border=\"1\">");
 
         foreach (var row in rows)
         {
@@ -629,11 +635,11 @@ td {
 
             if (allsuccess)
             {
-                sb.Append("<tr class='successes' style='display: none;'>");
+                _ = sb.Append("<tr class='successes' style='display: none;'>");
             }
             if (anyfails)
             {
-                sb.Append("<tr class='fails'>");
+                _ = sb.Append("<tr class='fails'>");
             }
 
             foreach (var value in values)
@@ -644,35 +650,27 @@ td {
                 {
                     var title = value.Substring(start + 1, end - start - 1).Replace("|", "\n");
                     var cleanvalue = value[..start];
-                    sb.Append($"<td title='{title}'>{cleanvalue}</td>");
+                    _ = sb.Append($"<td title='{title}'>{cleanvalue}</td>");
                 }
                 else
                 {
-                    if (value == "x")
+                    var classAttribute = value switch
                     {
-                        sb.Append($"<td class='fail'>{value}</td>");
-                    }
-                    else if (value == ".")
-                    {
-                        sb.Append($"<td class='pass'>{value}</td>");
-                    }
-                    else if (value == "-")
-                    {
-                        sb.Append($"<td class='missing'>{value}</td>");
-                    }
-                    else
-                    {
-                        sb.Append($"<td>{value}</td>");
-                    }
+                        "x" => " class='fail'",
+                        "." => " class='pass'",
+                        "-" => " class='missing'",
+                        _ => string.Empty
+                    };
+                    _ = sb.Append($"<td{classAttribute}>{value}</td>");
                 }
             }
 
-            sb.AppendLine("</tr>");
+            _ = sb.AppendLine("</tr>");
         }
 
-        sb.AppendLine("</table>");
-        sb.AppendLine("</body>");
-        sb.AppendLine("</html>");
+        _ = sb.AppendLine("</table>");
+        _ = sb.AppendLine("</body>");
+        _ = sb.AppendLine("</html>");
 
         File.WriteAllText(filename, sb.ToString());
     }

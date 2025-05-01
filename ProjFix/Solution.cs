@@ -7,7 +7,7 @@ namespace ProjFix
 {
     class Solution(string solutionfile)
     {
-        private readonly string _solutionfile = solutionfile;
+        private readonly string Solutionfile = solutionfile;
 
         public void RestoreProjects()
         {
@@ -19,7 +19,7 @@ namespace ProjFix
 
             foreach (var p in projects)
             {
-                p.Restore(_solutionfile);
+                p.Restore(Solutionfile);
             }
         }
 
@@ -28,11 +28,11 @@ namespace ProjFix
             string[] rows;
             try
             {
-                rows = File.ReadAllLines(_solutionfile);
+                rows = File.ReadAllLines(Solutionfile);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{Solutionfile}': {ex.Message}");
                 return null;
             }
 
@@ -64,11 +64,11 @@ namespace ProjFix
 
                         projects.Add(new Project()
                         {
-                            _sln_package = package,
-                            _sln_shortfilename = shortfilename,
-                            _sln_path = path,
-                            _sln_guid = guid,
-                            _modified = false
+                            Sln_package = package,
+                            Sln_shortfilename = shortfilename,
+                            Sln_path = path,
+                            Sln_guid = guid,
+                            Modified = false
                         });
                     }
                 }
@@ -78,7 +78,7 @@ namespace ProjFix
 
             foreach (var p in projects)
             {
-                var p2 = Project.LoadProject(_solutionfile, p._sln_path);
+                var p2 = Project.LoadProject(Solutionfile, p.Sln_path);
                 if (p2 == null)
                 {
                     error = true;
@@ -86,22 +86,22 @@ namespace ProjFix
                 }
 
                 ConsoleHelper.WriteLine(
-                    $"sln_package: '{p._sln_package}" +
-                    $"', sln_guid: '{p._sln_guid}" +
-                    $"', sln_shortfilename: '{p._sln_shortfilename}" +
-                    $"', sln_path: '{p._sln_path}" +
-                    $"', proj_assemblynames: {p2._proj_assemblynames.Count}" +
-                    $", proj_guids: {p2._proj_guids.Count}" +
-                    $", proj_outputtypes: {p2._proj_outputtypes.Count}.",
+                    $"sln_package: '{p.Sln_package}" +
+                    $"', sln_guid: '{p.Sln_guid}" +
+                    $"', sln_shortfilename: '{p.Sln_shortfilename}" +
+                    $"', sln_path: '{p.Sln_path}" +
+                    $"', proj_assemblynames: {p2.Proj_assemblynames.Count}" +
+                    $", proj_guids: {p2.Proj_guids.Count}" +
+                    $", proj_outputtypes: {p2.Proj_outputtypes.Count}.",
                     true);
 
-                p._proj_assemblynames = p2._proj_assemblynames;
-                p._proj_guids = p2._proj_guids;
-                p._proj_outputtypes = p2._proj_outputtypes;
+                p.Proj_assemblynames = p2.Proj_assemblynames;
+                p.Proj_guids = p2.Proj_guids;
+                p.Proj_outputtypes = p2.Proj_outputtypes;
 
-                p._outputpaths = p2._outputpaths;
-                p._references = p2._references;
-                p._projectReferences = p2._projectReferences;
+                p.Outputpaths = p2.Outputpaths;
+                p.References = p2.References;
+                p.ProjectReferences = p2.ProjectReferences;
             }
 
             if (error)
@@ -117,20 +117,20 @@ namespace ProjFix
         {
             var valid = true;
 
-            foreach (var p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p.Sln_path))
             {
                 p.Compact();
             }
 
-            foreach (var p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p.Sln_path))
             {
                 p.CompactRefs();
             }
 
             ConsoleHelper.WriteLineDeferred("-=-=- Validating -=-=-");
-            foreach (var p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p.Sln_path))
             {
-                if (!p.Validate(_solutionfile, projects))
+                if (!p.Validate(Solutionfile, projects))
                 {
                     valid = false;
                 }
@@ -143,9 +143,9 @@ namespace ProjFix
                 return false;
             }
 
-            foreach (var p in projects.OrderBy(p => p._sln_path))
+            foreach (var p in projects.OrderBy(p => p.Sln_path))
             {
-                p.Fix(_solutionfile, projects, hintpaths, removeversion);
+                _ = p.Fix(Solutionfile, projects, hintpaths, removeversion);
             }
 
             return true;  // Success
@@ -156,12 +156,12 @@ namespace ProjFix
             int count1, count2;
 
             count1 = count2 = 0;
-            foreach (var p in projects.OrderBy(pp => pp._sln_path))
+            foreach (var p in projects.OrderBy(pp => pp.Sln_path))
             {
                 count1++;
-                if (p._modified)
+                if (p.Modified)
                 {
-                    p.WriteProject(_solutionfile, simulate, nobackup);
+                    p.WriteProject(Solutionfile, simulate, nobackup);
                     count2++;
                 }
             }

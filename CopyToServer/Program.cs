@@ -48,7 +48,7 @@ Usage: CopyToServer <source> <target> <username> <password>");
                 if (!Directory.Exists(target))
                 {
                     Console.WriteLine($"Creating folder: '{target}'");
-                    Directory.CreateDirectory(target);
+                    _ = Directory.CreateDirectory(target);
                 }
 
                 foreach (var filename in files)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace ProjFix
@@ -64,7 +63,7 @@ namespace ProjFix
 
             for (var i = 0; i < count; i++)
             {
-                sb.Append($"..{Path.DirectorySeparatorChar}");
+                _ = sb.Append($"..{Path.DirectorySeparatorChar}");
             }
 
             return sb.ToString();

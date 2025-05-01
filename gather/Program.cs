@@ -36,7 +36,7 @@ namespace gather
 
             if (!Directory.Exists(outputpath))
             {
-                Directory.CreateDirectory(outputpath);
+                _ = Directory.CreateDirectory(outputpath);
             }
 
             foreach (var path in paths)

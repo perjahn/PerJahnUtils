@@ -7,7 +7,7 @@ function Main() {
 
     Clean
 
-    Generate-BuildFile "all.build"
+    Generate-SolutionFile "perjahnutils.sln"
 }
 
 function Clean() {
@@ -28,54 +28,34 @@ function Clean() {
     }
 }
 
-function Generate-BuildFile([string] $buildfile) {
-    [string[]] $slnfiles = @(dir -Recurse "*.sln" -File | % { $_.FullName })
-
-    if (Test-Path "C:\Windows") {
-        [string[]] $slnfiles = @($slnfiles | ? { Test-Path ([IO.Path]::ChangeExtension($_, ".vcxproj")) })
-    }
-    else {
-        [string[]] $slnfiles = @($slnfiles | ? {
-            [string] $filename = [IO.Path]::ChangeExtension($_, ".vcxproj")
-            if (Test-Path $filename) {
-                return $false
-            }
-
-            [string] $filename = [IO.Path]::ChangeExtension($_, ".csproj")
-            if (!(Test-Path $filename)) {
-                Write-Host "Excluding project: Missing csproj for solution: '$_'" -f Yellow
-                return $false
-            }
-
-            [string] $content = [IO.File]::ReadAllText($filename)
-            if (!$content.Contains("Microsoft.NET.Sdk")) {
-                Write-Host "Excluding old C# project: '$($filename.Substring((pwd).Path.Length + 1))'" -f Yellow
-                return $false
-            }
-
-            [string] $qq = "<AnalysisMode>All</AnalysisMode><EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild><AnalysisLevelStyle>preview</AnalysisLevelStyle><NoWarn>CA1033,CA1063,CA1303,CA1304,CA1305,CA1310,CA1311,CA1515,CS1591,CA1816,CA1822,CA1849,CA1852,CA2007,CA2100,IDE0006,IDE0008,IDE0040,IDE0210</NoWarn><GenerateDocumentationFile>true</GenerateDocumentationFile>"
-
-            sed -i "s;<TargetFramework>net8\.0</TargetFramework>;<TargetFramework>net9.0</TargetFramework>$($qq);g" $filename
-            return $true
-        })
-    }
-
-    [string[]] $slnfiles = @($slnfiles | % { $_.Substring((pwd).Path.Length + 1) })
-
-    Write-Host "Found $($slnfiles.Count) solutions."
-
-    [string[]] $xml = @()
-    $xml += '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'
-    $xml += '  <Target Name="Build">'
-    $xml += '    <MSBuild Targets="Restore;Build;Publish" Projects="' + ($slnfiles -join ";") + '" Properties="Configuration=Release;Runtime=linux-x64" ContinueOnError="true" BuildInParallel="true" />'
-    $xml += '  </Target>'
-    $xml += '</Project>'
-
+function Generate-SolutionFile([string] $solutionfile) {
     Write-Host -n "Dotnet version: "
     dotnet --version
 
-    Write-Host "Saving generated build file: '$buildfile'"
-    Set-Content $buildfile $xml
+    [string[]] $slnfiles = @(dir -Recurse "*.sln" -File | % { $_.FullName })
+    Write-Host "Found $($slnfiles.Count) solutions." -f Green
+    $slnfiles | del
+
+    [string[]] $projfiles = @(dir -r *.csproj | % { $_.FullName })
+    Write-Host "Found $($projfiles.Count) projects." -f Green
+
+    dotnet new sln -n ([IO.Path]::GetFileNameWithoutExtension($solutionfile))
+
+    [int] $offset = (Get-Location).Path.Length + 1
+    foreach ($projfile in $projfiles) {
+        [string] $content = [IO.File]::ReadAllText($projfile)
+        if (!$content.Contains("Microsoft.NET.Sdk")) {
+            Write-Host "Excluding old C# project: '$($projfile.Substring($offset))'" -f Yellow
+        }
+        else {
+            dotnet sln $solutionfile add $projfile.Substring($offset)
+
+            [string] $qq = "<AnalysisMode>All</AnalysisMode><EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild><AnalysisLevelStyle>preview</AnalysisLevelStyle><NoWarn>CA1031,CA1303,CA1304,CA1305,CA1307,CA1309,CA1310,CA1311,CA1515,CS1591,CA1820,CA1822,CA1849,CA1852,CA2007,CA2201,CA2234,CA2251,CA5392,IDE0008,IDE0032,IDE0040,IDE0044,IDE0210</NoWarn><GenerateDocumentationFile>true</GenerateDocumentationFile>"
+            sed -i "s;<TargetFramework>net9\.0</TargetFramework>;<TargetFramework>net9.0</TargetFramework>$($qq);g" $projfile
+        }
+    }
+
+    Write-Host "Generated solution file: '$solutionfile'"
 }
 
 Main

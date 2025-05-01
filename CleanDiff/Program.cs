@@ -13,9 +13,9 @@ namespace CleanDiff
 {
     class Program
     {
-        static bool _RemoveComments, _SortAttributes, _SortElements, _Collapse, _WinDiff, _DontDiffIfEqual;
+        static bool FlagRemoveComments, FlagSortAttributes, FlagSortElements, FlagCollapse, FlagWinDiff, FlagDontDiffIfEqual;
 
-        static List<string> _searchPaths = [];
+        static List<string> SearchPaths = [];
 
         static int Main(string[] args)
         {
@@ -55,7 +55,7 @@ Optional flags:
             if (windiffpath == null)
             {
                 Console.WriteLine($"Couldn't find windiff.exe, the following paths was searched:{Environment.NewLine}" +
-                    $"'{string.Join($"'{Environment.NewLine}'", _searchPaths)}'");
+                    $"'{string.Join($"'{Environment.NewLine}'", SearchPaths)}'");
                 return -1;
             }
 
@@ -75,14 +75,14 @@ Optional flags:
                 @"C:\Utils"
             ];
 
-            _searchPaths.AddRange(windiffpaths);
+            SearchPaths.AddRange(windiffpaths);
 
-            _searchPaths.AddRange(Environment.GetEnvironmentVariable("path").Split(';'));
+            SearchPaths.AddRange(Environment.GetEnvironmentVariable("path").Split(';'));
 
             var asspath = Assembly.GetExecutingAssembly().Location;
-            _searchPaths.Add(Path.GetDirectoryName(asspath));
+            SearchPaths.Add(Path.GetDirectoryName(asspath));
 
-            foreach (var path in _searchPaths)
+            foreach (var path in SearchPaths)
             {
                 var windiffpath = Path.Combine(path, "windiff.exe");
                 if (File.Exists(windiffpath))
@@ -109,33 +109,33 @@ Optional flags:
 
         static void SetFlags(string[] args, int flags)
         {
-            _RemoveComments = _SortAttributes = _SortElements = _Collapse = _WinDiff = _DontDiffIfEqual = true;
+            FlagRemoveComments = FlagSortAttributes = FlagSortElements = FlagCollapse = FlagWinDiff = FlagDontDiffIfEqual = true;
 
             for (var i = 0; i < flags; i++)
             {
                 if (args[i] == "-DontRemoveComments")
                 {
-                    _RemoveComments = false;
+                    FlagRemoveComments = false;
                 }
                 if (args[i] == "-DontSortAttributes")
                 {
-                    _SortAttributes = false;
+                    FlagSortAttributes = false;
                 }
                 if (args[i] == "-DontSortElements")
                 {
-                    _SortElements = false;
+                    FlagSortElements = false;
                 }
                 if (args[i] == "-DontCollapse")
                 {
-                    _Collapse = false;
+                    FlagCollapse = false;
                 }
                 if (args[i] == "-DontWinDiff")
                 {
-                    _WinDiff = false;
+                    FlagWinDiff = false;
                 }
                 if (args[i] == "-DontDiffIfEqual")
                 {
-                    _DontDiffIfEqual = false;
+                    FlagDontDiffIfEqual = false;
                 }
             }
         }
@@ -178,12 +178,12 @@ Optional flags:
             IStructuralEquatable eqa1 = buf1;
             diff = !eqa1.Equals(buf2, StructuralComparisons.StructuralEqualityComparer);
 
-            if (_DontDiffIfEqual || diff)
+            if (FlagDontDiffIfEqual || diff)
             {
-                if (_WinDiff)
+                if (FlagWinDiff)
                 {
                     Console.WriteLine($"Diffing: '{file1}' and '{file2}'");
-                    Process.Start(windiffpath, $"\"{outfile1}\" \"{outfile2}\"");
+                    _ = Process.Start(windiffpath, $"\"{outfile1}\" \"{outfile2}\"");
                 }
             }
 
@@ -204,7 +204,7 @@ Optional flags:
                 return false;
             }
 
-            if (_RemoveComments)
+            if (FlagRemoveComments)
             {
                 List<XComment> comments = [.. ((IEnumerable)xdoc.XPathEvaluate("//comment()")).Cast<XComment>()];
                 foreach (var comment in comments)
@@ -213,17 +213,17 @@ Optional flags:
                 }
             }
 
-            if (_Collapse)
+            if (FlagCollapse)
             {
                 CollapseEmptyElements(xdoc.Root);
             }
 
-            if (_SortAttributes)
+            if (FlagSortAttributes)
             {
                 SortAttributes(xdoc.Root);
             }
 
-            if (_SortElements)
+            if (FlagSortElements)
             {
                 SortElements(xdoc.Root);
             }
@@ -290,21 +290,6 @@ Optional flags:
                     ele.Remove();
                 }
             }
-        }
-
-        static string GetElementPath(XElement xele)
-        {
-            var path = string.Empty;
-
-            XNode xnode = xele;
-
-            while (xnode.NodeType == XmlNodeType.Element)
-            {
-                path = @"\" + ((XElement)xnode).Name + path;
-                xnode = xnode.Parent;
-            }
-
-            return path;
         }
     }
 }

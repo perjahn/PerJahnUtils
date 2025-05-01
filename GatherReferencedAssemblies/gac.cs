@@ -1,19 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.GACManagedAccess;
 
 namespace GatherReferencedAssemblies
 {
     class Gac
     {
-        static List<string> SystemAssemblies = null;
+        static List<string> SystemAssemblies;
 
         private static void InitIsSystemAssembly()
         {
             SystemAssemblies = [];
 
-            AssemblyCacheEnum asmEnum = new(null);
+            AssemblyCacheEnumx asmEnum = new(null);
             string nextAsm;
             while ((nextAsm = asmEnum.GetNextAssembly()) != null)
             {

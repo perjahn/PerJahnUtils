@@ -8,7 +8,7 @@ namespace RemoveMissingFiles
     class Solution(string solutionfile)
     {
         private readonly string _solutionfile = solutionfile;
-        private List<Project> _projects;
+        private List<Project> Projects;
 
         public void LoadProjects()
         {
@@ -48,9 +48,9 @@ namespace RemoveMissingFiles
 
                         projects.Add(new Project()
                         {
-                            _sln_package = package,
-                            _sln_path = path,
-                            _removedfiles = 0
+                            Sln_package = package,
+                            Sln_path = path,
+                            Removedfiles = 0
                         });
                     }
                 }
@@ -63,7 +63,7 @@ namespace RemoveMissingFiles
                 Project p2;
                 try
                 {
-                    p2 = Project.LoadProject(_solutionfile, p._sln_path);
+                    p2 = Project.LoadProject(_solutionfile, p.Sln_path);
                 }
                 catch (ApplicationException ex)
                 {
@@ -72,7 +72,7 @@ namespace RemoveMissingFiles
                     continue;
                 }
 
-                p._allfiles = p2._allfiles;
+                p.Allfiles = p2.Allfiles;
             }
 
             if (error)
@@ -80,17 +80,17 @@ namespace RemoveMissingFiles
                 throw new ApplicationException("Fix errors before continuing!");
             }
 
-            _projects = projects;
+            Projects = projects;
         }
 
         public int FixProjects()
         {
-            foreach (var p in _projects.OrderBy(p => p._sln_path))
+            foreach (var p in Projects.OrderBy(p => p.Sln_path))
             {
                 p.Fix(_solutionfile);
             }
 
-            return _projects.Select(p => p._removedfiles).Sum();
+            return Projects.Sum(p => p.Removedfiles);
         }
 
         public void WriteProjects(bool simulate)
@@ -98,14 +98,14 @@ namespace RemoveMissingFiles
             int count1, count2, count3;
 
             count1 = count2 = count3 = 0;
-            foreach (var p in _projects.OrderBy(pp => pp._sln_path))
+            foreach (var p in Projects.OrderBy(pp => pp.Sln_path))
             {
                 count1++;
-                if (p._removedfiles > 0)
+                if (p.Removedfiles > 0)
                 {
                     p.WriteProject(_solutionfile, simulate);
                     count2++;
-                    count3 += p._removedfiles;
+                    count3 += p.Removedfiles;
                 }
             }
 

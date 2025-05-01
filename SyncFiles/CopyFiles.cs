@@ -10,9 +10,9 @@ namespace SyncFiles
     {
         public static bool CompareMetadata { get; set; }
         public static bool Simulate { get; set; }
-        public static string[]? Identifiers { get; set; } = null;
+        public static string[]? Identifiers { get; set; }
         public static long Maxsize { get; set; }
-        public static string[]? Excludes { get; set; } = null;
+        public static string[]? Excludes { get; set; }
 
         static void Log(string message, bool verbose = false, ConsoleColor? color = null)
         {
@@ -73,7 +73,7 @@ namespace SyncFiles
             if (Environment.UserInteractive)
             {
                 Log($"{Environment.NewLine}Press Enter to start copying...");
-                Console.ReadLine();
+                _ = Console.ReadLine();
             }
 
             CreateFolders(targetpath, missingfolders);
@@ -215,32 +215,6 @@ namespace SyncFiles
             return;
         }
 
-        static void ShowSlowStatistics(string targetpath, string[] missingfiles)
-        {
-            var existcopycount = 0;
-            var copycount = 0;
-
-            foreach (var row in missingfiles)
-            {
-                var filename = row.Split('\t')[2];
-                var targetpath2 = Path.Combine(targetpath, filename);
-
-                if (File.Exists(targetpath2))
-                {
-                    // file already exist, probably different
-                    existcopycount++;
-                }
-                else
-                {
-                    // file didn't exist in target
-                    copycount++;
-                }
-            }
-
-            Log($"Missing files in target, will be copied: {copycount}");
-            Log($"Different, will be overwritten: {existcopycount}");
-        }
-
         static void CreateFolders(string targetpath, string[] targetfolders)
         {
             foreach (var targetfolder in targetfolders)
@@ -252,7 +226,7 @@ namespace SyncFiles
                     Log($"Creating folder: '{targetfolderfullpath}'");
                     if (!Simulate)
                     {
-                        Directory.CreateDirectory(targetfolderfullpath);
+                        _ = Directory.CreateDirectory(targetfolderfullpath);
                     }
                 }
             }

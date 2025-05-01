@@ -68,10 +68,10 @@ namespace SyncNugetPackages
             public string lpProvider;
         }
 
-        [DllImport("mpr.dll")]
+        [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
         public static extern int WNetAddConnection2(NETRESOURCE netResource, string password, string username, uint flags);
 
-        [DllImport("mpr.dll")]
+        [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
         public static extern int WNetCancelConnection2(string lpName, Int32 dwFlags, bool bForce);
 
         class Myfileinfo
@@ -123,12 +123,12 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
         {
             if (!Directory.Exists(compressedFolder))
             {
-                Log("Compressed folder not found: '" + compressedFolder + "'");
+                Log($"Compressed folder not found: '{compressedFolder}'");
                 return;
             }
             if (!Directory.Exists(extractedFolder))
             {
-                Log("Extracted folder not found: '" + extractedFolder + "'");
+                Log($"Extracted folder not found: '{extractedFolder}'");
                 return;
             }
 
@@ -143,7 +143,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                 @"\C$\Windows\SysWOW64\config\systemprofile\.nuget\packages"
             ];
 
-            var operations = cachePaths.Zip(serverPaths, (string cachePath, string serverPath) => new { cachePath, serverPath });
+            var operations = cachePaths.Zip(serverPaths, (cachePath, serverPath) => new { cachePath, serverPath });
 
             foreach (var operation in operations)
             {
@@ -152,7 +152,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
                 var cachePathOffset = cachePath.EndsWith('\\') ? cachePath.Length : cachePath.Length + 1;
 
-                Log("Gathering local files from " + cachePath + "...");
+                Log($"Gathering local files from {cachePath}...");
                 List<Myfileinfo> filesCache = [.. Directory.GetFiles(cachePath, "*", SearchOption.AllDirectories)
                     .Select(f => new Myfileinfo
                     {
@@ -161,7 +161,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                         hash = ComputeHash(f)
                     })];
 
-                Log("Count: " + filesCache.Count);
+                Log($"Count: {filesCache.Count}");
 
                 Dictionary<string, int> copies = new() { ["local"] = 0 };
                 foreach (var server in servers)
@@ -172,26 +172,26 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                 long copiedsize = 0;
                 foreach (var server in servers)
                 {
-                    var networkPath = @"\\" + server + serverPath;
+                    var networkPath = $"\\\\{server}{serverPath}";
                     var localDrive = "Y:";
 
                     MapDrive(networkPath, localDrive);
 
-                    SyncFolders(cachePath, cachePathOffset, filesCache, localDrive + @"\", server, simulate, verbose, ref copies, out copiedsize);
+                    SyncFolders(cachePath, cachePathOffset, filesCache, $"{localDrive}\\", server, simulate, verbose, ref copies, out copiedsize);
                 }
 
-                Log("Copied files (" + copiedsize + " bytes):");
-                Log("  local: " + copies["local"]);
+                Log($"Copied files ({copiedsize} bytes):");
+                Log($"  local: {copies["local"]}");
                 foreach (var server in servers)
                 {
-                    Log("  " + server + ": " + copies[server]);
+                    Log($"  {server}: {copies[server]}");
                 }
 
                 Log("Unmapping Y:");
                 var result = WNetCancelConnection2("Y:", 1, true);
                 if (result != 0)
                 {
-                    throw new ApplicationException("Couldn't unmap Y:. Error result: " + result);
+                    throw new ApplicationException($"Couldn't unmap Y:. Error result: {result}");
                 }
             }
         }
@@ -202,11 +202,11 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
             if (Directory.Exists(localDrive))
             {
-                Log("Unmapping " + localDrive);
+                Log($"Unmapping {localDrive}");
                 result = WNetCancelConnection2(localDrive, 1, true);
                 if (result != 0)
                 {
-                    throw new ApplicationException("Couldn't unmap " + localDrive + ". Error result: " + result);
+                    throw new ApplicationException($"Couldn't unmap {localDrive}. Error result: {result}");
                 }
             }
 
@@ -223,16 +223,16 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                 lpRemoteName = uncPath
             };
 
-            Log("Mapping " + uncPath + " to " + localDrive);
+            Log($"Mapping {uncPath} to {localDrive}");
             result = WNetAddConnection2(netResource, null, null, 6);
             if (result != 0)
             {
-                throw new ApplicationException("Couldn't map " + uncPath + " to " + localDrive + ". Error result: " + result);
+                throw new ApplicationException($"Couldn't map {uncPath} to {localDrive}. Error result: {result}");
             }
 
             if (!Directory.Exists(localDrive))
             {
-                throw new ApplicationException("Couldn't map " + uncPath + " to " + localDrive + ". Directory not found.");
+                throw new ApplicationException($"Couldn't map {uncPath} to {localDrive}. Directory not found.");
             }
         }
 
@@ -243,7 +243,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
             var offset2 = path2.EndsWith('\\') ? path2.Length : path2.Length + 1;
 
-            Log("***** Gathering files from: " + path2 + " *****");
+            Log($"***** Gathering files from: {path2} *****");
 
             List<Myfileinfo> files2 = [.. Directory.GetFiles(path2, "*", SearchOption.AllDirectories)
                 .SelectMany(f =>
@@ -261,12 +261,12 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                     catch (Exception ex) when (ex is PathTooLongException or DirectoryNotFoundException or NullReferenceException)
                     {
                         infos = [];
-                        Log(f + ": " + ex.Message);
+                        Log($"{f}: {ex.Message}");
                     }
                     return infos;
                 })];
 
-            Log("Server: " + server + ", count: " + files2.Count);
+            Log($"Server: {server}, count: {files2.Count}");
 
             foreach (var file2 in files2)
             {
@@ -282,15 +282,15 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                             {
                                 if (verbose)
                                 {
-                                    Log("Diff file: '" + file2.filename +
-                                        "', size1: " + file1.info.Length +
-                                        ", size2: " + file2.info.Length +
-                                        ", date1: " + file1.info.LastWriteTime.ToString("yyyyMMdd HHmmss") +
-                                        ", date2: " + file2.info.LastWriteTime.ToString("yyyyMMdd HHmmss") +
-                                        ", hash1: " + file1.hash +
-                                        ", hash2: " + file2.hash);
+                                    Log($"Diff file: '{file2.filename}" +
+                                        $"', size1: {file1.info.Length}" +
+                                        $", size2: {file2.info.Length}" +
+                                        $", date1: {file1.info.LastWriteTime:yyyyMMdd HHmmss}" +
+                                        $", date2: {file2.info.LastWriteTime:yyyyMMdd HHmmss}" +
+                                        ", hash1: {file1.hash}" +
+                                        ", hash2: {file2.hash}");
 
-                                    Log("Copying (diff): '" + file2.info.FullName + "' -> '" + file1.info.FullName + "'");
+                                    Log($"Copying (diff): '{file2.info.FullName}' -> '{file1.info.FullName}'");
                                 }
                                 if (!simulate)
                                 {
@@ -310,12 +310,12 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                     {
                         if (verbose)
                         {
-                            Log("Copying (new1): '" + file2.info.FullName + "' -> '" + targetfile + "'");
+                            Log($"Copying (new1): '{file2.info.FullName}' -> '{targetfile}'");
                         }
                         var dir = Path.GetDirectoryName(targetfile);
                         if (!Directory.Exists(dir))
                         {
-                            Directory.CreateDirectory(dir);
+                            _ = Directory.CreateDirectory(dir);
                         }
                         if (!simulate)
                         {
@@ -332,7 +332,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                     }
                     catch (Exception ex) when (ex is PathTooLongException or DirectoryNotFoundException or NullReferenceException)
                     {
-                        Log("Couldn't copy file: '" + file2.info.FullName + "' -> '" + targetfile + "'");
+                        Log($"Couldn't copy file: '{file2.info.FullName}' -> '{targetfile}'");
                         Log(ex.Message);
                     }
                 }
@@ -350,12 +350,12 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                     {
                         if (verbose)
                         {
-                            Log("Copying (new2): '" + file1.info.FullName + "' -> '" + targetfile + "'");
+                            Log($"Copying (new2): '{file1.info.FullName}' -> '{targetfile}'");
                         }
                         var dir = Path.GetDirectoryName(targetfile);
                         if (!Directory.Exists(dir))
                         {
-                            Directory.CreateDirectory(dir);
+                            _ = Directory.CreateDirectory(dir);
                         }
                         if (!simulate)
                         {
@@ -372,7 +372,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
                     }
                     catch (Exception ex) when (ex is PathTooLongException or DirectoryNotFoundException or NullReferenceException)
                     {
-                        Log("Couldn't copy file: '" + file1.info.FullName + "' -> '" + targetfile + "'");
+                        Log($"Couldn't copy file: '{file1.info.FullName}' -> '{targetfile}'");
                         Log(ex.Message);
                     }
                 }
@@ -387,7 +387,7 @@ I think this app needs to be run twice to make sure all servers are synced. ToDo
 
         static void Log(string message)
         {
-            Console.WriteLine(Dns.GetHostName() + ": " + message);
+            Console.WriteLine($"{Dns.GetHostName()}: {message}");
         }
     }
 }

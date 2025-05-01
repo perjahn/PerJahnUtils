@@ -8,8 +8,8 @@ namespace GetMissingWarnings
 {
     class Program
     {
-        private static int _missingfiles = 0;
-        private static int _totalmissing = 0;
+        private static int _missingfiles;
+        private static int _totalmissing;
 
         static void Main(string[] args)
         {

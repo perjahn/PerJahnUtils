@@ -9,28 +9,28 @@ namespace ProjFix
 {
     class Project
     {
-        public string _sln_package { get; set; }
-        public string _sln_shortfilename { get; set; }
-        public string _sln_guid { get; set; }
-        public string _sln_path { get; set; }
+        public string Sln_package { get; set; }
+        public string Sln_shortfilename { get; set; }
+        public string Sln_guid { get; set; }
+        public string Sln_path { get; set; }
 
-        public string _proj_assemblyname { get; set; }
-        public string _proj_guid { get; set; }
-        public string _proj_outputtype { get; set; }  // Not used, yet.
+        public string Proj_assemblyname { get; set; }
+        public string Proj_guid { get; set; }
+        public string Proj_outputtype { get; set; }  // Not used, yet.
 
-        public List<string> _proj_assemblynames { get; set; }  // Compacted into _proj_assemblyname after load.
-        public List<string> _proj_guids { get; set; }  // Compacted into _proj_guid after load.
-        public List<string> _proj_outputtypes { get; set; }  // Compacted into _proj_outputtype after load.
+        public List<string> Proj_assemblynames { get; set; }  // Compacted into _proj_assemblyname after load.
+        public List<string> Proj_guids { get; set; }  // Compacted into _proj_guid after load.
+        public List<string> Proj_outputtypes { get; set; }  // Compacted into _proj_outputtype after load.
 
-        public List<string> _outputpaths { get; set; }
-        public List<AssemblyRef> _references { get; set; }
-        public List<ProjectRef> _projectReferences { get; set; }
+        public List<string> Outputpaths { get; set; }
+        public List<AssemblyRef> References { get; set; }
+        public List<ProjectRef> ProjectReferences { get; set; }
 
-        public bool _modified { get; set; }
+        public bool Modified { get; set; }
 
         public void Restore(string solutionfile)
         {
-            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), _sln_path);
+            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Sln_path);
             var bakfile = $"{fullfilename}.bak.xml";
             if (File.Exists(bakfile))
             {
@@ -65,7 +65,7 @@ namespace ProjFix
 
             try
             {
-                newproj._proj_assemblynames = [.. xdoc
+                newproj.Proj_assemblynames = [.. xdoc
                     .Elements(ns + "Project")
                     .Elements(ns + "PropertyGroup")
                     .Elements(ns + "AssemblyName")
@@ -79,7 +79,7 @@ namespace ProjFix
 
             try
             {
-                newproj._proj_guids = [.. xdoc
+                newproj.Proj_guids = [.. xdoc
                     .Elements(ns + "Project")
                     .Elements(ns + "PropertyGroup")
                     .Elements(ns + "ProjectGuid")
@@ -93,7 +93,7 @@ namespace ProjFix
 
             try
             {
-                newproj._proj_outputtypes = [.. xdoc
+                newproj.Proj_outputtypes = [.. xdoc
                     .Elements(ns + "Project")
                     .Elements(ns + "PropertyGroup")
                     .Elements(ns + "OutputType")
@@ -105,13 +105,13 @@ namespace ProjFix
                 return null;
             }
 
-            newproj._outputpaths = [.. xdoc
+            newproj.Outputpaths = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "PropertyGroup")
                 .Elements(ns + "OutputPath")
                 .Select(el => el.Value)];
 
-            newproj._references = [.. xdoc
+            newproj.References = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "ItemGroup")
                 .Elements(ns + "Reference")
@@ -135,7 +135,7 @@ namespace ProjFix
                     Copylocal = null
                 })];
 
-            newproj._projectReferences = [.. xdoc
+            newproj.ProjectReferences = [.. xdoc
                 .Elements(ns + "Project")
                 .Elements(ns + "ItemGroup")
                 .Elements(ns + "ProjectReference")
@@ -176,52 +176,52 @@ namespace ProjFix
             // _proj_guids         -> _proj_guid
             // _proj_outputtypes   -> _proj_outputtype
 
-            if (_proj_assemblynames.Count > 1)
+            if (Proj_assemblynames.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    $"Warning: Corrupt project file: {_sln_path}, multiple assembly names: '{_proj_assemblynames.Count}', compacting Name elements.");
-                _modified = true;
+                    $"Warning: Corrupt project file: {Sln_path}, multiple assembly names: '{Proj_assemblynames.Count}', compacting Name elements.");
+                Modified = true;
             }
-            if (_proj_assemblynames.Count >= 1)
+            if (Proj_assemblynames.Count >= 1)
             {
-                _proj_assemblyname = _proj_assemblynames[0];
-                _proj_assemblynames = null;
+                Proj_assemblyname = Proj_assemblynames[0];
+                Proj_assemblynames = null;
             }
 
-            if (_proj_guids.Count > 1)
+            if (Proj_guids.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    $"Warning: Corrupt project file: {_sln_path}, multiple guids: '{_proj_guids.Count}', compacting ProjectGuid elements.");
-                _modified = true;
+                    $"Warning: Corrupt project file: {Sln_path}, multiple guids: '{Proj_guids.Count}', compacting ProjectGuid elements.");
+                Modified = true;
             }
-            if (_proj_guids.Count >= 1)
+            if (Proj_guids.Count >= 1)
             {
-                _proj_guid = _proj_guids[0];
-                _proj_guids = null;
+                Proj_guid = Proj_guids[0];
+                Proj_guids = null;
             }
 
-            if (_proj_outputtypes.Count > 1)
+            if (Proj_outputtypes.Count > 1)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                    $"Warning: Corrupt project file: {_sln_path}, multiple output types: '{_proj_outputtypes.Count}', compacting Private elements.");
-                _modified = true;
+                    $"Warning: Corrupt project file: {Sln_path}, multiple output types: '{Proj_outputtypes.Count}', compacting Private elements.");
+                Modified = true;
             }
-            if (_proj_outputtypes.Count >= 1)
+            if (Proj_outputtypes.Count >= 1)
             {
-                _proj_outputtype = _proj_outputtypes[0];
-                _proj_outputtypes = null;
+                Proj_outputtype = Proj_outputtypes[0];
+                Proj_outputtypes = null;
             }
         }
 
         public void CompactRefs()
         {
-            foreach (var assref in _references)
+            foreach (var assref in References)
             {
                 if (assref.Names.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        $"Warning: Corrupt project file: {_sln_path}, reference: '{assref.Include}', compacting Name elements.");
-                    _modified = true;
+                        $"Warning: Corrupt project file: {Sln_path}, reference: '{assref.Include}', compacting Name elements.");
+                    Modified = true;
                 }
                 if (assref.Names.Count >= 1)
                 {
@@ -232,8 +232,8 @@ namespace ProjFix
                 if (assref.Hintpaths.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        $"Warning: Corrupt project file: {_sln_path}, reference: '{assref.Include}', compacting HintPath elements.");
-                    _modified = true;
+                        $"Warning: Corrupt project file: {Sln_path}, reference: '{assref.Include}', compacting HintPath elements.");
+                    Modified = true;
                 }
                 if (assref.Hintpaths.Count >= 1)
                 {
@@ -244,8 +244,8 @@ namespace ProjFix
                 if (assref.Copylocals.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        $"Warning: Corrupt project file: {_sln_path}, reference: '{assref.Include}', compacting Private elements.");
-                    _modified = true;
+                        $"Warning: Corrupt project file: {Sln_path}, reference: '{assref.Include}', compacting Private elements.");
+                    Modified = true;
                 }
                 if (assref.Copylocals.Count >= 1)
                 {
@@ -257,13 +257,13 @@ namespace ProjFix
                 }
             }
 
-            foreach (var projref in _projectReferences)
+            foreach (var projref in ProjectReferences)
             {
                 if (projref.Names.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        $"Warning: Corrupt project file: {_sln_path}, project reference: '{projref.Include}', compacting Name elements.");
-                    _modified = true;
+                        $"Warning: Corrupt project file: {Sln_path}, project reference: '{projref.Include}', compacting Name elements.");
+                    Modified = true;
                 }
                 if (projref.Names.Count >= 1)
                 {
@@ -274,8 +274,8 @@ namespace ProjFix
                 if (projref.Projects.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        $"Warning: Corrupt project file: {_sln_path}, project reference: '{projref.Include}', compacting Project elements.");
-                    _modified = true;
+                        $"Warning: Corrupt project file: {Sln_path}, project reference: '{projref.Include}', compacting Project elements.");
+                    Modified = true;
                 }
                 if (projref.Projects.Count >= 1)
                 {
@@ -286,8 +286,8 @@ namespace ProjFix
                 if (projref.Packages.Count > 1)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Yellow,
-                        $"Warning: Corrupt project file: {_sln_path}, project reference: '{projref.Include}', compacting Package elements.");
-                    _modified = true;
+                        $"Warning: Corrupt project file: {Sln_path}, project reference: '{projref.Include}', compacting Package elements.");
+                    Modified = true;
                 }
                 if (projref.Packages.Count >= 1)
                 {
@@ -301,23 +301,23 @@ namespace ProjFix
         {
             var valid = true;
 
-            if (_sln_guid != null && _proj_guid != null && string.Compare(_sln_guid, _proj_guid, true) != 0)
+            if (Sln_guid != null && Proj_guid != null && string.Compare(Sln_guid, Proj_guid, true) != 0)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                    $"Mismatched guid for project '{_sln_path}': Guid in solution: '{_sln_guid}'. Guid in project: '{_proj_guid}'.");
+                    $"Mismatched guid for project '{Sln_path}': Guid in solution: '{Sln_guid}'. Guid in project: '{Proj_guid}'.");
                 valid = false;
             }
-            if (string.Compare(_sln_shortfilename, Path.GetFileNameWithoutExtension(_sln_path), true) != 0)
+            if (string.Compare(Sln_shortfilename, Path.GetFileNameWithoutExtension(Sln_path), true) != 0)
             {
                 ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                    $"Mismatched name for project '{_sln_path}': Project name in solution: '{_sln_shortfilename}'. File name: '{Path.GetFileNameWithoutExtension(_sln_path)}'.");
+                    $"Mismatched name for project '{Sln_path}': Project name in solution: '{Sln_shortfilename}'. File name: '{Path.GetFileNameWithoutExtension(Sln_path)}'.");
                 valid = false;
             }
 
-            CheckName(_sln_path, _proj_assemblyname);
+            CheckName(Sln_path, Proj_assemblyname);
 
             var afterthis = false;
-            foreach (var proj in projects.OrderBy(p => p._sln_path))
+            foreach (var proj in projects.OrderBy(p => p.Sln_path))
             {
                 if (proj == this)
                 {
@@ -329,21 +329,21 @@ namespace ProjFix
                     continue;
                 }
 
-                if (_proj_assemblyname == proj._proj_assemblyname)
+                if (Proj_assemblyname == proj.Proj_assemblyname)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        $"Error: Projects have identical assembly names: '{_proj_assemblyname}': '{_sln_path}' and '{proj._sln_path}'.");
+                        $"Error: Projects have identical assembly names: '{Proj_assemblyname}': '{Sln_path}' and '{proj.Sln_path}'.");
                     valid = false;
                 }
             }
 
-            foreach (var assref in _references)
+            foreach (var assref in References)
             {
-                if (string.Compare(assref.Shortinclude, _proj_assemblyname, true) == 0 ||
-                    string.Compare(assref.Shortinclude, _sln_shortfilename, true) == 0)
+                if (string.Compare(assref.Shortinclude, Proj_assemblyname, true) == 0 ||
+                    string.Compare(assref.Shortinclude, Sln_shortfilename, true) == 0)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        $"Error: Project have reference to itself: '{_sln_path}'. Reference: '{assref.Shortinclude}'.");
+                        $"Error: Project have reference to itself: '{Sln_path}'. Reference: '{assref.Shortinclude}'.");
                     valid = false;
                 }
 
@@ -357,39 +357,39 @@ namespace ProjFix
                     if (!exts.Any(e => path.EndsWith(e, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                            $"Error: Invalid reference type: '{_sln_path}'. Ext: '{Path.GetExtension(path)}'. Path: '{path}'.");
+                            $"Error: Invalid reference type: '{Sln_path}'. Ext: '{Path.GetExtension(path)}'. Path: '{path}'.");
                         valid = false;
                     }
                 }
             }
 
-            foreach (var projref in _projectReferences)
+            foreach (var projref in ProjectReferences)
             {
-                if (string.Compare(projref.Shortinclude, _proj_assemblyname, true) == 0 ||
-                    string.Compare(projref.Shortinclude, _sln_shortfilename, true) == 0)
+                if (string.Compare(projref.Shortinclude, Proj_assemblyname, true) == 0 ||
+                    string.Compare(projref.Shortinclude, Sln_shortfilename, true) == 0)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        $"Error: Project have reference to itself: '{_sln_path}'. Project reference: '{projref.Shortinclude}'.");
+                        $"Error: Project have reference to itself: '{Sln_path}'. Project reference: '{projref.Shortinclude}'.");
                     valid = false;
                 }
 
                 // This might bail on names which later could have been converted
                 // to assembly references. In those cases a warning should have been enough.
                 var shortinclude = projref.Shortinclude;
-                if (projects.Any(p => string.Compare(p._sln_shortfilename, shortinclude, true) == 0) &&
-                    !projects.Any(p => string.Compare(p._sln_shortfilename, shortinclude, false) == 0))
+                if (projects.Any(p => string.Compare(p.Sln_shortfilename, shortinclude, true) == 0) &&
+                    !projects.Any(p => string.Compare(p.Sln_shortfilename, shortinclude, false) == 0))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        $"Error: Reference has mismatched casing: Project: '{_sln_path} '. Project reference: '{shortinclude}'. Target project: '{projects.First(p => string.Compare(p._sln_shortfilename, shortinclude, true) == 0)._sln_shortfilename}'.");
+                        $"Error: Reference has mismatched casing: Project: '{Sln_path} '. Project reference: '{shortinclude}'. Target project: '{projects.First(p => string.Compare(p.Sln_shortfilename, shortinclude, true) == 0).Sln_shortfilename}'.");
                     valid = false;
                 }
 
                 // Project references which we need must atleast exist in file system.
-                var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), projref.Include);
-                if (!projects.Any(p => p._sln_shortfilename == projref.Shortinclude) && !File.Exists(fullfilename))
+                var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(Sln_path), projref.Include);
+                if (!projects.Any(p => p.Sln_shortfilename == projref.Shortinclude) && !File.Exists(fullfilename))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Red,
-                        $"Error: Project reference does not exist: Project: '{_sln_path}'. Project reference path: '{fullfilename}'.");
+                        $"Error: Project reference does not exist: Project: '{Sln_path}'. Project reference path: '{fullfilename}'.");
                     valid = false;
                 }
             }
@@ -453,12 +453,12 @@ namespace ProjFix
 
         public bool Fix(string solutionfile, List<Project> projects, List<string> hintpaths, bool removeversion)
         {
-            ConsoleHelper.WriteLineDeferred($"-=-=- Fixing project: '{_sln_path}' -=-=-");
+            ConsoleHelper.WriteLineDeferred($"-=-=- Fixing project: '{Sln_path}' -=-=-");
 
             // ass -> proj
-            foreach (var assref in _references.OrderBy(r => r.Shortinclude))
+            foreach (var assref in References.OrderBy(r => r.Shortinclude))
             {
-                var exists = projects.Any(p => p._proj_assemblyname == assref.Shortinclude);
+                var exists = projects.Any(p => p.Proj_assemblyname == assref.Shortinclude);
                 if (exists)
                 {
                     var projref = CreateProjectReferenceFromReference(projects, assref);
@@ -471,16 +471,16 @@ namespace ProjFix
                         ConsoleHelper.WriteLine($"  ref -> projref: '{assref.Shortinclude}' -> '{projref.Shortinclude}'.", true);
                     }
 
-                    _projectReferences.Add(projref);
-                    _references.Remove(assref);
-                    _modified = true;
+                    ProjectReferences.Add(projref);
+                    _ = References.Remove(assref);
+                    Modified = true;
                 }
             }
 
             // proj -> ass
-            foreach (var projref in _projectReferences.OrderBy(r => r.Shortinclude))
+            foreach (var projref in ProjectReferences.OrderBy(r => r.Shortinclude))
             {
-                var exists = projects.Any(p => p._sln_shortfilename == projref.Shortinclude);
+                var exists = projects.Any(p => p.Sln_shortfilename == projref.Shortinclude);
                 if (!exists)
                 {
                     AssemblyRef assref = CreateReferenceFromProjectReference(solutionfile, projects, hintpaths, projref);
@@ -493,21 +493,21 @@ namespace ProjFix
                         ConsoleHelper.WriteLine($"  projref -> ref: '{projref.Shortinclude}' -> '{assref.Shortinclude}'.", true);
                     }
 
-                    _references.Add(assref);
-                    _projectReferences.Remove(projref);
-                    _modified = true;
+                    References.Add(assref);
+                    _ = ProjectReferences.Remove(projref);
+                    Modified = true;
                 }
             }
 
             // Fix hint paths
-            foreach (var assref in _references.OrderBy(r => r.Shortinclude))
+            foreach (var assref in References.OrderBy(r => r.Shortinclude))
             {
                 FixHintPath(solutionfile, hintpaths, assref);
             }
 
             if (removeversion)
             {
-                foreach (var assref in _references.OrderBy(r => r.Shortinclude))
+                foreach (var assref in References.OrderBy(r => r.Shortinclude))
                 {
                     var shortref = GetShortRef(assref.Include);
                     if (shortref != assref.Include)
@@ -516,7 +516,7 @@ namespace ProjFix
                         assref.Include = shortref;
                         assref.Shortinclude = shortref;
 
-                        _modified = true;
+                        Modified = true;
                     }
                 }
             }
@@ -531,7 +531,7 @@ namespace ProjFix
             Project referencedProject;
             try
             {
-                referencedProject = projects.SingleOrDefault(p => p._proj_assemblyname == assref.Shortinclude);
+                referencedProject = projects.SingleOrDefault(p => p.Proj_assemblyname == assref.Shortinclude);
             }
             catch (InvalidOperationException)
             {
@@ -540,15 +540,15 @@ namespace ProjFix
                 throw;
             }
 
-            var relpath = FileHelper.GetRelativePath(_sln_path, referencedProject._sln_path);
+            var relpath = FileHelper.GetRelativePath(Sln_path, referencedProject.Sln_path);
 
             return new ProjectRef
             {
                 Include = relpath,
-                Shortinclude = referencedProject._sln_shortfilename,
-                Name = referencedProject._sln_shortfilename,
-                Project = referencedProject._proj_guid,
-                Package = referencedProject._sln_package,
+                Shortinclude = referencedProject.Sln_shortfilename,
+                Name = referencedProject.Sln_shortfilename,
+                Project = referencedProject.Proj_guid,
+                Package = referencedProject.Sln_package,
                 Names = null,
                 Projects = null,
                 Packages = null
@@ -559,7 +559,7 @@ namespace ProjFix
         {
             // Look for assembly name in external project file. The project file might not exist though.
 
-            TryToRetrieveAssemblyInfoOfProjectReference(solutionfile, projects, projref, out string assemblyname, out string outputtype);
+            _ = TryToRetrieveAssemblyInfoOfProjectReference(solutionfile, projects, projref, out string assemblyname, out string outputtype);
 
             // Guess assembly name = proj name
             assemblyname ??= projref.Shortinclude;
@@ -624,7 +624,7 @@ namespace ProjFix
                     // Ok - replacing null with new hint path
                     ConsoleHelper.WriteLine($"  Found assembly in hintpath: '{assref.Shortinclude}': -> '{asspath_new}'. Ext: '{ext}'.", true);
                     assref.Hintpath = asspath_new;
-                    _modified = true;
+                    Modified = true;
                 }
             }
             else
@@ -638,13 +638,13 @@ namespace ProjFix
 
                         ConsoleHelper.WriteLine($"  Didn't find gac assembly in any specified hintpath: '{assref.Shortinclude}'. Removing hintpath: '{assref.Hintpath}'.", true);
                         assref.Hintpath = null;
-                        _modified = true;
+                        Modified = true;
                     }
                     else
                     {
                         var asspath = Path.IsPathRooted(assref.Hintpath)
                             ? assref.Hintpath
-                            : Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), assref.Hintpath);
+                            : Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(Sln_path), assref.Hintpath);
 
                         if (!File.Exists(asspath))
                         {
@@ -660,7 +660,7 @@ namespace ProjFix
                     {
                         ConsoleHelper.WriteLine($"  Found assembly in specified hintpath: '{assref.Shortinclude}': '{assref.Hintpath}' -> '{asspath_new}'.", true);
                         assref.Hintpath = asspath_new;
-                        _modified = true;
+                        Modified = true;
                     }
                 }
             }
@@ -674,7 +674,7 @@ namespace ProjFix
             }
 
             string asspath = null;
-            var projfilepath = Path.Combine(Path.GetDirectoryName(solutionfile), _sln_path);
+            var projfilepath = Path.Combine(Path.GetDirectoryName(solutionfile), Sln_path);
 
             foreach (var path in hintpaths)
             {
@@ -695,7 +695,7 @@ namespace ProjFix
         {
             XDocument xdoc;
 
-            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), projref.Include);
+            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(Sln_path), projref.Include);
 
             ConsoleHelper.WriteLine($"  Loading external project: '{fullfilename}'.", true);
 
@@ -739,7 +739,7 @@ namespace ProjFix
             {
                 // Caution: External project (its assembly name) may conflict with a loaded project name
                 var afterthis = false;
-                foreach (var proj in projects.OrderBy(p => p._sln_path))
+                foreach (var proj in projects.OrderBy(p => p.Sln_path))
                 {
                     if (proj == this)
                     {
@@ -751,9 +751,9 @@ namespace ProjFix
                         continue;
                     }
 
-                    if (assemblyname == proj._proj_assemblyname)
+                    if (assemblyname == proj.Proj_assemblyname)
                     {
-                        ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Error: Projects have identical assembly names: '{assemblyname}': '{fullfilename}' and '{proj._sln_path}'.");
+                        ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Error: Projects have identical assembly names: '{assemblyname}': '{fullfilename}' and '{proj.Sln_path}'.");
                         throw new Exception("Error");
                     }
                 }
@@ -765,7 +765,7 @@ namespace ProjFix
         public void WriteProject(string solutionfile, bool simulate, bool nobackup)
         {
             XDocument xdoc;
-            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), _sln_path);
+            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Sln_path);
 
             try
             {
@@ -777,7 +777,7 @@ namespace ProjFix
                 return;
             }
 
-            ConsoleHelper.WriteLineDeferred($"-=-=- Saving project: '{_sln_path}' -=-=-");
+            ConsoleHelper.WriteLineDeferred($"-=-=- Saving project: '{Sln_path}' -=-=-");
 
             UpdateReferences(xdoc);
             UpdateProjectReferences(xdoc);
@@ -817,7 +817,7 @@ namespace ProjFix
             // Remove references
             foreach (var reference in references)
             {
-                if (!_references.Any(r => r.Shortinclude == reference))
+                if (!References.Any(r => r.Shortinclude == reference))
                 {
                     XElement[] refs = [.. xdoc
                         .Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "Reference")
@@ -831,7 +831,7 @@ namespace ProjFix
             }
 
             // Add/update references
-            foreach (var assref in _references.OrderBy(r => r.Shortinclude))
+            foreach (var assref in References.OrderBy(r => r.Shortinclude))
             {
                 if (!references.Contains(assref.Shortinclude))
                 {
@@ -858,7 +858,7 @@ namespace ProjFix
             // Remove project references
             foreach (var reference in projectReferences)
             {
-                if (!_projectReferences.Any(r => r.Shortinclude == reference))
+                if (!ProjectReferences.Any(r => r.Shortinclude == reference))
                 {
                     XElement[] refs = [.. xdoc
                         .Element(ns + "Project").Elements(ns + "ItemGroup").Elements(ns + "ProjectReference")
@@ -872,7 +872,7 @@ namespace ProjFix
             }
 
             // Add/update project references
-            foreach (var projref in _projectReferences.OrderBy(r => r.Shortinclude))
+            foreach (var projref in ProjectReferences.OrderBy(r => r.Shortinclude))
             {
                 if (!projectReferences.Contains(projref.Shortinclude))
                 {

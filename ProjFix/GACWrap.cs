@@ -1,7 +1,8 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
-namespace System.GACManagedAccess
+namespace ProjFix
 {
     //-------------------------------------------------------------
     // Interfaces defined by fusion
@@ -186,15 +187,15 @@ namespace System.GACManagedAccess
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public class InstallReference(Guid guid, string id, string data)
+    public class InstallReference(Guid guidx, string id, string data)
     {
         public Guid GuidScheme => guidScheme;
         public string Identifier => identifier;
         public string Description => description;
 
-        readonly int cbSize = 2 * IntPtr.Size + 16 + (id.Length + data.Length) * 2;
-        readonly int flags = 0;
-        readonly Guid guidScheme = guid;
+        readonly int cbSize = (2 * IntPtr.Size) + 16 + ((id.Length + data.Length) * 2);
+        readonly int flags;
+        readonly Guid guidScheme = guidx;
 
         [MarshalAs(UnmanagedType.LPWStr)]
         readonly string identifier = id;
@@ -215,19 +216,19 @@ namespace System.GACManagedAccess
     }
 
     [ComVisible(false)]
-    public class InstallReferenceGuid
+    public static class InstallReferenceGuid
     {
-        public static bool IsValidGuidScheme(Guid guid)
+        public static bool IsValidGuidScheme(Guid guidx)
         {
-            return guid.Equals(UninstallSubkeyGuid) || guid.Equals(FilePathGuid) || guid.Equals(OpaqueGuid) || guid.Equals(Guid.Empty);
+            return guidx.Equals(UninstallSubkeyGuid) || guidx.Equals(FilePathGuid) || guidx.Equals(OpaqueGuid) || guidx.Equals(Guid.Empty);
         }
 
-        public readonly static Guid UninstallSubkeyGuid = new("8cedc215-ac4b-488b-93c0-a50a49cb2fb8");
-        public readonly static Guid FilePathGuid = new("b02f9d65-fb77-4f7a-afa5-b391309f11c9");
-        public readonly static Guid OpaqueGuid = new("2ec93463-b0c3-45e1-8364-327e96aea856");
+        public static readonly Guid UninstallSubkeyGuid = new("8cedc215-ac4b-488b-93c0-a50a49cb2fb8");
+        public static readonly Guid FilePathGuid = new("b02f9d65-fb77-4f7a-afa5-b391309f11c9");
+        public static readonly Guid OpaqueGuid = new("2ec93463-b0c3-45e1-8364-327e96aea856");
         // these GUID cannot be used for installing into GAC.
-        public readonly static Guid MsiGuid = new("25df0fc1-7f97-4070-add7-4b13bbfd7cb8");
-        public readonly static Guid OsInstallGuid = new("d16d444c-56d8-11d5-882d-0080c847b195");
+        public static readonly Guid MsiGuid = new("25df0fc1-7f97-4070-add7-4b13bbfd7cb8");
+        public static readonly Guid OsInstallGuid = new("d16d444c-56d8-11d5-882d-0080c847b195");
     }
 
     [ComVisible(false)]
@@ -239,7 +240,7 @@ namespace System.GACManagedAccess
             {
                 if (!InstallReferenceGuid.IsValidGuidScheme(reference.GuidScheme))
                 {
-                    throw new ArgumentException("Invalid reference guid.", "guid");
+                    throw new ArgumentException("Invalid reference guid.");
                 }
             }
 
@@ -265,7 +266,7 @@ namespace System.GACManagedAccess
             {
                 if (!InstallReferenceGuid.IsValidGuidScheme(reference.GuidScheme))
                 {
-                    throw new ArgumentException("Invalid reference guid.", "guid");
+                    throw new ArgumentException("Invalid reference guid.");
                 }
             }
 
@@ -287,7 +288,7 @@ namespace System.GACManagedAccess
         {
             if (assemblyName == null)
             {
-                throw new ArgumentException("Invalid name", "assemblyName");
+                throw new ArgumentException("Invalid name");
             }
 
             AssemblyInfo aInfo = new()
@@ -312,10 +313,10 @@ namespace System.GACManagedAccess
     }
 
     [ComVisible(false)]
-    public class AssemblyCacheEnum
+    public class AssemblyCacheEnumx
     {
         // null means enumerate all the assemblies
-        public AssemblyCacheEnum(string assemblyName)
+        public AssemblyCacheEnumx(string assemblyName)
         {
             IAssemblyName fusionName = null;
             var hr = 0;
@@ -383,57 +384,8 @@ namespace System.GACManagedAccess
             return sDisplayName.ToString();
         }
 
-        private IAssemblyEnum m_AssemblyEnum = null;
+        private IAssemblyEnum m_AssemblyEnum;
         private bool done;
-    }
-
-    public class AssemblyCacheInstallReferenceEnum
-    {
-        public AssemblyCacheInstallReferenceEnum(string assemblyName)
-        {
-            var hr = Utils.CreateAssemblyNameObject(
-                out IAssemblyName fusionName,
-                assemblyName,
-                CreateAssemblyNameObjectFlags.CANOF_PARSE_DISPLAY_NAME,
-                IntPtr.Zero);
-
-            if (hr >= 0)
-            {
-                hr = Utils.CreateInstallReferenceEnum(out refEnum, fusionName, 0, IntPtr.Zero);
-            }
-            if (hr < 0)
-            {
-                Marshal.ThrowExceptionForHR(hr);
-            }
-        }
-
-        public InstallReference GetNextReference()
-        {
-            var hr = refEnum.GetNextInstallReferenceItem(out IInstallReferenceItem item, 0, IntPtr.Zero);
-            if ((uint)hr == 0x80070103)
-            {
-                // ERROR_NO_MORE_ITEMS
-                return null;
-            }
-
-            if (hr < 0)
-            {
-                Marshal.ThrowExceptionForHR(hr);
-            }
-
-            InstallReference instRef = new(Guid.Empty, string.Empty, string.Empty);
-
-            hr = item.GetReference(out IntPtr refData, 0, IntPtr.Zero);
-            if (hr < 0)
-            {
-                Marshal.ThrowExceptionForHR(hr);
-            }
-
-            Marshal.PtrToStructure(refData, instRef);
-            return instRef;
-        }
-
-        private IInstallReferenceEnum refEnum;
     }
 
     internal class Utils

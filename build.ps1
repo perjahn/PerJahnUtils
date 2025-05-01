@@ -9,11 +9,11 @@ function Main() {
 
     ./prebuild.ps1
 
-    Write-Host ("*"*100) -f Cyan
+    Write-Host ("*" * 100) -f Cyan
 
-    dotnet build all.build -c Release
+    dotnet publish *.sln -c Release --runtime linux-x64
 
-    Write-Host ("*"*100) -f Cyan
+    Write-Host ("*" * 100) -f Cyan
 
     ./postbuild.ps1
 

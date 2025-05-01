@@ -17,7 +17,7 @@ namespace gethash
 
             var filename = args[0];
 
-            string filehash = GetHash(filename);
+            var filehash = GetHash(filename);
 
             Console.WriteLine($"Hash: {filehash}");
 
@@ -29,7 +29,7 @@ namespace gethash
             Console.WriteLine($"Reading: '{filename}'");
             using var stream = File.OpenRead(filename);
 
-            int blocksize = 64 * 1024 * 1024;
+            var blocksize = 64 * 1024 * 1024;
 
             var buf = new byte[blocksize];
 
@@ -43,22 +43,22 @@ namespace gethash
                 }
 
                 Console.Write('.');
-                int bytesRead = stream.Read(buf, 0, blocksize);
+                var bytesRead = stream.Read(buf, 0, blocksize);
                 if (bytesRead < blocksize)
                 {
                     Console.WriteLine($"Tried to read {blocksize} bytes, got {bytesRead} bytes.");
                 }
-                sha256Hash.TransformBlock(buf, 0, bytesRead, null, 0);
+                _ = sha256Hash.TransformBlock(buf, 0, bytesRead, null, 0);
             }
             Console.WriteLine();
 
-            sha256Hash.TransformFinalBlock(buf, 0, 0);
+            _ = sha256Hash.TransformFinalBlock(buf, 0, 0);
 
             StringBuilder builder = new();
 
-            for (int i = 0; i < sha256Hash.Hash.Length; i++)
+            for (var i = 0; i < sha256Hash.Hash.Length; i++)
             {
-                builder.Append(sha256Hash.Hash[i].ToString("x2"));
+                _ = builder.Append(sha256Hash.Hash[i].ToString("x2"));
             }
 
             return builder.ToString();

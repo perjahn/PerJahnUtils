@@ -6,18 +6,18 @@ namespace CreatePublish
 {
     class Solution(string solutionfile)
     {
-        private readonly string _solutionfile = solutionfile;
+        private readonly string Solutionfile = solutionfile;
 
         public List<Project> LoadProjects()
         {
             string[] rows;
             try
             {
-                rows = File.ReadAllLines(_solutionfile);
+                rows = File.ReadAllLines(Solutionfile);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
             {
-                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{_solutionfile}': {ex.Message}");
+                ConsoleHelper.ColorWrite(ConsoleColor.Red, $"Couldn't load solution: '{Solutionfile}': {ex.Message}");
                 return null;
             }
 
@@ -47,8 +47,8 @@ namespace CreatePublish
 
                         projects.Add(new Project()
                         {
-                            _sln_shortfilename = shortfilename,
-                            _sln_path = path
+                            Sln_shortfilename = shortfilename,
+                            Sln_path = path
                         });
                     }
                 }
@@ -58,16 +58,16 @@ namespace CreatePublish
 
             foreach (var p in projects)
             {
-                var p2 = Project.LoadProject(_solutionfile, p._sln_path);
+                var p2 = Project.LoadProject(Solutionfile, p.Sln_path);
                 if (p2 == null)
                 {
                     error = true;
                     continue;
                 }
 
-                ConsoleHelper.WriteLine($"sln_shortfilename: '{p._sln_shortfilename}', sln_path: '{p._sln_path}'.", true);
+                ConsoleHelper.WriteLine($"sln_shortfilename: '{p.Sln_shortfilename}', sln_path: '{p.Sln_path}'.", true);
 
-                p._ProjectTypeGuids = p2._ProjectTypeGuids;
+                p.ProjectTypeGuids = p2.ProjectTypeGuids;
             }
 
             if (error)

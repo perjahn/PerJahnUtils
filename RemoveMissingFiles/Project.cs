@@ -9,10 +9,10 @@ namespace RemoveMissingFiles
 {
     class Project
     {
-        public string _sln_package { get; set; }
-        public string _sln_path { get; set; }
-        public List<string> _allfiles { get; set; }
-        public int _removedfiles { get; set; }
+        public string Sln_package { get; set; }
+        public string Sln_path { get; set; }
+        public List<string> Allfiles { get; set; }
+        public int Removedfiles { get; set; }
 
         private static string[] excludedtags = [
             "Reference", "Folder", "Import", "Service", "BootstrapperPackage", "CodeAnalysisDependentAssemblyPaths",
@@ -38,7 +38,7 @@ namespace RemoveMissingFiles
 
             // File names are, believe it or not, percent encoded. Although space is encoded as space, not as +.
 
-            newproj._allfiles = [.. xdoc
+            newproj.Allfiles = [.. xdoc
                 .Element(ns + "Project").Elements(ns + "ItemGroup").Elements()
                 .Where(el => el.Attribute("Include") != null && !excludedtags.Contains(el.Name.LocalName))
                 .OrderBy(el => el.Attribute("Include").Value)
@@ -51,14 +51,14 @@ namespace RemoveMissingFiles
         {
             List<string> existingfiles = [];
 
-            foreach (var include in _allfiles)
+            foreach (var include in Allfiles)
             {
                 // Files must exist in file system.
-                var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(_sln_path), include);
+                var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Path.GetDirectoryName(Sln_path), include);
                 if (!File.Exists(fullfilename))
                 {
-                    ConsoleHelper.WriteLineColor($"'{_sln_path}' --> '{include}'", ConsoleColor.Red);
-                    _removedfiles++;
+                    ConsoleHelper.WriteLineColor($"'{Sln_path}' --> '{include}'", ConsoleColor.Red);
+                    Removedfiles++;
                 }
                 else
                 {
@@ -66,13 +66,13 @@ namespace RemoveMissingFiles
                 }
             }
 
-            _allfiles = existingfiles;
+            Allfiles = existingfiles;
         }
 
         public void WriteProject(string solutionfile, bool simulate)
         {
             XDocument xdoc;
-            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), _sln_path);
+            var fullfilename = Path.Combine(Path.GetDirectoryName(solutionfile), Sln_path);
 
             try
             {
@@ -108,7 +108,7 @@ namespace RemoveMissingFiles
             {
                 var filename = Uri.UnescapeDataString(fileitem.Attribute("Include").Value);
 
-                if (!_allfiles.Contains(filename))
+                if (!Allfiles.Contains(filename))
                 {
                     //Console.WriteLine($"Removing file: '{filename}'");
                     fileitem.Remove();

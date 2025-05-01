@@ -35,7 +35,7 @@ namespace GatherReferencedAssemblies
             if (pause && Environment.UserInteractive)
             {
                 Console.WriteLine("\nPress any key to continue...");
-                Console.ReadKey();
+                _ = Console.ReadKey();
             }
         }
 

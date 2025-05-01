@@ -9,13 +9,13 @@ namespace PopulateNugetCache
     {
         public enum OperationMode { copy, move }
 
-        public bool Dryrun { get; set; } = false;
+        public bool Dryrun { get; set; }
         public OperationMode Operation { get; set; } = OperationMode.copy;
-        public bool Verbose { get; set; } = false;
+        public bool Verbose { get; set; }
 
-        long statFolders = 0;
-        long statFiles = 0;
-        long statFilesSize = 0;
+        long statFolders;
+        long statFiles;
+        long statFilesSize;
 
         public void PopulateNugetCache(string sourceRootFolder)
         {
@@ -162,7 +162,7 @@ namespace PopulateNugetCache
                     Log($"Creating folder: '{parentFolder}'", verbose: true);
                     if (!Dryrun)
                     {
-                        Directory.CreateDirectory(parentFolder);
+                        _ = Directory.CreateDirectory(parentFolder);
                     }
                 }
 
@@ -189,7 +189,7 @@ namespace PopulateNugetCache
                 Log($"Creating folder: '{targetRootFolder}'", verbose: true);
                 if (!Dryrun)
                 {
-                    Directory.CreateDirectory(targetRootFolder);
+                    _ = Directory.CreateDirectory(targetRootFolder);
                 }
             }
         }
@@ -203,7 +203,7 @@ namespace PopulateNugetCache
                 Log($"Creating folder: '{destDirName}'", verbose: true);
                 if (!Dryrun)
                 {
-                    Directory.CreateDirectory(destDirName);
+                    _ = Directory.CreateDirectory(destDirName);
                 }
             }
 
@@ -213,7 +213,7 @@ namespace PopulateNugetCache
                 Log($"Copying file: '{file.FullName}' -> '{temppath}'", verbose: true);
                 if (!Dryrun)
                 {
-                    file.CopyTo(temppath);
+                    _ = file.CopyTo(temppath);
                 }
             }
 

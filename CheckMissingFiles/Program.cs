@@ -18,7 +18,7 @@ namespace CheckMissingFiles
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine($"{Environment.NewLine}Press any key to continue...");
-                Console.ReadKey();
+                _ = Console.ReadKey();
             }
 
             return success;
@@ -83,7 +83,7 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
                 if (removeFiles.Count >= 1)
                 {
                     ConsoleHelper.WriteLine($"Excluding {removeFiles.Count} solutions: '{excludeFile}'");
-                    solutionFiles.RemoveAll(f => Path.GetFileName(f) == excludeFile);
+                    _ = solutionFiles.RemoveAll(f => Path.GetFileName(f) == excludeFile);
                 }
                 else
                 {
@@ -258,9 +258,9 @@ Example: CheckMissingFiles -eHello2.sln,Hello3.sln hello*.sln";
 
             var parseError = projects.Any(p => p.ParseError);
 
-            var missingfilesError = projects.Select(p => p.MissingfilesError).Sum();
-            var missingfilesWarning = projects.Select(p => p.MissingfilesWarning).Sum();
-            var excessfiles = projects.Select(p => p.Excessfiles).Sum();
+            var missingfilesError = projects.Sum(p => p.MissingfilesError);
+            var missingfilesWarning = projects.Sum(p => p.MissingfilesWarning);
+            var excessfiles = projects.Sum(p => p.Excessfiles);
 
             var msg = $"Parsed {projects.Count} projects, found";
 

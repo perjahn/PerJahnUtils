@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -25,31 +26,66 @@ namespace ExportDataTable
 
         static void Export(string connstr, string tablename, string filename, string sortcol, int batchsize)
         {
-            var watch = Stopwatch.StartNew();
+            using MySqlConnection cn = new(connstr);
+            cn.Open();
 
-            using Db mydb = new(connstr);
+            Export2(cn, tablename, filename, sortcol, batchsize);
+
+            cn.Close();
+        }
+
+        static void Export2(MySqlConnection cn, string tablename, string filename, string sortcol, int batchsize)
+        {
+            var watch = Stopwatch.StartNew();
 
             for (var row = 0; ;)
             {
                 if (row % batchsize != 0)
                 {
-                    Console.WriteLine(string.Empty + (int)watch.Elapsed.TotalSeconds + $": Got {row} rows.");
+                    Console.WriteLine($"{(int)watch.Elapsed.TotalSeconds}: Got {row} rows.");
                     return;
                 }
 
-                var sql = $"select * from `{tablename}` order by `{sortcol}` limit {row},{batchsize}";
+                var sql = "select * from @tablename order by @sortcol limit @row,@batchsize";
 
                 List<string> rows = [];
 
-                using MySqlDataReader reader = mydb.ExecuteReaderSQL(sql);
+                using var cmd = cn.CreateCommand();
+
+                cmd.Connection = cn;
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = sql;
+                cmd.CommandTimeout = 600;
+
+                var pTableName = cmd.CreateParameter();
+                pTableName.ParameterName = "tablename";
+                pTableName.Value = tablename;
+                _ = cmd.Parameters.Add(pTableName);
+
+                var pSortCol = cmd.CreateParameter();
+                pSortCol.ParameterName = "sortcol";
+                pSortCol.Value = sortcol;
+                _ = cmd.Parameters.Add(pSortCol);
+
+                var pRow = cmd.CreateParameter();
+                pRow.ParameterName = "row";
+                pRow.Value = row;
+                _ = cmd.Parameters.Add(pRow);
+
+                var pBatchSize = cmd.CreateParameter();
+                pBatchSize.ParameterName = "batchsize";
+                pBatchSize.Value = batchsize;
+                _ = cmd.Parameters.Add(pBatchSize);
+
+                using MySqlDataReader reader = cmd.ExecuteReader();
 
                 if (!reader.HasRows)
                 {
-                    Console.WriteLine(string.Empty + (int)watch.Elapsed.TotalSeconds + $": Got {row} rows.");
+                    Console.WriteLine($"{(int)watch.Elapsed.TotalSeconds}: Got {row} rows.");
                     return;
                 }
 
-                Console.WriteLine(string.Empty + (int)watch.Elapsed.TotalSeconds + ": Got rows.");
+                Console.WriteLine($"{(int)watch.Elapsed.TotalSeconds}: Got rows.");
 
                 while (reader.Read())
                 {
@@ -59,22 +95,22 @@ namespace ExportDataTable
                     {
                         if (reader.IsDBNull(col))
                         {
-                            Console.WriteLine(string.Empty + (int)watch.Elapsed.TotalSeconds + $": row {row}, column {col} is null");
+                            Console.WriteLine($"{(int)watch.Elapsed.TotalSeconds}: row {row}, column {col} is null");
                             if (col != 0)
                             {
-                                sb.Append('\t');
+                                _ = sb.Append('\t');
                             }
                         }
                         else
                         {
                             if (col == 0)
                             {
-                                sb.Append(reader[col]);
+                                _ = sb.Append(reader[col]);
                             }
                             else
                             {
-                                sb.Append('\t');
-                                sb.Append(reader[col]);
+                                _ = sb.Append('\t');
+                                _ = sb.Append(reader[col]);
                             }
                         }
                     }
@@ -85,7 +121,7 @@ namespace ExportDataTable
                 }
 
                 File.AppendAllLines(filename, rows);
-                Console.WriteLine(string.Empty + (int)watch.Elapsed.TotalSeconds + $": Wrote {row} rows.");
+                Console.WriteLine($"{(int)watch.Elapsed.TotalSeconds}: Wrote {row} rows.");
 
                 Thread.Sleep(1000);
             }

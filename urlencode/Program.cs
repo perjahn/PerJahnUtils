@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace urldecode
+namespace urlencode
 {
     class Program
     {

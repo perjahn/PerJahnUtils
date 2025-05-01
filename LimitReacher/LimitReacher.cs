@@ -62,11 +62,11 @@ Value should be parsable to double.");
 
             double count = values.Length;
 
-            var ssx = sumxsq - sumx * sumx / count;
-            var ssy = sumysq - sumy * sumy / count;
-            var sco = sumcodev - sumx * sumy / count;
+            var ssx = sumxsq - (sumx * sumx / count);
+            var ssy = sumysq - (sumy * sumy / count);
+            var sco = sumcodev - (sumx * sumy / count);
 
-            var yintercept = sumy / count - sco / ssx * sumx / count;
+            var yintercept = (sumy / count) - (sco / ssx * sumx / count);
 
             return yintercept;
         }

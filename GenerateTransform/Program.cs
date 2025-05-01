@@ -234,6 +234,9 @@ transfile:   Transformation output file that will be created.");
                                 parent.Add(newel);
                                 break;
                             }
+
+                        default:
+                            break;
                     }
                 }
             }

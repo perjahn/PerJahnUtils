@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -173,7 +174,7 @@ Optional flags:
                 if (_WinDiff)
                 {
                     Console.WriteLine($"Diffing: '{file1}' and '{file2}'");
-                    System.Diagnostics.Process.Start(windiffpath, $"\"{outfile1}\" \"{outfile2}\"");
+                    _ = Process.Start(windiffpath, $"\"{outfile1}\" \"{outfile2}\"");
                 }
             }
 

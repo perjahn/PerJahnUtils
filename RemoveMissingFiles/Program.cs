@@ -16,7 +16,7 @@ namespace RemoveMissingFiles
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine($"{Environment.NewLine}Press any key to continue...");
-                Console.ReadKey(true);
+                _ = Console.ReadKey(true);
             }
 
             return result;

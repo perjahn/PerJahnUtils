@@ -29,7 +29,7 @@ namespace CreateSolution
             if (Environment.UserInteractive && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine("Press any key to continue...");
-                Console.ReadKey();
+                _ = Console.ReadKey();
             }
         }
 
@@ -151,7 +151,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
             {
                 if (excludeProjects.Any(p => exts.Any(ext => filename.EndsWith($"\\{p}{ext}"))))
                 {
-                    files.Remove(filename);
+                    _ = files.Remove(filename);
                     if (first)
                     {
                         Console.WriteLine("Excluding projects:");
@@ -175,7 +175,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 {
                     if (Path.GetExtension(p.path) == exts[i])
                     {
-                        sb.AppendLine("Project(\"{" + typeguids[i] + "}\") = \"" + $"{p.name}\", \"{p.path}\", \"{{{p.guid}}}\"{Environment.NewLine}EndProject");
+                        _ = sb.AppendLine("Project(\"{" + typeguids[i] + "}\") = \"" + $"{p.name}\", \"{p.path}\", \"{{{p.guid}}}\"{Environment.NewLine}EndProject");
                     }
                 }
                 projcount++;
@@ -183,10 +183,16 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             foreach (var websiteFolder in websiteFolders)
             {
-                Random r = new();
-                var port = r.Next(1024, 65535);
+                int port;
+                using var rng = RandomNumberGenerator.Create();
+                var bytes = new byte[2];
+                do
+                {
+                    rng.GetBytes(bytes);
+                    port = BitConverter.ToUInt16(bytes, 0);
+                } while (port is < 1024 or > 65535);
 
-                sb.AppendLine(
+                _ = sb.AppendLine(
                     "Project(\"{E24C65DC-7377-472B-9ABA-BC803B73C61A}\") = \"" + $"{Path.GetFileName(websiteFolder)}\", \"http://localhost:{port}\", \"" + "{" + Guid.NewGuid().ToString().ToUpper() + "}" + $"\"{Environment.NewLine}" +
                     $"\tProjectSection(WebsiteProperties) = preProject{Environment.NewLine}" +
                     $"\t\tSlnRelativePath = \"{websiteFolder}\\\"{Environment.NewLine}" +
@@ -202,7 +208,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             if (generateGlobalSection)
             {
-                sb.Append(GenerateGlobalSection(projs));
+                _ = sb.Append(GenerateGlobalSection(projs));
             }
 
             var s = vsVersion switch
@@ -258,8 +264,10 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                         Buffer.BlockCopy(pathbuf, 0, bytes, 0, pathbuf.Length);
                         Buffer.BlockCopy(filebuf, 0, bytes, pathbuf.Length, filebuf.Length);
 
+#pragma warning disable CA5351 // Generate a stable guid. guid and md5 is 128-bit, i.e. md5 is probably the best we can do.
                         var hash = MD5.HashData(bytes);
-                        var guid = new Guid(hash);
+#pragma warning restore CA5351
+                        Guid guid = new(hash);
                         newproj.guid = guid.ToString().ToUpper();
                     }
                     else
@@ -299,23 +307,6 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
             }
 
             return projects;
-        }
-
-        private List<Proj> GetDuplicates(List<Proj> projects)
-        {
-            List<Proj> dups = [];
-
-            var results = projects.GroupBy(a => a.guid).Where(g => g.Count() > 1);
-
-            foreach (var group in results)
-            {
-                foreach (var item in group)
-                {
-                    dups.Add(item);
-                }
-            }
-
-            return dups;
         }
 
         static List<string> GetAllTargets(List<Proj> projs)
@@ -386,7 +377,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                         if (proj1.guid == proj2.guid)
                         {
                             Console.WriteLine($"  Guid: '{proj2.guid}', File: '{proj2.path}', Project: '{proj2.name}'.");
-                            projs2.Remove(proj2);
+                            _ = projs2.Remove(proj2);
                         }
                     }
                 }
@@ -421,7 +412,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                         if (proj1.assemblyname != string.Empty && proj2.assemblyname != string.Empty && string.CompareOrdinal(proj1.assemblyname, proj2.assemblyname) == 0)
                         {
                             Console.WriteLine($"  Assemblyname: '{proj2.assemblyname}', File: '{proj2.path}', Project: '{proj2.name}'.");
-                            projs2.Remove(proj2);
+                            _ = projs2.Remove(proj2);
                         }
                     }
                 }
@@ -456,7 +447,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                         if (string.CompareOrdinal(proj1.name, proj2.name) == 0)
                         {
                             Console.WriteLine($"  Project: '{proj2.name}', File: '{proj2.path}', Guid: '{proj2.guid}'.");
-                            projs2.Remove(proj2);
+                            _ = projs2.Remove(proj2);
                         }
                     }
                 }
@@ -494,7 +485,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             var sb = new StringBuilder();
 
-            sb.AppendLine(
+            _ = sb.AppendLine(
                 $"Global{Environment.NewLine}" +
                 $"\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
 
@@ -504,13 +495,13 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
 
             foreach (var target in targets)
             {
-                sb.AppendLine(
+                _ = sb.AppendLine(
                     $"\t\t{target}|Any CPU = {target}|Any CPU{Environment.NewLine}" +
                     $"\t\t{target}|Mixed Platforms = {target}|Mixed Platforms{Environment.NewLine}" +
                     $"\t\t{target}|x86 = {target}|x86");
             }
 
-            sb.AppendLine(
+            _ = sb.AppendLine(
                 $"\tEndGlobalSection{Environment.NewLine}" +
                 $"\tGlobalSection(ProjectConfigurationPlatforms) = postSolution");
 
@@ -518,7 +509,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
             {
                 foreach (var target in p.targets)
                 {
-                    sb.AppendLine(
+                    _ = sb.AppendLine(
                         $"\t\t{p.guid}.{target}|Any CPU.ActiveCfg = {target}|Any CPU{Environment.NewLine}" +
                         $"\t\t{p.guid}.{target}|Any CPU.Build.0 = {target}|Any CPU{Environment.NewLine}" +
                         $"\t\t{p.guid}.{target}|Mixed Platforms.ActiveCfg = {target}|Any CPU{Environment.NewLine}" +
@@ -527,7 +518,7 @@ Example: CreateSolution -wSites\WebSite1 -wSites\WebSite2 . all.sln myproj1 mypr
                 }
             }
 
-            sb.AppendLine(
+            _ = sb.AppendLine(
                 $"\tEndGlobalSection{Environment.NewLine}" +
                 $"\tGlobalSection(SolutionProperties) = preSolution{Environment.NewLine}" +
                 $"\t\tHideSolutionNode = FALSE{Environment.NewLine}" +

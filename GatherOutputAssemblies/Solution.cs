@@ -7,12 +7,12 @@ namespace GatherOutputAssemblies
 {
     class Solution
     {
-        public string _path { get; set; }
+        public string SolutionPath { get; set; }
         public string[] Projectfiles { get; set; } = [];
 
         public Solution(string solutionfile)
         {
-            _path = solutionfile;
+            SolutionPath = solutionfile;
 
             List<string> projects = [];
 
@@ -23,7 +23,7 @@ namespace GatherOutputAssemblies
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
             {
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Couldn't load solution: '" + solutionfile + "': " + ex.Message);
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"Couldn't load solution: '{solutionfile}': {ex.Message}");
                 return;
             }
 
@@ -40,7 +40,7 @@ namespace GatherOutputAssemblies
 
                 foreach (var projtypeguid in projtypeguids)
                 {
-                    var projtypeline = "Project(\"" + projtypeguid + "\") =";
+                    var projtypeline = $"Project(\"{projtypeguid}\") =";
 
                     if (row.StartsWith(projtypeline))
                     {
@@ -74,23 +74,23 @@ namespace GatherOutputAssemblies
             projects2 = ExcludeReferredProjects(projects2, gatherall, includeProjects, verbose);
             projects2 = ExcludeWebMvcProjects(projects2, verbose);
 
-            Console.WriteLine("Retrieving output folders for " + projects2.Count + " projects.");
+            Console.WriteLine($"Retrieving output folders for {projects2.Count} projects.");
 
             (string sourcepath, string targetpath)[] operations = [.. projects2
                 .Select(p =>
                     (
                         sourcepath: p.GetOutputFolder(buildconfig, verbose),
-                        targetpath: Path.Combine(outputpath, FileHelper.GetCleanFolderName(Path.GetFileNameWithoutExtension(p._path)))
+                        targetpath: Path.Combine(outputpath, FileHelper.GetCleanFolderName(Path.GetFileNameWithoutExtension(p.ProjectPath)))
                     ))
                 .Where(p => p.sourcepath != null)];
 
             if (deletetargetfolder && Directory.Exists(outputpath))
             {
-                Console.WriteLine("Deleting folder: '" + outputpath + "'");
+                Console.WriteLine($"Deleting folder: '{outputpath}'");
                 Directory.Delete(outputpath, true);
             }
 
-            Console.WriteLine("Copying " + operations.Length + " projects.");
+            Console.WriteLine($"Copying {operations.Length} projects.");
 
             var copiedFiles = 0;
 
@@ -99,7 +99,7 @@ namespace GatherOutputAssemblies
                 var sourcepath = operation.sourcepath;
                 var targetpath = operation.targetpath;
 
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Cyan, "Copying folder: '" + sourcepath + "' -> '" + targetpath + "'");
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Cyan, $"Copying folder: '{sourcepath}' -> '{targetpath}'");
 
                 if (!FileHelper.CopyFolder(new(sourcepath), new(targetpath), simulate, verbose, ref copiedFiles))
                 {
@@ -107,7 +107,7 @@ namespace GatherOutputAssemblies
                 }
             }
 
-            Console.WriteLine("Copied " + copiedFiles + " files.");
+            Console.WriteLine($"Copied {copiedFiles} files.");
 
             return result;
         }
@@ -119,13 +119,13 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (unusable): '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, $"Evaluating project (unusable): '{project.ProjectPath}'");
                 }
 
-                if (project._proj_guid == null || project._ProjectTypeGuids == null)
+                if (project.Proj_guid == null || project.ProjectTypeGuids == null)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding unusable project: '");
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project.ProjectPath);
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
                     continue;
                 }
@@ -152,13 +152,13 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (web/mvc): '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, $"Evaluating project (web/mvc): '{project.ProjectPath}'");
                 }
 
-                if (project._ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
+                if (project.ProjectTypeGuids.Any(g1 => webmvcguids.Any(g2 => string.Compare(g1, g2, true) == 0)))
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding web/mvc project: '");
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project.ProjectPath);
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
                     continue;
                 }
@@ -182,15 +182,15 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (explicit): '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, $"Evaluating project (explicit): '{project.ProjectPath}'");
                 }
 
-                string[] matches = [.. excludeProjects.Where(x => IsWildcardMatch(project._path, x))];
+                string[] matches = [.. excludeProjects.Where(x => IsWildcardMatch(project.ProjectPath, x))];
 
                 if (matches.Length > 0)
                 {
                     ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding explicit project: '");
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project.ProjectPath);
                     ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'");
 
                     foreach (var excludematch in matches)
@@ -208,7 +208,7 @@ namespace GatherOutputAssemblies
             {
                 if (!used[project])
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow, "Excessive exclude filter unused: '" + project + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow, $"Excessive exclude filter unused: '{project}'");
                 }
             }
 
@@ -222,11 +222,11 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "Evaluating project (referred): '" + project._path + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, $"Evaluating project (referred): '{project.ProjectPath}'");
                 }
 
-                var include = includeProjects.Contains(Path.GetFileNameWithoutExtension(project._path));
-                var referred = projects.Any(p => p._projectReferences.Any(r => Path.GetFileName(r.Include) == Path.GetFileName(project._path)));
+                var include = includeProjects.Contains(Path.GetFileNameWithoutExtension(project.ProjectPath));
+                var referred = projects.Any(p => p.ProjectReferences.Any(r => Path.GetFileName(r.Include) == Path.GetFileName(project.ProjectPath)));
 
                 if (gatherall || include || !referred)
                 {
@@ -237,14 +237,14 @@ namespace GatherOutputAssemblies
                     var refs = "'" +
                         string.Join("', '",
                             projects
-                                .Where(p => p._projectReferences.Any(r => Path.GetFileName(r.Include) == Path.GetFileName(project._path)))
-                                .OrderBy(p => Path.GetFileNameWithoutExtension(p._path))
-                                .Select(p => Path.GetFileNameWithoutExtension(p._path)))
+                                .Where(p => p.ProjectReferences.Any(r => Path.GetFileName(r.Include) == Path.GetFileName(project.ProjectPath)))
+                                .OrderBy(p => Path.GetFileNameWithoutExtension(p.ProjectPath))
+                                .Select(p => Path.GetFileNameWithoutExtension(p.ProjectPath)))
                         + "'";
 
                     ConsoleHelper.ColorWrite(ConsoleColor.Blue, "Excluding referred project '");
-                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project._path);
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, "'. Referred by: " + refs);
+                    ConsoleHelper.ColorWrite(ConsoleColor.DarkCyan, project.ProjectPath);
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Blue, $"'. Referred by: {refs}");
                 }
             }
 

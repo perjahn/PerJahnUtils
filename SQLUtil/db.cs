@@ -104,7 +104,7 @@ namespace SQLUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key;
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);
@@ -131,7 +131,7 @@ namespace SQLUtil
             using var da = _factory.CreateDataAdapter();
             da.SelectCommand = cmd;
 
-            DbCommandBuilder cb = _factory.CreateCommandBuilder();
+            var cb = _factory.CreateCommandBuilder();
             cb.DataAdapter = da;
             da.InsertCommand = cb.GetInsertCommand();
             da.UpdateCommand = cb.GetUpdateCommand();
@@ -181,7 +181,7 @@ namespace SQLUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key;
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);
@@ -260,7 +260,7 @@ namespace SQLUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key;
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);
@@ -306,7 +306,7 @@ namespace SQLUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key;
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);

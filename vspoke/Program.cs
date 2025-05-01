@@ -183,7 +183,7 @@ Examples:
                 {
                     // Didn't find any child node - create it
                     var xele = xdoc.CreateElement(elementname, vsuri);
-                    xnode.AppendChild(xele);
+                    _ = xnode.AppendChild(xele);
 
                     xnode = xele;
 

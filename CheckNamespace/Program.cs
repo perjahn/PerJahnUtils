@@ -30,19 +30,19 @@ Example: powershell CheckNamespace (dir C:\git\mycode -i *.sln -r)";
 
             List<Solution> solutions = [.. LoadSolutions(args)];
 
-            List<Project> projects = [.. solutions.SelectMany(s => s._projects)];
+            List<Project> projects = [.. solutions.SelectMany(s => s.Projects)];
 
             Console.WriteLine($"Total projects: {projects.Count}");
 
             projects = [.. projects
-                .GroupBy(p => Path.Combine(Path.GetDirectoryName(p._solutionfile), p._sln_path))
+                .GroupBy(p => Path.Combine(Path.GetDirectoryName(p.Solutionfile), p.Sln_path))
                 .Select(g => g.First())];
 
             Console.WriteLine($"Unique projects: {projects.Count}");
 
             var failcount = 0;
 
-            foreach (var p in projects.OrderBy(p => Path.Combine(Path.GetDirectoryName(p._solutionfile), p._sln_path)))
+            foreach (var p in projects.OrderBy(p => Path.Combine(Path.GetDirectoryName(p.Solutionfile), p.Sln_path)))
             {
                 failcount += p.CheckNamespace();
             }
@@ -52,7 +52,7 @@ Example: powershell CheckNamespace (dir C:\git\mycode -i *.sln -r)";
             return 0;
         }
 
-        static private IEnumerable<Solution> LoadSolutions(string[] solpaths)
+        private static IEnumerable<Solution> LoadSolutions(string[] solpaths)
         {
             foreach (var path in solpaths)
             {

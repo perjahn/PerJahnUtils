@@ -106,16 +106,16 @@ test projects copied to the output folder.";
                     {
                         dir = ".";
                     }
-                    Console.WriteLine("Dir: '" + dir + "', Pattern: '" + pattern + "'");
+                    Console.WriteLine($"Dir: '{dir}', Pattern: '{pattern}'");
                     string[] files = [.. Directory.GetFiles(dir, pattern, recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
                         .Select(ff => ff.StartsWith(@".\") ? ff[2..] : ff)];
                     return files;
                 })];
 
-            Console.WriteLine("Found " + solutionfiles.Length + " solutions.");
+            Console.WriteLine($"Found {solutionfiles.Length} solutions.");
             foreach (var filename in solutionfiles)
             {
-                Console.WriteLine("'" + filename + "'");
+                Console.WriteLine($"'{filename}'");
             }
 
             var buildconfig = parsedArgs[1];
@@ -128,7 +128,7 @@ test projects copied to the output folder.";
             string buildconfig, string outputpath, string[] includeProjects, string[] excludeProjects,
             bool deletetargetfolder, bool gatherall, bool simulate, bool verbose)
         {
-            Console.WriteLine("Loading " + solutionfiles.Length + " solutions...");
+            Console.WriteLine($"Loading {solutionfiles.Length} solutions...");
 
             Solution[] solutions = [.. solutionfiles.Select(s => new Solution(s))];
 
@@ -137,15 +137,15 @@ test projects copied to the output folder.";
                 .Distinct()
                 .OrderBy(f => f)];
 
-            Console.WriteLine("Loading " + projectfiles.Length + " projects...");
+            Console.WriteLine($"Loading {projectfiles.Length} projects...");
 
             Project[] projects = [.. projectfiles.Select(Project.LoadProject).Where(p => p != null)];
 
             foreach (var project in projects)
             {
-                project._solutionfiles = [.. solutions
-                    .Where(s => s.Projectfiles.Contains(project._path))
-                    .Select(s => s._path)
+                project.Solutionfiles = [.. solutions
+                    .Where(s => s.Projectfiles.Contains(project.ProjectPath))
+                    .Select(s => s.SolutionPath)
                     .OrderBy(f => f)];
             }
 

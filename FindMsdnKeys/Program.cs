@@ -9,8 +9,8 @@ namespace FindMsdnKeys
 {
     class Program
     {
-        static long _progressFiles = 0;
-        static long _progressDirectories = 0;
+        static long _progressFiles;
+        static long _progressDirectories;
 
         static void Main(string[] args)
         {

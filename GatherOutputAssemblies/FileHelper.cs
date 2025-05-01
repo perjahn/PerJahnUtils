@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace GatherOutputAssemblies
@@ -26,11 +25,11 @@ namespace GatherOutputAssemblies
                 var s = GetRelativePath(paths[i], paths[i + 1]);
                 if (s == paths[i + 2])
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Green, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + s + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Green, $"'{paths[i]}' -> '{paths[i + 1]}' = '{s}'");
                 }
                 else
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "'" + paths[i] + "' -> '" + paths[i + 1] + "' = '" + s + "' (" + paths[i + 2] + ")");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"'{paths[i]}' -> '{paths[i + 1]}' = '{s}' ({paths[i + 2]})");
                 }
             }
         }
@@ -64,7 +63,7 @@ namespace GatherOutputAssemblies
 
             for (var i = 0; i < count; i++)
             {
-                sb.Append(".." + Path.DirectorySeparatorChar);
+                _ = sb.Append($"..{Path.DirectorySeparatorChar}");
             }
 
             return sb.ToString();
@@ -131,11 +130,11 @@ namespace GatherOutputAssemblies
                 var s = CompactPath(paths[i]);
                 if (s == paths[i + 1])
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Green, "'" + paths[i] + "' -> '" + s + "'");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Green, $"'{paths[i]}' -> '{s}'");
                 }
                 else
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "'" + paths[i] + "' -> '" + s + "' (" + paths[i + 1] + ")");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"'{paths[i]}' -> '{s}' ({paths[i + 1]})");
                 }
             }
         }
@@ -195,7 +194,7 @@ namespace GatherOutputAssemblies
             {
                 if (char.IsLetterOrDigit(c) || c == '.' || c == '_' || c == '-')
                 {
-                    sb.Append(c);
+                    _ = sb.Append(c);
                 }
             }
 
@@ -203,7 +202,7 @@ namespace GatherOutputAssemblies
 
             if (cleaned != dirtyFolderName)
             {
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow, "Project named cleaned up: '" + dirtyFolderName + "' -> '" + cleaned + "¨'");
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Yellow, $"Project named cleaned up: '{dirtyFolderName}' -> '{cleaned}¨'");
             }
 
             return cleaned;
@@ -213,7 +212,7 @@ namespace GatherOutputAssemblies
         {
             if (!source.Exists)
             {
-                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Ignoring folder, it does not exist: '" + source.FullName + "'");
+                ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"Ignoring folder, it does not exist: '{source.FullName}'");
                 return false;
             }
 
@@ -221,11 +220,11 @@ namespace GatherOutputAssemblies
             {
                 if (verbose)
                 {
-                    Console.WriteLine("Creating folder: '" + target.FullName + "'");
+                    Console.WriteLine($"Creating folder: '{target.FullName}'");
                 }
                 if (!simulate)
                 {
-                    Directory.CreateDirectory(target.FullName);
+                    _ = Directory.CreateDirectory(target.FullName);
                 }
             }
 
@@ -235,7 +234,7 @@ namespace GatherOutputAssemblies
                 var targetfile = Path.Combine(target.FullName, fi.Name);
                 if (verbose)
                 {
-                    Console.WriteLine("Copying file: '" + sourcefile + "' -> '" + targetfile + "'");
+                    Console.WriteLine($"Copying file: '{sourcefile}' -> '{targetfile}'");
                 }
                 if (!simulate)
                 {
@@ -247,7 +246,7 @@ namespace GatherOutputAssemblies
             foreach (var di in source.GetDirectories())
             {
                 DirectoryInfo targetSubdir = new(Path.Combine(target.FullName, di.Name));
-                CopyFolder(di, targetSubdir, simulate, verbose, ref copiedFiles);
+                _ = CopyFolder(di, targetSubdir, simulate, verbose, ref copiedFiles);
             }
 
             return true;

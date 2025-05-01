@@ -41,19 +41,19 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             if (parsedArgs[0] == "test" && parsedArgs[1] == "test" && parsedArgs[2] == "test")
             {
                 Test.Test1();
-                Console.ReadKey();
+                _ = Console.ReadKey();
                 return;
             }
             else if (parsedArgs[0] == "test" && parsedArgs[1] == "test" && parsedArgs[2] == "test2")
             {
                 Test.Test2();
-                Console.ReadKey();
+                _ = Console.ReadKey();
                 return;
             }
             else if (parsedArgs[0] == "test" && parsedArgs[1] == "test" && parsedArgs[2] == "test3")
             {
                 FileHelper.TestGetRelativePath();
-                Console.ReadKey();
+                _ = Console.ReadKey();
                 return;
             }
 
@@ -91,7 +91,7 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 
             foreach (var project in projects)
             {
-                if (project._ProjectTypeGuids.Select(g => g.ToLower()).Any(webmvcguids.Contains))
+                if (project.ProjectTypeGuids.Select(g => g.ToLower()).Any(webmvcguids.Contains))
                 {
                     webmvcprojects.Add(project);
                 }
@@ -104,8 +104,8 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
             }
 
             StringBuilder sb = new();
-            sb.AppendLine("<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
-            sb.AppendLine("  <Target Name=\"Build\">");
+            _ = sb.AppendLine("<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
+            _ = sb.AppendLine("  <Target Name=\"Build\">");
 
             var solutionname = Path.GetFileNameWithoutExtension(solutionfile);
 
@@ -123,16 +123,16 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
                 Console.WriteLine($"publishfolder: '{publishfolder}'");
             }
 
-            foreach (var project in webmvcprojects.OrderBy(p => Path.GetFileNameWithoutExtension(p._sln_path)))
+            foreach (var project in webmvcprojects.OrderBy(p => Path.GetFileNameWithoutExtension(p.Sln_path)))
             {
-                var slnpath = project._sln_path;
+                var slnpath = project.Sln_path;
 
                 if (slnpath.StartsWith(@".\"))
                 {
                     slnpath = slnpath[2..];
                 }
 
-                var projectname = Path.GetFileNameWithoutExtension(project._sln_path);
+                var projectname = Path.GetFileNameWithoutExtension(project.Sln_path);
                 var publishfolder2 = string.Join(string.Empty, projectname.ToCharArray().Where(c => !char.IsWhiteSpace(c)));
 
                 // projfilename = (curdir -> ) buildfile -> project
@@ -143,11 +143,11 @@ Example: CreatePublish mysol.sln publishmvc.proj ..\Deploy";
 
                 Console.WriteLine($"'{solutionname}' + '{projectname}' -> '{publishfolder3}' ({projfilename})");
 
-                sb.AppendLine($"    <MSBuild Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir={publishfolder3}\" Projects=\"{projfilename}\" />");
+                _ = sb.AppendLine($"    <MSBuild Targets=\"PipelinePreDeployCopyAllFilesToOneFolder\" Properties=\"Configuration=Release;_PackageTempDir={publishfolder3}\" Projects=\"{projfilename}\" />");
             }
 
-            sb.AppendLine("  </Target>");
-            sb.AppendLine("</Project>");
+            _ = sb.AppendLine("  </Target>");
+            _ = sb.AppendLine("</Project>");
 
             return sb.ToString();
         }

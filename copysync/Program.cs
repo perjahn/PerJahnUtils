@@ -14,10 +14,10 @@ namespace copysync
 
     class Program
     {
-        static bool _onlynewer = false;
-        static bool _simulate = false;
-        static bool _tfs = false;
-        static bool _verbose = false;
+        static bool _onlynewer;
+        static bool _simulate;
+        static bool _tfs;
+        static bool _verbose;
 
         static int Main(string[] args)
         {
@@ -26,7 +26,7 @@ namespace copysync
             if (Environment.UserInteractive)
             {
                 Console.WriteLine($"{Environment.NewLine}Press any key to continue...");
-                Console.ReadKey();
+                _ = Console.ReadKey();
             }
 
             return result;

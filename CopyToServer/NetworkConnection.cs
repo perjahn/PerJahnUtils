@@ -21,6 +21,10 @@ namespace CopyToServer
                 RemoteName = networkName
             };
 
+            if (credentials == null)
+            {
+                throw new ArgumentNullException(nameof(credentials), "Credentials cannot be null");
+            }
             var userName = string.IsNullOrEmpty(credentials.Domain) ?
                 credentials.UserName :
                 string.Format(@"{0}\{1}", credentials.Domain, credentials.UserName);
@@ -45,13 +49,13 @@ namespace CopyToServer
 
         protected virtual void Dispose(bool disposing)
         {
-            WNetCancelConnection2(_networkName, 0, true);
+            _ = WNetCancelConnection2(_networkName, 0, true);
         }
 
-        [DllImport("mpr.dll")]
+        [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
         private static extern int WNetAddConnection2(NetResource netResource, string password, string username, int flags);
 
-        [DllImport("mpr.dll")]
+        [DllImport("mpr.dll", CharSet = CharSet.Unicode)]
         private static extern int WNetCancelConnection2(string name, int flags, bool force);
     }
 
@@ -84,7 +88,7 @@ namespace CopyToServer
         None = 0,
         Disk = 1,
         Print = 2,
-        Reserved2 = 8
+        Reservedx = 8
     }
 
     public enum ResourceDisplaytype : int

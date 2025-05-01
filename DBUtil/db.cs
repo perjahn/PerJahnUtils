@@ -40,7 +40,7 @@ namespace DBUtil
             // Retrieve the installed providers and factories.
             DataTable dtProviders = DbProviderFactories.GetFactoryClasses();
 
-            DataRow[] rows = dtProviders.Select("InvariantName='" + DbProvider + "'");
+            DataRow[] rows = dtProviders.Select($"InvariantName='{DbProvider}'");
 
             _factory = DbProviderFactories.GetFactory(rows[0]);
 
@@ -104,7 +104,7 @@ namespace DBUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key.ToString();
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);
@@ -181,7 +181,7 @@ namespace DBUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key.ToString();
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);
@@ -260,7 +260,7 @@ namespace DBUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key.ToString();
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);
@@ -306,7 +306,7 @@ namespace DBUtil
             {
                 foreach (var pair in parameters)
                 {
-                    DbParameter p = cmd.CreateParameter();
+                    var p = cmd.CreateParameter();
                     p.ParameterName = pair.Key.ToString();
                     p.Value = pair.Value;
                     cmd.Parameters.Add(p);
@@ -326,18 +326,18 @@ namespace DBUtil
             {
                 if (Username != null && Password != null)
                 {
-                    connstr = "Server=" + Server + "; Database=" + Database + "; Trusted_Connection=False; User ID=" + Username + "; Password=" + Password + ";";
+                    connstr = $"Server={Server}; Database={Database}; Trusted_Connection=False; User ID={Username}; Password={Password};";
                 }
                 else
                 {
-                    connstr = "Server=" + Server + "; Database=" + Database + "; Trusted_Connection=True;";
+                    connstr = $"Server={Server}; Database={Database}; Trusted_Connection=True;";
                 }
             }
             else if (DbProvider == "MySql.Data.MySqlClient")
             {
                 if (Username != null && Password != null)
                 {
-                    connstr = "Server=" + Server + "; Database=" + Database + "; Uid=" + Username + "; Pwd=" + Password + ";";
+                    connstr = $"Server={Server}; Database={Database}; Uid={Username}; Pwd={Password};";
                 }
                 else
                 {
@@ -346,7 +346,7 @@ namespace DBUtil
             }
             else
             {
-                throw new NotImplementedException("Unsupported database provider: '" + DbProvider + "'.");
+                throw new NotImplementedException($"Unsupported database provider: '{DbProvider}'.");
             }
 
             return connstr;
@@ -369,7 +369,7 @@ namespace DBUtil
             }
             else
             {
-                throw new NotImplementedException("Unsupported database provider: '" + DbProvider + "'.");
+                throw new NotImplementedException($"Unsupported database provider: '{DbProvider}'.");
             }
 
             var connstr = db.ConstructConnectionString(DbProvider, Server, Database, Username, Password);
@@ -390,15 +390,15 @@ namespace DBUtil
 
             if (DbProvider == "System.Data.SqlClient")
             {
-                sql = "select name from [" + Database + "].dbo.sysobjects where type='U' order by name";
+                sql = $"select name from [{Database}].dbo.sysobjects where type='U' order by name";
             }
             else if (DbProvider == "MySql.Data.MySqlClient")
             {
-                sql = "select table_name name from `information_schema`.`tables` where table_schema='" + Database + "' order by table_name";
+                sql = $"select table_name name from `information_schema`.`tables` where table_schema='{Database}' order by table_name";
             }
             else
             {
-                throw new NotImplementedException("Unsupported database provider: '" + DbProvider + "'.");
+                throw new NotImplementedException($"Unsupported database provider: '{DbProvider}'.");
             }
 
             dtTables = ExecuteDataTableSQL(sql);
@@ -412,11 +412,11 @@ namespace DBUtil
         {
             if (DbProvider == "System.Data.SqlClient")
             {
-                return "[" + Schema + "].dbo.[" + Table + "]";
+                return $"[{Schema}].dbo.[{Table}]";
             }
             else if (DbProvider == "MySql.Data.MySqlClient")
             {
-                return "`" + Schema + "`.`" + Table + "`";
+                return $"`{Schema}`.`{Table}`";
             }
             else
             {
@@ -428,11 +428,11 @@ namespace DBUtil
         {
             if (DbProvider == "System.Data.SqlClient")
             {
-                return "[" + Column + "]";
+                return $"[{Column}]";
             }
             else if (DbProvider == "MySql.Data.MySqlClient")
             {
-                return "`" + Column + "`";
+                return $"`{Column}`";
             }
             else
             {

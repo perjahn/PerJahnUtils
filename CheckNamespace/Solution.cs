@@ -7,21 +7,21 @@ namespace CheckNamespace
 {
     class Solution
     {
-        private readonly string _solutionfile;
-        public List<Project> _projects;
+        private readonly string Solutionfile;
+        public List<Project> Projects;
 
         public Solution(string solutionfile)
         {
-            _solutionfile = solutionfile;
+            Solutionfile = solutionfile;
 
             string[] rows;
             try
             {
-                rows = File.ReadAllLines(_solutionfile);
+                rows = File.ReadAllLines(Solutionfile);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
             {
-                throw new ApplicationException($"Couldn't load solution: '{Path.GetFileName(_solutionfile)}': {ex.Message}", ex);
+                throw new ApplicationException($"Couldn't load solution: '{Path.GetFileName(Solutionfile)}': {ex.Message}", ex);
             }
 
             // Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCsProject", "Folder\Folder\MyCsProject.csproj", "{01010101-0101-0101-0101-010101010101}"
@@ -33,7 +33,7 @@ namespace CheckNamespace
                 .Where(r => projtypeguids.Any(g => IsPackageRow(r, g)))
                 .Select(r => r.Split(',')[1].Trim().Trim('"'))];
 
-            _projects = [.. LoadProjects(projpaths)];
+            Projects = [.. LoadProjects(projpaths)];
         }
 
         private static bool IsPackageRow(string row, string guid)
@@ -51,7 +51,7 @@ namespace CheckNamespace
 
                 try
                 {
-                    p = new Project(_solutionfile, path);
+                    p = new Project(Solutionfile, path);
                 }
                 catch (ApplicationException ex)
                 {

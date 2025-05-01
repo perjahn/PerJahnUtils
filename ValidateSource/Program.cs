@@ -457,7 +457,7 @@ Example:          ValidateSource myfolder -fix -l2 \\notthisfolder\\", 0);
 
                         if (offset % _indentationsize != 0)
                         {
-                            var add = _indentationsize - offset % _indentationsize;
+                            var add = _indentationsize - (offset % _indentationsize);
                             rows[i] = new string(' ', add) + rows[i];
                         }
                     }

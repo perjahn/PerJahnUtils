@@ -6,7 +6,7 @@ namespace ProjFix
     {
         public static bool Verboselogging { get; set; }
 
-        private static string _deferredline = null;
+        private static string _deferredline;
         private static int _deferredcoloroffset;
         private static int _deferredcolorlength;
         private static ConsoleColor _deferredcolor;

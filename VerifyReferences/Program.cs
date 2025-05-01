@@ -15,7 +15,7 @@ namespace VerifyReferences
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine(Environment.NewLine + "Press any key to continue...");
-                Console.ReadKey();
+                _ = Console.ReadKey();
             }
 
             return result;

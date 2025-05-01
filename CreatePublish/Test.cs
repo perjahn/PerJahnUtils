@@ -97,14 +97,14 @@ namespace CreatePublish
 
             var folder = Path.GetDirectoryName(solutionfile);
             Console.WriteLine($"Creating directory: '{folder}'");
-            Directory.CreateDirectory(folder);
+            _ = Directory.CreateDirectory(folder);
             File.WriteAllText(solutionfile, solutioncontent);
 
             var projectcontent = @"<Project><PropertyGroup><ProjectTypeGuids>{E3E379DF-F4C6-4180-9B81-6769533ABE47}</ProjectTypeGuids></PropertyGroup></Project>";
 
             folder = Path.GetDirectoryName(projectfile);
             Console.WriteLine($"Creating directory: '{folder}'");
-            Directory.CreateDirectory(folder);
+            _ = Directory.CreateDirectory(folder);
             File.WriteAllText(projectfile, projectcontent);
         }
 

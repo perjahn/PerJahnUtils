@@ -16,7 +16,7 @@ namespace CreateBuildfile
             if (Environment.UserInteractive && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DontPrompt")))
             {
                 Console.WriteLine("Press any key to continue...");
-                Console.ReadKey();
+                _ = Console.ReadKey();
             }
         }
 
@@ -72,7 +72,7 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
 
                     if (excludeFiles.Any(f => Path.GetFileName(f) == Path.GetFileName(filename)))
                     {
-                        files.Remove(filename);
+                        _ = files.Remove(filename);
                         if (first)
                         {
                             Console.WriteLine("Excluding projects:");
@@ -87,7 +87,7 @@ Example: CreateBuildfile . all.build mysol1 mysol2";
 
             foreach (var solutionfile in files)
             {
-                sb.AppendLine($"    <MSBuild BuildInParallel=\"true\" Properties=\"Configuration=Release\" ContinueOnError=\"true\" Projects=\"{GetRelativePath(buildfile, solutionfile)}\" />");
+                _ = sb.AppendLine($"    <MSBuild BuildInParallel=\"true\" Properties=\"Configuration=Release\" ContinueOnError=\"true\" Projects=\"{GetRelativePath(buildfile, solutionfile)}\" />");
             }
 
             var s = sb.ToString();

@@ -91,16 +91,7 @@ namespace SQLUtil
                     }
 
                     var filename = saveFileDialog1.FileName;
-
-                    string separator;
-                    if (saveFileDialog1.FilterIndex == 1)
-                    {
-                        separator = ",";  // 1=csv
-                    }
-                    else
-                    {
-                        separator = "\t";  // 2=tab
-                    }
+                    var separator saveFileDialog1.FilterIndex == 1 ? "," : "\t";
 
                     using StreamWriter sw = new(filename);
                     for (var c = 0; c < dt.Columns.Count; c++)
@@ -123,12 +114,11 @@ namespace SQLUtil
                     dataGridView1.DataSource = null;  // Forget column order
                     dataGridView1.DataSource = dt;
                 }
-                this.Text = "SQL Util - Rows: " + dt.Rows.Count + ", Columns: " + dt.Columns.Count;
-
+                this.Text = $"SQL Util - Rows: {dt.Rows.Count}, Columns: {dt.Columns.Count}";
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex);
             }
         }
     }

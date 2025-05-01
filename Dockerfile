@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/nightly/sdk
+FROM mcr.microsoft.com/dotnet/sdk
 
 WORKDIR /app
 

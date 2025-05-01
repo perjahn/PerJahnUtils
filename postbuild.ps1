@@ -40,12 +40,17 @@ function Gather-Artifacts([string] $buildconfig, [string] $artifactfolder) {
     Write-Host "Found $($binfiles.Count) files."
 
     foreach ($source in $binfiles) {
-        if ($source.Contains("Log")) {
-            Write-Host "Not moving file: '$source' -> '$artifactfolder'" -f Yellow
+        [string] $folder = $source.Substring(0, $source.IndexOf("/"))
+        if ($folder.EndsWith("Log")) {
+            Write-Host "Not moving file1: '$source' -> '$artifactfolder'" -f Yellow
             continue
         }
         if (Test-Path (Join-Path $artifactfolder (Split-Path -Leaf $source))) {
-            Write-Host "Not moving file: '$source' -> '$artifactfolder'" -f Yellow
+            Write-Host "Not moving file2: '$source' -> '$artifactfolder'" -f Yellow
+            continue
+        }
+        if ($source.EndsWith(".deps.json") -or $source.EndsWith(".pdb") -or $source.EndsWith(".xml")) {
+            Write-Host "Not moving file3: '$source' -> '$artifactfolder'" -f Yellow
             continue
         }
         Write-Host "Moving file: '$source' -> '$artifactfolder'"

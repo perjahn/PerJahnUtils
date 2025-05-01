@@ -22,7 +22,7 @@ namespace SyncFiles
             if (Environment.UserInteractive)
             {
                 Log($"{Environment.NewLine}Press Enter to continue...");
-                Console.ReadLine();
+                _ = Console.ReadLine();
             }
         }
 
@@ -106,7 +106,7 @@ Usage: SyncFiles [-d] [-eEXCLUDE] [-iIDENTIFERFILE] [-lLOGPATH] [-mMAXSIZE] [-s]
                 if (!Directory.Exists(logpath))
                 {
                     Console.WriteLine($"Creating log folder: '{logpath}'.{Environment.NewLine}");
-                    Directory.CreateDirectory(logpath);
+                    _ = Directory.CreateDirectory(logpath);
                 }
 
                 LogWriter.Logfile = Path.Combine(logpath, logfile);

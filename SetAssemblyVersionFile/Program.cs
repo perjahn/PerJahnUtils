@@ -39,7 +39,7 @@ namespace SetAssemblyVersionFile
             if (Environment.UserInteractive)
             {
                 Log("Press any key to continue...");
-                Console.ReadKey();
+                _ = Console.ReadKey();
             }
 
             return result;
