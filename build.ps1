@@ -11,7 +11,7 @@ function Main() {
 
     Write-Host ("*" * 100) -f Cyan
 
-    dotnet publish *.sln -c Release --runtime linux-x64
+    dotnet publish *.slnx -c Release --runtime linux-x64
 
     Write-Host ("*" * 100) -f Cyan
 
