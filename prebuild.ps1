@@ -46,7 +46,7 @@ function Generate-SolutionFile([string] $solutionfile) {
             $xmlstring += '<Project Path="' + $_.Substring($offset) + '" />'
 
             [string] $qq = "<AnalysisMode>All</AnalysisMode><EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild><AnalysisLevelStyle>preview</AnalysisLevelStyle><NoWarn>CA1031,CA1303,CA1304,CA1305,CA1307,CA1309,CA1310,CA1311,CA1515,CS1591,CA1820,CA1822,CA1849,CA1852,CA2007,CA2201,CA2234,CA2251,CA5392,IDE0008,IDE0032,IDE0040,IDE0044,IDE0210</NoWarn><GenerateDocumentationFile>true</GenerateDocumentationFile>"
-            sed -i "s;<TargetFramework>net9\.0</TargetFramework>;<TargetFramework>net9.0</TargetFramework>$($qq);g" $_
+            sed -i "s;<TargetFramework>net10\.0</TargetFramework>;<TargetFramework>net11.0</TargetFramework>$($qq);g" $_
         }
     }
 

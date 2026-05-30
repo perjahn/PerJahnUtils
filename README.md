@@ -1,5 +1,5 @@
 [![Build](https://github.com/perjahn/PerJahnUtils/actions/workflows/build.yml/badge.svg)](https://github.com/perjahn/PerJahnUtils/actions/workflows/build.yml)
-[![CodeQL](https://github.com/perjahn/PerJahnUtils/actions/workflows/codeql.yml/badge.svg)](https://github.com/perjahn/PerJahnUtils/actions/workflows/codeql.yml)
+[![CodeQL](https://github.com/perjahn/PerJahnUtils/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/perjahn/PerJahnUtils/actions/workflows/github-code-scanning/codeql)
 
 This is a collection of utils which you might find useful.
 
